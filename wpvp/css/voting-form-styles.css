@@ -1596,7 +1596,7 @@ html.wp-dark-mode-active:not([data-wp-dark-mode-preset="0"]) form.custom-form la
 
 
 
-/* Editing owbn/owbn-main/shortcodes/user_voting_list.php (inactive) */
+/* Editing owbn/wpvp/shortcodes/user_voting_list.php (inactive) */
 /*         section.vote--result {
             background: var(--e-global-color-bcd8248);
             height: 100vh;
@@ -1722,7 +1722,7 @@ html.wp-dark-mode-active:not([data-wp-dark-mode-preset="0"]) form.custom-form la
         /* Filter page css end */
 
 
-/* Editing owbn/owbn-main/shortcodes/user_search_vote_list.php (inactive) */
+/* Editing owbn/wpvp/shortcodes/user_search_vote_list.php (inactive) */
 /*  body,
         body * {
             box-sizing: border-box;
@@ -1853,7 +1853,7 @@ html.wp-dark-mode-active:not([data-wp-dark-mode-preset="0"]) form.custom-form la
         /* Filter page css end */
 
 
-/* Editing owbn/owbn-main/shortcodes/voting_form.php (inactive) */
+/* Editing owbn/wpvp/shortcodes/voting_form.php (inactive) */
 .cke_notifications_area {
         display: none;
     }
