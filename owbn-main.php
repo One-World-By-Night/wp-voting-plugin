@@ -8,7 +8,7 @@
  */
 
 // Include necessary files
-$plugin_dir = plugin_dir_path(__FILE__) . 'owbn-main/';
+$plugin_dir = plugin_dir_path(__FILE__) . 'wpvp/';
 
 require_once($plugin_dir . 'shortcodes/personal_dashboard.php');
 require_once($plugin_dir . 'shortcodes/voting_form.php');
@@ -79,16 +79,16 @@ function owbn_enqueue_assets()
 
     wp_enqueue_script('jquery', 'https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js', array(), '3.7.1', true);
     // Enqueue global variables script first
-    wp_enqueue_script('global-variables', $plugin_dir_url . 'owbn-main/js/global_variable.js', array(), '1.0.0', true);
+    wp_enqueue_script('global-variables', $plugin_dir_url . 'wpvp/js/global_variable.js', array(), '1.0.0', true);
 
-    wp_enqueue_script('voting-form-script', $plugin_dir_url . 'owbn-main/js/voting-form-script.js', array('global-variables'), '1.0.0', true);
+    wp_enqueue_script('voting-form-script', $plugin_dir_url . 'wpvp/js/voting-form-script.js', array('global-variables'), '1.0.0', true);
 
     // enque the cdn scripts
 
-    wp_enqueue_script('ckeditor',  $plugin_dir_url . 'owbn-main/ckeditor/ckeditor.js', array(), '41.4.2', true);
+    wp_enqueue_script('ckeditor',  $plugin_dir_url . 'wpvp/ckeditor/ckeditor.js', array(), '41.4.2', true);
 
     // Enqueue styles
-    wp_enqueue_style('voting-form-styles', $plugin_dir_url . 'owbn-main/css/voting-form-styles.css', array(), '1.0.0');
+    wp_enqueue_style('voting-form-styles', $plugin_dir_url . 'wpvp/css/voting-form-styles.css', array(), '1.0.0');
     wp_enqueue_style('font-awesome', 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css', array(), '5.15.4');
 }
 add_action('wp_enqueue_scripts', 'owbn_enqueue_assets', 99);
@@ -98,7 +98,7 @@ add_action('wp_enqueue_scripts', 'owbn_enqueue_assets', 99);
  */
 function enqueue_custom_scripts()
 {
-    wp_enqueue_script('upload-file', plugin_dir_url(__FILE__) . 'owbn-main/js/upload-file.js', array('global-variables'), '1.0.0', true);
+    wp_enqueue_script('upload-file', plugin_dir_url(__FILE__) . 'wpvp/js/upload-file.js', array('global-variables'), '1.0.0', true);
 
     // Localize the script with new data
     wp_localize_script('upload-file', 'my_ajax_obj', array(
