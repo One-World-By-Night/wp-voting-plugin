@@ -11,6 +11,6 @@ defined('ABSPATH') || exit;
 
 /** --- Require each tools file once --- */
 require_once __DIR__ . '/cpt.php';
-require_once __DIR__ . '/settings.php';
-require_once __DIR__ . '/enqueue.php';
+require_once __DIR__ . '/fields.php';
 require_once __DIR__ . '/metabox.php';
+require_once __DIR__ . '/settings.php';
