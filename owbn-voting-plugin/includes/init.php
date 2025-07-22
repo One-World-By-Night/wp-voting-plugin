@@ -29,6 +29,9 @@ require_once __DIR__ . '/admin/init.php';
 // Load AccessSchena-Client for permissions if used
 require_once __DIR__ . '/accessschema-client/accessSchema-client.php';
 
+// Load page creation functions
+require_once __DIR__ . '/pages/init.php';
+
 // Load hooks so we can leverage tools
 require_once __DIR__ . '/hooks/init.php';
 
@@ -45,4 +48,4 @@ require_once __DIR__ . '/shortcodes/init.php';
 require_once __DIR__ . '/languages/init.php';
 
 // Plugin Level init hook
-do_action('wpvotingplugin_loaded');
+do_action('wppvotinglugin_loaded');

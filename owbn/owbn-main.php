@@ -371,7 +371,7 @@ function my_custom_cron_function()
 {
     error_log('Cron job for closing_date triggered at ' . current_time('mysql'));
 
-  
+
     global $wpdb;
     // $table_name = $wpdb->prefix . 'voting';
     $table_name = 'wp_2_voting';
