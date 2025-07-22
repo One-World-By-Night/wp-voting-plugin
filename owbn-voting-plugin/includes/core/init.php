@@ -10,3 +10,9 @@
 defined('ABSPATH') || exit;
 
 /** --- Require each tools file once --- */
+require_once __DIR__ . '/activation.php';
+require_once __DIR__ . '/deactivation.php';
+require_once __DIR__ . '/authorization.php';
+require_once __DIR__ . '/bootstrap.php';
+require_once __DIR__ . '/enqueue.php';
+require_once __DIR__ . '/votes.php';
