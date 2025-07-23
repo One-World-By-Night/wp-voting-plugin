@@ -4,7 +4,7 @@
  * Text Domain: wp-voting-plugin
  * @version 2.0.0
  * @author greghacke
- * Function: Porvide a single entry point to load all plugin components in standard and class-based structure
+ * Function: Provide a single entry point to load all plugin components in standard and class-based structure
  */
 
 defined('ABSPATH') || exit;
@@ -23,10 +23,13 @@ if ($classes) {
 // Load Helper so we have our data for other content
 require_once __DIR__ . '/helper/init.php';
 
+// Load vote processing algorithms
+require_once __DIR__ . '/vote-processing/init.php';
+
 // Load admin so we get everything registered properly
 require_once __DIR__ . '/admin/init.php';
 
-// Load AccessSchena-Client for permissions if used
+// Load AccessSchema-Client for permissions if used
 require_once __DIR__ . '/accessschema-client/accessSchema-client.php';
 
 // Load page creation functions
@@ -48,4 +51,4 @@ require_once __DIR__ . '/shortcodes/init.php';
 require_once __DIR__ . '/languages/init.php';
 
 // Plugin Level init hook
-do_action('wppvotinglugin_loaded');
+do_action('wpvp_plugin_loaded');
