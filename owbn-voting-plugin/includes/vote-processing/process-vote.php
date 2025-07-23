@@ -39,7 +39,7 @@ function wpvp_process_votes($vote_data, $vote_box_array, $voting_options_array)
             break;
 
         case 'punishment':
-            $results = wpvp_process_punishment($vote_box_array, $voting_options_array);
+            $results = wpvp_process_disciplinary($vote_box_array, $voting_options_array);
             break;
 
         default:
