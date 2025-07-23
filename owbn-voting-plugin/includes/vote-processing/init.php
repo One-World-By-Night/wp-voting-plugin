@@ -11,6 +11,7 @@ defined('ABSPATH') || exit;
 
 /** --- Require each tools file once --- */
 require_once __DIR__ . '/process-vote.php';
+require_once __DIR__ . '/process-discplinary.php';
 require_once __DIR__ . '/process-rcv.php';
 require_once __DIR__ . '/process-singleton.php';
 require_once __DIR__ . '/results-calculations.php';
