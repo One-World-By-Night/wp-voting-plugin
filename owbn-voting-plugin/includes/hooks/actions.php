@@ -1,6 +1,6 @@
 <?php
 
-/** File: includes/core/deactivation.php
+/** File: includes/hooks/actions.php
  * Text Domain: wp-voting-plugin
  * @version 2.0.0
  * @author greghacke
