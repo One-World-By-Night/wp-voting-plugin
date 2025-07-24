@@ -13,6 +13,9 @@ defined('ABSPATH') || exit;
  * Plugin activation handler
  * Called when the plugin is activated
  */
+
+require_once dirname(__DIR__) . '/helper/db-setup.php';
+
 function wpvp_activate_plugin()
 {
     // Check if this is a single site installation
