@@ -8,11 +8,6 @@
 
 defined('ABSPATH') || exit;
 
-// Include the db-setup file if not already loaded
-if (!function_exists('wpvp_create_tables')) {
-    require_once WPVP_PLUGIN_DIR . 'includes/helper/db-setup.php';
-}
-
 /**
  * Create plugin database tables
  */
