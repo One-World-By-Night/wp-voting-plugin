@@ -65,6 +65,19 @@ add_action('admin_init', function () {
     register_setting('wpvp_accessschema', "{$prefix}_capability_map");
 });
 
+// In your admin settings
+add_settings_field(
+    'wpvp_keep_data_on_uninstall',
+    'Keep data when deleting plugin',
+    function() {
+        $value = get_option('wpvp_keep_data_on_uninstall', false);
+        echo '<input type="checkbox" name="wpvp_keep_data_on_uninstall" value="1" ' . checked($value, true, false) . '>';
+        echo '<p class="description">Check to preserve votes and settings if plugin is deleted</p>';
+    },
+    'wpvp_settings',
+    'wpvp_general_section'
+);
+
 /**
  * Render main settings page
  */
