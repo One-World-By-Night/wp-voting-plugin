@@ -37,7 +37,7 @@ In your plugin’s main file:
 require_once plugin_dir_path(__FILE__) . 'includes/accessschema-client/accessschema-client.php';
 
 Edit the prefix.php file and replace:  
-define('ASC_PREFIX', 'YPP');  
+define('ASC_PREFIX', 'YPL');  
 define('ASC_LABEL', 'Your Plugin Label');  
 to match your plugin.
 
