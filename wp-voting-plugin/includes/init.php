@@ -26,6 +26,9 @@ require_once __DIR__ . '/helper/init.php';
 // Load Ajax functionality
 require_once __DIR__ . '/ajax/init.php';
 
+// Load functions
+require_once __DIR__ . '/functions/init.php';
+
 // Load vote processing algorithms
 require_once __DIR__ . '/vote-processing/init.php';
 
