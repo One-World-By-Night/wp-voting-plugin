@@ -47,13 +47,10 @@ if (!function_exists('accessSchema_client_remote_post')) {
         // Defensive logging
         if (!is_string($client_id)) {
             error_log("[AS] FATAL: Non-string slug in accessSchema_client_remote_post: " . print_r($client_id, true));
-
-            // Get trace
             ob_start();
             debug_print_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 10);
             $trace = ob_get_clean();
             error_log("[AS] Stack trace:\n" . $trace);
-
             return new WP_Error('invalid_slug', 'Plugin slug must be a string');
         }
 
@@ -65,7 +62,8 @@ if (!function_exists('accessSchema_client_remote_post')) {
             return new WP_Error('config_error', 'Remote URL or API key is not set for plugin: ' . esc_html($client_id));
         }
 
-        $url = trailingslashit($url_base) . ltrim($endpoint, '/');
+        // Construct the full API URL
+        $url = trailingslashit($url_base) . 'wp-json/access-schema/v1/' . ltrim($endpoint, '/');
 
         $response = wp_remote_post($url, [
             'headers' => [
@@ -118,7 +116,8 @@ if (!function_exists('accessSchema_client_remote_get')) {
             return new WP_Error('config_error', 'Remote URL or API key is not set');
         }
 
-        $url = trailingslashit($url_base) . ltrim($endpoint, '/');
+        // Construct the full API URL
+        $url = trailingslashit($url_base) . 'wp-json/access-schema/v1/' . ltrim($endpoint, '/');
 
         $response = wp_remote_get($url, [
             'headers' => [

@@ -14,3 +14,5 @@ require_once __DIR__ . '/log-vote-casting.php';
 require_once __DIR__ . '/log-vote-management.php';
 require_once __DIR__ . '/log-vote-processing.php';
 require_once __DIR__ . '/log-vote.php';
+require_once __DIR__ . '/admin-helpers.php';
+require_once __DIR__ . '/vote-helpers.php';

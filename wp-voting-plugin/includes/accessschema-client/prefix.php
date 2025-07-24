@@ -10,5 +10,5 @@
 defined( 'ABSPATH' ) || exit;
 
 // Unique constant prefix for this embedded instance of accessSchema-client
-define('ASC_PREFIX', 'WPVP');                // Change 'YPP' to your plugin's unique prefix
-define('ASC_LABEL', 'WP Voting Plugin');   // Change 'Your Plugin Label' to your plugin's label
+define('ASC_PREFIX', 'WPVP');       // Change 'YPP' to your plugin's unique prefix
+define('ASC_LABEL', 'WPVP');        // Change 'Your Plugin Label' to your plugin's label
