@@ -1,12 +1,14 @@
 <?php
 
-/**
- * AccessSchema Client Prefix Configuration
- * For WP Voting Plugin
+/** File: prefix.php
+ * Text Domain: accessschema-client
+ * version 1.2.0
+ * @author greghacke
+ * Function: 
  */
 
-// Set the unique prefix for this plugin instance
-define('ASC_PREFIX', 'WPVP');
+defined( 'ABSPATH' ) || exit;
 
-// Set the display label for admin menus
-define('ASC_LABEL', 'WP Voting Plugin');
+// Unique constant prefix for this embedded instance of accessSchema-client
+define('ASC_PREFIX', 'YPP');                // Change 'YPP' to your plugin's unique prefix
+define('ASC_LABEL', 'Your Plugin Label');   // Change 'Your Plugin Label' to your plugin's label
