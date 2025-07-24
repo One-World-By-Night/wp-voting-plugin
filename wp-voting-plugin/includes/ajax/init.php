@@ -14,3 +14,4 @@ require_once __DIR__ . '/ajax-cast-ballot.php';
 require_once __DIR__ . '/ajax-file-upload.php';
 require_once __DIR__ . '/ajax-save-vote.php';
 require_once __DIR__ . '/ajax-vote-status.php';
+require_once __DIR__ . '/vote-ajax.php';

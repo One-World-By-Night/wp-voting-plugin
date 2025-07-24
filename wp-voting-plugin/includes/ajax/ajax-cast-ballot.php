@@ -1,6 +1,6 @@
 <?php
 
-/** File: includes/admin/all-votes.php
+/** File: includes/ajax/ajax-cast-ballot.php
  * Text Domain: wp-voting-plugin
  * @version 2.0.0
  * @author greghacke
@@ -8,4 +8,3 @@
  */
 
 defined('ABSPATH') || exit;
-

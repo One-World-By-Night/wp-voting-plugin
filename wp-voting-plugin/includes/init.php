@@ -23,6 +23,9 @@ if ($classes) {
 // Load Helper so we have our data for other content
 require_once __DIR__ . '/helper/init.php';
 
+// Load Ajax functionality
+require_once __DIR__ . '/ajax/init.php';
+
 // Load vote processing algorithms
 require_once __DIR__ . '/vote-processing/init.php';
 
