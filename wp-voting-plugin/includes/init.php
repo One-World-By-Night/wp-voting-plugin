@@ -35,6 +35,9 @@ require_once __DIR__ . '/vote-processing/init.php';
 // Load admin so we get everything registered properly
 require_once __DIR__ . '/admin/init.php';
 
+// Load utils so we have our helper functions available
+require_once __DIR__ . '/utils/init.php';
+
 // Load AccessSchema-Client for permissions if used
 require_once __DIR__ . '/accessschema-client/accessSchema-client.php';
 

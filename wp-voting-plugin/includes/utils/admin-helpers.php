@@ -32,17 +32,16 @@ function wpvp_get_current_filters() {
     return $filters;
 }
 
-function wpvp_get_pagination_args($total_items, $per_page = 20) {
-    $current_page = max(1, get_query_var('paged', 1));
-    $total_pages = ceil($total_items / $per_page);
-
+function wpvp_get_pagination_args() {
+    $args = wpvp_get_votes_query_args();
+    $total_items = wpvp_get_total_votes_count($args);
+    $per_page = $args['per_page'];
+    
     return array(
         'total_items' => $total_items,
+        'total_pages' => ceil($total_items / $per_page),
         'per_page' => $per_page,
-        'current_page' => $current_page,
-        'total_pages' => $total_pages,
-        'base' => wpvp_votes_add_query_arg(array('paged' => '%#%')),
-        'format' => '?paged=%#%',
+        'current_page' => $args['page']
     );
 }
 

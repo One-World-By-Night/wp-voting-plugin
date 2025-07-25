@@ -8,24 +8,6 @@
 
 defined('ABSPATH') || exit;
 
-// Helper function stubs
-function wpvp_process_search_query() {
-    return isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '';
-}
-
-function wpvp_get_pagination_args() {
-    $args = wpvp_get_votes_query_args();
-    $total_items = wpvp_get_total_votes_count($args);
-    $per_page = $args['per_page'];
-    
-    return array(
-        'total_items' => $total_items,
-        'total_pages' => ceil($total_items / $per_page),
-        'per_page' => $per_page,
-        'current_page' => $args['page']
-    );
-}
-
 function wpvp_render_vote_actions($vote) {
     $actions = array();
     
