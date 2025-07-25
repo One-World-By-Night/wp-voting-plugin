@@ -1,28 +1,12 @@
 <?php
-/**
- * Stub functions for All Votes page
- * Temporary functions to make the page render
+
+/** File: includes/functions//vote-data.php
+ * Text Domain: wp-voting-plugin
+ * @version 2.0.0
+ * @author greghacke
  */
 
 defined('ABSPATH') || exit;
-
-// Data retrieval stubs
-function wpvp_get_votes_query_args() {
-    return array();
-}
-
-function wpvp_get_votes($args = array()) {
-    // Return empty array for now
-    return array();
-}
-
-function wpvp_get_vote_types() {
-    return array(
-        'single' => 'Single Choice',
-        'multiple' => 'Multiple Choice',
-        'rating' => 'Rating'
-    );
-}
 
 // Helper function stubs
 function wpvp_process_search_query() {
@@ -64,4 +48,8 @@ function wpvp_can_view_results($vote) {
 
 function wpvp_can_delete_vote($vote) {
     return true;
+}
+
+function wpvp_render_vote_actions($vote) {
+    return '<div class="vote-actions">Actions stub</div>';
 }

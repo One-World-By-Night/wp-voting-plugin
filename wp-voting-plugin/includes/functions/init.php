@@ -10,4 +10,5 @@
 defined('ABSPATH') || exit;
 
 /** --- Require each tools file once --- */
+require_once __DIR__ . '/vote-data.php';
 require_once __DIR__ . '/vote-queries.php';
