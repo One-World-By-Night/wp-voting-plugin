@@ -13,35 +13,35 @@ defined('ABSPATH') || exit;
  * Add admin menu pages
  */
 add_action('admin_menu', function () {
-    // Main menu
+    // Main menu - point to all votes page
     add_menu_page(
         __('WP Voting', 'wp-voting-plugin'),
         __('WP Voting', 'wp-voting-plugin'),
         'manage_options',
-        'wpvp-settings',
-        'wpvp_render_settings_page',
+        'wpvp-all-votes',  
+        'wpvp_render_all_votes_page', 
         'dashicons-chart-pie',
         30
     );
 
+    // All Votes submenu (same slug as parent to highlight)
+    add_submenu_page(
+        'wpvp-all-votes',  
+        __('All Votes', 'wp-voting-plugin'),
+        __('All Votes', 'wp-voting-plugin'),
+        'manage_options',
+        'wpvp-all-votes',  // Same as parent
+        'wpvp_render_all_votes_page'
+    );
+
     // Settings submenu
     add_submenu_page(
-        'wpvp-settings',
+        'wpvp-all-votes',  
         __('Settings', 'wp-voting-plugin'),
         __('Settings', 'wp-voting-plugin'),
         'manage_options',
         'wpvp-settings',
         'wpvp_render_settings_page'
-    );
-
-    // All Votes submenu
-    add_submenu_page(
-        'wpvp-settings',
-        __('All Votes', 'wp-voting-plugin'),
-        __('All Votes', 'wp-voting-plugin'),
-        'manage_options',
-        'wpvp-all-votes',
-        'wpvp_render_all_votes_page'
     );
 });
 
