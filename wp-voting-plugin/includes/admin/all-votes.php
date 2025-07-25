@@ -184,10 +184,10 @@ function wpvp_render_votes_table_empty() {
  * Search functionality for votes
  */
 function wpvp_render_search_box() {
-    $search = wpvp_process_search_query();
+    $search = wpvp_process_search_query(isset($_GET['s']) ? $_GET['s'] : '');
     ?>
     <form method="get" class="search-form">
-        <input type="hidden" name="page" value="wp-voting-plugin">
+        <input type="hidden" name="page" value="wpvp-all-votes">
         <p class="search-box">
             <label class="screen-reader-text" for="wpvp-search-input"><?php _e('Search Votes:', 'wp-voting-plugin'); ?></label>
             <input type="search" id="wpvp-search-input" name="s" value="<?php echo esc_attr($search); ?>">
