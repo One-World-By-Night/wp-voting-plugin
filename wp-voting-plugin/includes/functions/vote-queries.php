@@ -10,7 +10,7 @@ defined('ABSPATH') || exit;
 
 function wpvp_get_votes_query_args() {
     $args = array(
-        'per_page' => 20,
+        'per_page' => 4,
         'page' => isset($_GET['paged']) ? max(1, intval($_GET['paged'])) : 1,
         'search' => isset($_GET['s']) ? sanitize_text_field($_GET['s']) : '',
         'orderby' => isset($_GET['orderby']) ? sanitize_text_field($_GET['orderby']) : 'created_at',
