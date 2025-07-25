@@ -13,8 +13,10 @@ function wpvp_format_vote_date($date) {
     return 'Date stub';
 }
 
-function wpvp_get_vote_url($action, $vote_id) {
-    return '#';
+function wpvp_get_vote_url($vote_id) {
+    // For now, return the admin results page
+    // Later this can be changed to a public voting page
+    return admin_url('admin.php?page=wpvp-vote-results&id=' . $vote_id);
 }
 
 function wpvp_get_vote_status_badge($status) {
@@ -22,7 +24,8 @@ function wpvp_get_vote_status_badge($status) {
 }
 
 function wpvp_get_vote_type_label($type) {
-    return 'Type stub';
+    $types = wpvp_get_vote_types();
+    return isset($types[$type]) ? $types[$type] : $type;
 }
 
 function wpvp_can_edit_vote($vote) {
