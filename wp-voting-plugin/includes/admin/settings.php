@@ -18,25 +18,45 @@ add_action('admin_menu', function () {
         __('WP Voting', 'wp-voting-plugin'),
         __('WP Voting', 'wp-voting-plugin'),
         'manage_options',
-        'wpvp-all-votes',  
-        'wpvp_render_all_votes_page', 
+        'wpvp-all-votes',
+        'wpvp_render_all_votes_page',
         'dashicons-chart-pie',
         30
     );
 
     // All Votes submenu (same slug as parent to highlight)
     add_submenu_page(
-        'wpvp-all-votes',  
+        'wpvp-all-votes',
         __('All Votes', 'wp-voting-plugin'),
         __('All Votes', 'wp-voting-plugin'),
         'manage_options',
-        'wpvp-all-votes',  // Same as parent
+        'wpvp-all-votes',
         'wpvp_render_all_votes_page'
+    );
+
+    // Add New Vote submenu
+    add_submenu_page(
+        'wpvp-all-votes',
+        __('Add New Vote', 'wp-voting-plugin'),
+        __('Add New', 'wp-voting-plugin'),
+        'manage_options',
+        'wp-voting-plugin-new',
+        'wpvp_render_create_vote_page'
+    );
+
+    // Edit Vote page (hidden from menu)
+    add_submenu_page(
+        null, // Hidden from menu
+        __('Edit Vote', 'wp-voting-plugin'),
+        __('Edit Vote', 'wp-voting-plugin'),
+        'manage_options',
+        'wpvp-edit-vote',
+        'wpvp_render_create_vote_page'
     );
 
     // Settings submenu
     add_submenu_page(
-        'wpvp-all-votes',  
+        'wpvp-all-votes',
         __('Settings', 'wp-voting-plugin'),
         __('Settings', 'wp-voting-plugin'),
         'manage_options',

@@ -55,7 +55,7 @@ function wpvp_create_tables()
         id INT NOT NULL AUTO_INCREMENT,
         vote_id INT NOT NULL,
         user_id INT NOT NULL,
-        vote_name LONGTEXT NOT NULL,        
+        voter_name LONGTEXT NOT NULL,        
         -- Vote data (JSON for flexibility with different voting types)
         ballot_data LONGTEXT NOT NULL,
         

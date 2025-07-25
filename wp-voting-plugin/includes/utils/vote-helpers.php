@@ -20,7 +20,36 @@ function wpvp_get_vote_url($vote_id) {
 }
 
 function wpvp_get_vote_status_badge($status) {
-    return '<span>Status stub</span>';
+    $badge_class = 'badge';
+    $badge_text = '';
+    
+    switch($status) {
+        case 'draft':
+            $badge_class .= ' badge-secondary';
+            $badge_text = __('Draft', 'wp-voting-plugin');
+            break;
+        case 'in_progress':
+            $badge_class .= ' badge-warning';
+            $badge_text = __('In Progress', 'wp-voting-plugin');
+            break;
+        case 'closed':
+            $badge_class .= ' badge-success';
+            $badge_text = __('Closed', 'wp-voting-plugin');
+            break;
+        case 'completed':
+            $badge_class .= ' badge-success';
+            $badge_text = __('Closed', 'wp-voting-plugin');
+            break;
+        case 'archived':
+            $badge_class .= ' badge-danger';
+            $badge_text = __('Archived', 'wp-voting-plugin');
+            break;
+        default:
+            $badge_class .= ' badge-secondary';
+            $badge_text = esc_html($status);
+    }
+    
+    return sprintf('<span class="%s">%s</span>', esc_attr($badge_class), esc_html($badge_text));
 }
 
 function wpvp_get_vote_type_label($type) {
