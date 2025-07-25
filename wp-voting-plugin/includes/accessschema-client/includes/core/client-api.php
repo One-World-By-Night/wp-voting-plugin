@@ -383,16 +383,12 @@ if ( !function_exists( 'asc_hook_user_has_cap_filter' ) ) {
         $mode      = get_option("{$client_id}_accessschema_mode", 'remote');
         $email     = $user->user_email;
 
-        // Log invocation
-        error_log("ASC CAP FILTER → Requested: {$requested_cap}, Mode: {$mode}, Email: {$email}");
-
         if ( $mode === 'none' ) {
             error_log("ASC CAP FILTER → Mode 'none', skipping ASC check.");
             return $allcaps;
         }
 
         if ( ! is_email($email) ) {
-            error_log("ASC CAP FILTER → Invalid email: {$email}");
             return $allcaps;
         }
 
@@ -414,8 +410,6 @@ if ( !function_exists( 'asc_hook_user_has_cap_filter' ) ) {
             $has_access = in_array($group_path, $roles, true) ||
                           !empty(preg_grep('#^' . preg_quote($group_path, '#') . '/#', $roles));
 
-            error_log("ASC CAP FILTER → Group check for '{$group_path}' => " . ($has_access ? '✅ GRANTED' : '❌ DENIED'));
-
             if ( $has_access ) {
                 $allcaps[$requested_cap] = true;
             }
@@ -426,31 +420,25 @@ if ( !function_exists( 'asc_hook_user_has_cap_filter' ) ) {
         // ✅ Mapped capability check (optional)
         $role_map = get_option("{$client_id}_capability_map", []);
         if ( empty($role_map[$requested_cap]) ) {
-            error_log("ASC CAP FILTER → No role map for {$requested_cap}, skipping.");
             return $allcaps;
         }
 
         foreach ( (array) $role_map[$requested_cap] as $raw_path ) {
             $role_path = asc_expand_role_path($raw_path);
 
-            error_log("ASC CAP FILTER → Checking {$requested_cap} via path: {$role_path}");
-
             $granted = ( $mode === 'local' )
                 ? accessSchema_client_local_check_access($email, $role_path, $client_id)
                 : accessSchema_client_remote_check_access($email, $role_path, $client_id, true);
 
             if ( is_wp_error($granted) ) {
-                error_log("ASC CAP FILTER → WP_Error: " . $granted->get_error_message());
                 continue;
             }
 
             if ( $granted === true ) {
                 $allcaps[$requested_cap] = true;
-                error_log("ASC CAP FILTER → ✅ ACCESS GRANTED for {$requested_cap} via {$role_path}");
                 break;
             }
 
-            error_log("ASC CAP FILTER → ❌ Access denied for {$role_path}");
         }
 
         return $allcaps;
