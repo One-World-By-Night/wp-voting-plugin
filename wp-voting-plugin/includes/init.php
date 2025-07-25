@@ -32,6 +32,12 @@ require_once __DIR__ . '/functions/init.php';
 // Load vote processing algorithms
 require_once __DIR__ . '/vote-processing/init.php';
 
+// Load vote management for creating and editing votes
+require_once __DIR__ . '/vote-management/init.php';
+
+// Load vote casting for ballots
+require_once __DIR__ . '/vote-casting/init.php';
+
 // Load admin so we get everything registered properly
 require_once __DIR__ . '/admin/init.php';
 

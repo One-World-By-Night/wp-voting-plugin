@@ -10,6 +10,31 @@
 defined('ABSPATH') || exit;
 
 /**
+ * Add screen options
+ */
+add_action('load-toplevel_page_wpvp-all-votes', 'wpvp_add_votes_screen_options');
+function wpvp_add_votes_screen_options() {
+    $option = 'per_page';
+    $args = array(
+        'label' => __('Votes per page', 'wp-voting-plugin'),
+        'default' => 20,
+        'option' => 'wpvp_votes_per_page'
+    );
+    add_screen_option($option, $args);
+}
+
+/**
+ * Save screen options
+ */
+add_filter('set-screen-option', 'wpvp_set_votes_screen_options', 10, 3);
+function wpvp_set_votes_screen_options($status, $option, $value) {
+    if ('wpvp_votes_per_page' === $option) {
+        return $value;
+    }
+    return $status;
+}
+
+/**
  * Render the main All Votes page
  * Core function that orchestrates the entire page rendering
  */
@@ -19,17 +44,85 @@ function wpvp_render_all_votes_page() {
         wp_die(__('You do not have sufficient permissions to access this page.', 'wp-voting-plugin'));
     }
     
+    // Process bulk actions if any
+    wpvp_process_vote_bulk_actions();
+    
     ?>
     <div class="wrap">
         <h1 class="wp-heading-inline"><?php _e('All Votes', 'wp-voting-plugin'); ?></h1>
         <a href="<?php echo admin_url('admin.php?page=wp-voting-plugin-new'); ?>" class="page-title-action"><?php _e('Add New', 'wp-voting-plugin'); ?></a>
         <hr class="wp-header-end">
         
-        <?php wpvp_render_search_box(); ?>
-        <?php wpvp_render_votes_filters(); ?>
-        <?php wpvp_render_votes_table(); ?>
+        <form method="get">
+            <input type="hidden" name="page" value="wpvp-all-votes">
+            <?php wpvp_render_search_box(); ?>
+            <?php wpvp_render_votes_filters(); ?>
+            <?php wpvp_render_votes_table(); ?>
+        </form>
     </div>
     <?php
+}
+
+/**
+ * Process bulk actions
+ */
+function wpvp_process_vote_bulk_actions() {
+    if (!isset($_REQUEST['action']) || $_REQUEST['action'] === '-1') {
+        return;
+    }
+    
+    if (!isset($_REQUEST['vote']) || !is_array($_REQUEST['vote'])) {
+        return;
+    }
+    
+    $action = $_REQUEST['action'];
+    $vote_ids = array_map('intval', $_REQUEST['vote']);
+    
+    global $wpdb;
+    $table_name = $wpdb->prefix . 'wpvp_votes';
+    
+    switch ($action) {
+        case 'delete':
+            foreach ($vote_ids as $vote_id) {
+                $wpdb->delete($table_name, array('id' => $vote_id));
+                // Also delete related ballots and results
+                $wpdb->delete($wpdb->prefix . 'wpvp_ballots', array('vote_id' => $vote_id));
+                $wpdb->delete($wpdb->prefix . 'wpvp_results', array('vote_id' => $vote_id));
+            }
+            break;
+        case 'activate':
+            foreach ($vote_ids as $vote_id) {
+                $wpdb->update($table_name, array('voting_stage' => 'open'), array('id' => $vote_id));
+            }
+            break;
+        case 'deactivate':
+            foreach ($vote_ids as $vote_id) {
+                $wpdb->update($table_name, array('voting_stage' => 'closed'), array('id' => $vote_id));
+            }
+            break;
+    }
+}
+
+/**
+ * Get sorting parameters
+ */
+function wpvp_get_sort_params() {
+    $orderby = isset($_GET['orderby']) ? sanitize_text_field($_GET['orderby']) : 'created_at';
+    $order = isset($_GET['order']) ? sanitize_text_field($_GET['order']) : 'DESC';
+    
+    // Validate orderby
+    $allowed_orderby = array('proposal_name', 'voting_type', 'voting_stage', 'created_at');
+    if (!in_array($orderby, $allowed_orderby)) {
+        $orderby = 'created_at';
+    }
+    
+    // Validate order
+    $order = strtoupper($order);
+    if (!in_array($order, array('ASC', 'DESC'))) {
+        $order = 'DESC';
+    }
+    
+    return array('orderby' => $orderby, 'order' => $order);
 }
 
 /**
@@ -45,9 +138,10 @@ function wpvp_render_votes_filters() {
         <div class="alignleft actions">
             <select name="status" id="wpvp-status-filter">
                 <option value=""><?php _e('All Statuses', 'wp-voting-plugin'); ?></option>
-                <option value="active" <?php selected($current_status, 'active'); ?>><?php _e('Active', 'wp-voting-plugin'); ?></option>
-                <option value="inactive" <?php selected($current_status, 'inactive'); ?>><?php _e('Inactive', 'wp-voting-plugin'); ?></option>
                 <option value="draft" <?php selected($current_status, 'draft'); ?>><?php _e('Draft', 'wp-voting-plugin'); ?></option>
+                <option value="open" <?php selected($current_status, 'open'); ?>><?php _e('Open', 'wp-voting-plugin'); ?></option>
+                <option value="closed" <?php selected($current_status, 'closed'); ?>><?php _e('Closed', 'wp-voting-plugin'); ?></option>
+                <option value="archived" <?php selected($current_status, 'archived'); ?>><?php _e('Archived', 'wp-voting-plugin'); ?></option>
             </select>
             
             <select name="type" id="wpvp-type-filter">
@@ -73,7 +167,33 @@ function wpvp_render_votes_filters() {
  * Main table with all votes
  */
 function wpvp_render_votes_table() {
-    $votes = wpvp_get_votes(wpvp_get_votes_query_args());
+    // Get per page option
+    $user = get_current_user_id();
+    $screen = get_current_screen();
+    $screen_option = $screen->get_option('per_page', 'option');
+    $per_page = get_user_meta($user, $screen_option, true);
+    if (empty($per_page) || $per_page < 1) {
+        $per_page = $screen->get_option('per_page', 'default');
+    }
+    
+    // Update query args with per page
+    $args = wpvp_get_votes_query_args();
+    $args['per_page'] = $per_page;
+    
+    // Get sort params
+    $sort_params = wpvp_get_sort_params();
+    $args['orderby'] = $sort_params['orderby'];
+    $args['order'] = $sort_params['order'];
+    
+    // Add filters
+    if (isset($_GET['status']) && $_GET['status']) {
+        $args['status'] = sanitize_text_field($_GET['status']);
+    }
+    if (isset($_GET['type']) && $_GET['type']) {
+        $args['type'] = sanitize_text_field($_GET['type']);
+    }
+    
+    $votes = wpvp_get_votes($args);
     
     ?>
     <table class="wp-list-table widefat fixed striped wpvp-votes-table">
@@ -100,26 +220,48 @@ function wpvp_render_votes_table() {
  * Column headers with sorting
  */
 function wpvp_render_votes_table_header() {
+    $sort_params = wpvp_get_sort_params();
+    $current_orderby = $sort_params['orderby'];
+    $current_order = $sort_params['order'];
+    
+    // Function to create sortable column header
+    $sortable_header = function($column, $label) use ($current_orderby, $current_order) {
+        $is_current = ($current_orderby === $column);
+        $order = ($is_current && $current_order === 'ASC') ? 'DESC' : 'ASC';
+        $class = $is_current ? "sorted " . strtolower($current_order) : 'sortable';
+        
+        $url = add_query_arg(array(
+            'orderby' => $column,
+            'order' => $order
+        ));
+        
+        return sprintf(
+            '<a href="%s"><span>%s</span><span class="sorting-indicator"></span></a>',
+            esc_url($url),
+            esc_html($label)
+        );
+    };
+    
     ?>
     <thead>
         <tr>
             <td class="manage-column column-cb check-column">
                 <input type="checkbox" id="cb-select-all">
             </td>
-            <th scope="col" class="manage-column column-title column-primary">
-                <?php _e('Title', 'wp-voting-plugin'); ?>
+            <th scope="col" class="manage-column column-title column-primary <?php echo $current_orderby === 'proposal_name' ? 'sorted ' . strtolower($current_order) : 'sortable'; ?>">
+                <?php echo $sortable_header('proposal_name', __('Title', 'wp-voting-plugin')); ?>
             </th>
-            <th scope="col" class="manage-column column-type">
-                <?php _e('Type', 'wp-voting-plugin'); ?>
+            <th scope="col" class="manage-column column-type <?php echo $current_orderby === 'voting_type' ? 'sorted ' . strtolower($current_order) : 'sortable'; ?>">
+                <?php echo $sortable_header('voting_type', __('Type', 'wp-voting-plugin')); ?>
             </th>
-            <th scope="col" class="manage-column column-status">
-                <?php _e('Status', 'wp-voting-plugin'); ?>
+            <th scope="col" class="manage-column column-status <?php echo $current_orderby === 'voting_stage' ? 'sorted ' . strtolower($current_order) : 'sortable'; ?>">
+                <?php echo $sortable_header('voting_stage', __('Status', 'wp-voting-plugin')); ?>
             </th>
             <th scope="col" class="manage-column column-responses">
                 <?php _e('Responses', 'wp-voting-plugin'); ?>
             </th>
-            <th scope="col" class="manage-column column-date">
-                <?php _e('Date', 'wp-voting-plugin'); ?>
+            <th scope="col" class="manage-column column-date <?php echo $current_orderby === 'created_at' ? 'sorted ' . strtolower($current_order) : 'sortable'; ?>">
+                <?php echo $sortable_header('created_at', __('Date', 'wp-voting-plugin')); ?>
             </th>
         </tr>
     </thead>
@@ -131,32 +273,40 @@ function wpvp_render_votes_table_header() {
  * Individual vote row with actions
  */
 function wpvp_render_votes_table_row($vote) {
+    // Get ballot count for this vote
+    global $wpdb;
+    $ballot_count = $wpdb->get_var($wpdb->prepare(
+        "SELECT COUNT(*) FROM {$wpdb->prefix}wpvp_ballots WHERE vote_id = %d",
+        $vote->id
+    ));
+    
     ?>
-    <tr data-vote-id="<?php echo esc_attr($vote->id); ?>">
+    <tr>
         <th scope="row" class="check-column">
-            <input type="checkbox" name="votes[]" value="<?php echo esc_attr($vote->id); ?>">
+            <input type="checkbox" name="vote[]" value="<?php echo esc_attr($vote->id); ?>">
         </th>
         <td class="title column-title has-row-actions column-primary">
             <strong>
-                <a href="<?php echo wpvp_get_vote_url('edit', $vote->id); ?>" class="row-title">
-                    <?php echo esc_html($vote->title); ?>
+                <a href="<?php echo esc_url(wpvp_get_vote_url($vote->id)); ?>">
+                    <?php echo esc_html($vote->proposal_name); ?>
                 </a>
             </strong>
-            <?php wpvp_render_row_actions($vote); ?>
+            <div class="row-actions">
+                <?php echo wpvp_render_vote_actions($vote); ?>
+            </div>
+            <button type="button" class="toggle-row"><span class="screen-reader-text"><?php _e('Show more details', 'wp-voting-plugin'); ?></span></button>
         </td>
-        <td class="type column-type">
-            <?php echo wpvp_get_vote_type_label($vote->type); ?>
+        <td data-colname="<?php _e('Type', 'wp-voting-plugin'); ?>">
+            <?php echo esc_html(wpvp_get_vote_type_label($vote->voting_type)); ?>
         </td>
-        <td class="status column-status">
-            <?php echo wpvp_get_vote_status_badge($vote->status); ?>
+        <td data-colname="<?php _e('Status', 'wp-voting-plugin'); ?>">
+            <?php echo wpvp_get_vote_status_badge($vote->voting_stage); ?>
         </td>
-        <td class="responses column-responses">
-            <a href="<?php echo wpvp_get_vote_url('results', $vote->id); ?>">
-                <?php echo number_format_i18n($vote->response_count); ?>
-            </a>
+        <td data-colname="<?php _e('Responses', 'wp-voting-plugin'); ?>">
+            <?php echo esc_html($ballot_count); ?>
         </td>
-        <td class="date column-date">
-            <?php echo wpvp_format_vote_date($vote->created_at); ?>
+        <td data-colname="<?php _e('Date', 'wp-voting-plugin'); ?>">
+            <?php echo esc_html(date_i18n(get_option('date_format'), strtotime($vote->created_at))); ?>
         </td>
     </tr>
     <?php
@@ -186,14 +336,11 @@ function wpvp_render_votes_table_empty() {
 function wpvp_render_search_box() {
     $search = wpvp_process_search_query(isset($_GET['s']) ? $_GET['s'] : '');
     ?>
-    <form method="get" class="search-form">
-        <input type="hidden" name="page" value="wpvp-all-votes">
-        <p class="search-box">
-            <label class="screen-reader-text" for="wpvp-search-input"><?php _e('Search Votes:', 'wp-voting-plugin'); ?></label>
-            <input type="search" id="wpvp-search-input" name="s" value="<?php echo esc_attr($search); ?>">
-            <input type="submit" class="button" value="<?php esc_attr_e('Search Votes', 'wp-voting-plugin'); ?>">
-        </p>
-    </form>
+    <p class="search-box">
+        <label class="screen-reader-text" for="wpvp-search-input"><?php _e('Search Votes:', 'wp-voting-plugin'); ?></label>
+        <input type="search" id="wpvp-search-input" name="s" value="<?php echo esc_attr($search); ?>">
+        <input type="submit" class="button" value="<?php esc_attr_e('Search Votes', 'wp-voting-plugin'); ?>">
+    </p>
     <?php
 }
 
@@ -240,7 +387,7 @@ function wpvp_render_bulk_actions() {
     ?>
     <div class="alignleft actions bulkactions">
         <select name="action" id="wpvp-bulk-action-selector">
-            <option value=""><?php _e('Bulk Actions', 'wp-voting-plugin'); ?></option>
+            <option value="-1"><?php _e('Bulk Actions', 'wp-voting-plugin'); ?></option>
             <option value="activate"><?php _e('Activate', 'wp-voting-plugin'); ?></option>
             <option value="deactivate"><?php _e('Deactivate', 'wp-voting-plugin'); ?></option>
             <option value="delete"><?php _e('Delete', 'wp-voting-plugin'); ?></option>

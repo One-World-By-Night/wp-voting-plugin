@@ -33,9 +33,32 @@ function wpvp_get_current_filters() {
 }
 
 function wpvp_get_pagination_args() {
+    // Get per page from screen options
+    $user = get_current_user_id();
+    $screen = get_current_screen();
+    $per_page = 20; // Default
+    
+    if ($screen) {
+        $screen_option = $screen->get_option('per_page', 'option');
+        $per_page = get_user_meta($user, $screen_option, true);
+        if (empty($per_page) || $per_page < 1) {
+            $per_page = $screen->get_option('per_page', 'default');
+        }
+    }
+    
+    // Get query args with filters
     $args = wpvp_get_votes_query_args();
+    $args['per_page'] = $per_page;
+    
+    // Add filters to count query
+    if (isset($_GET['status']) && $_GET['status']) {
+        $args['status'] = sanitize_text_field($_GET['status']);
+    }
+    if (isset($_GET['type']) && $_GET['type']) {
+        $args['type'] = sanitize_text_field($_GET['type']);
+    }
+    
     $total_items = wpvp_get_total_votes_count($args);
-    $per_page = $args['per_page'];
     
     return array(
         'total_items' => $total_items,
