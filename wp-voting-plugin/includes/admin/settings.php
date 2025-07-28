@@ -436,6 +436,10 @@ function wpvp_test_accessschema_connection() {
         }
     }
     
+    // Cache the roles for 24 hours
+    set_transient('wpvp_accessschema_roles_cache', $paths, 24 * HOUR_IN_SECONDS);
+    update_option('wpvp_accessschema_roles_cache_time', current_time('timestamp'));
+    
     $total = count($paths);
     $display_paths = array_slice($paths, 0, 5); // Show only first 5
     $display_text = implode(', ', $display_paths);
@@ -444,7 +448,7 @@ function wpvp_test_accessschema_connection() {
         $display_text .= sprintf(' ... and %d more', $total - 5);
     }
     
-    $message = sprintf('Connected! Found %d roles: %s', $total, $display_text);
+    $message = sprintf('Connected! Found %d roles: %s. Roles cached for 24 hours.', $total, $display_text);
     wp_send_json_success(['message' => $message, 'paths' => $paths, 'total' => $total]);
 }
 
@@ -797,6 +801,21 @@ add_action('wp_ajax_wpvp_fetch_accessschema_roles', 'wpvp_fetch_accessschema_rol
 function wpvp_fetch_accessschema_roles() {
     check_ajax_referer('wpvp_admin_nonce', 'nonce');
     
+    // First check cache
+    $cached_roles = get_transient('wpvp_accessschema_roles_cache');
+    if ($cached_roles !== false) {
+        $formatted_roles = [];
+        foreach ($cached_roles as $role) {
+            $formatted_roles[] = [
+                'id' => $role,
+                'text' => $role
+            ];
+        }
+        wp_send_json_success($formatted_roles);
+        return;
+    }
+    
+    // If no cache, fetch from API
     $prefix = 'wpvp';
     $mode = get_option("{$prefix}_accessschema_mode", 'none');
     $url = get_option("{$prefix}_accessschema_client_url", '');
@@ -836,24 +855,28 @@ function wpvp_fetch_accessschema_roles() {
         wp_send_json_error('Invalid JSON response');
     }
     
-    // Format for select2
-    $formatted_roles = [];
-    
+    // Extract and cache role paths
+    $paths = [];
     if (isset($data['roles']) && is_array($data['roles'])) {
         foreach ($data['roles'] as $role) {
             if (isset($role['path'])) {
-                $formatted_roles[] = [
-                    'id' => $role['path'],
-                    'text' => $role['path']  // Just show the path
-                ];
+                $paths[] = $role['path'];
             }
         }
     }
     
-    // Add common wildcard patterns as suggestions
-    $formatted_roles[] = ['id' => 'chronicle/*/cm', 'text' => 'chronicle/*/cm'];
-    $formatted_roles[] = ['id' => 'coordinator/*/coordinator', 'text' => 'coordinator/*/coordinator'];
-    $formatted_roles[] = ['id' => 'exec/*/coordinator', 'text' => 'exec/*/coordinator'];
+    // Cache for 24 hours
+    set_transient('wpvp_accessschema_roles_cache', $paths, 24 * HOUR_IN_SECONDS);
+    update_option('wpvp_accessschema_roles_cache_time', current_time('timestamp'));
+    
+    // Format for select2
+    $formatted_roles = [];
+    foreach ($paths as $path) {
+        $formatted_roles[] = [
+            'id' => $path,
+            'text' => $path
+        ];
+    }
     
     wp_send_json_success($formatted_roles);
 }
