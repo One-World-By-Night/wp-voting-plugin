@@ -324,29 +324,54 @@ function wpvp_render_wordpress_permissions($selected = array()) {
  * Render AccessSchema permissions
  */
 function wpvp_render_accessschema_permissions($selected = array()) {
-    // Check if AccessSchema is available
-    if (!function_exists('as_get_groups')) {
-        echo '<p class="error">' . __('AccessSchema plugin is not active.', 'wp-voting-plugin') . '</p>';
-        return;
+    // Get capability map from settings
+    $capability_map = get_option('wpvp_capability_map', array());
+    
+    // Get the cast_votes array from capability map
+    $default_groups = isset($capability_map['cast_votes']) ? $capability_map['cast_votes'] : array();
+    
+    // Get cached AccessSchema roles
+    $cached_roles = get_transient('wpvp_accessschema_roles_cache');
+    
+    // If editing a vote, use the selected values; if new, use defaults
+    $effective_selected = !empty($selected) ? $selected : $default_groups;
+    
+    // Collect all unique options
+    $all_options = array();
+    
+    // First, add all selected/default values (these might include wildcards)
+    foreach ($effective_selected as $group) {
+        $all_options[$group] = true;
     }
     
-    // Get default groups from settings
-    $default_groups = get_option('wpvp_accessschema_cast_vote_groups', array());
-    
-    // Get all AccessSchema groups
-    $groups = as_get_groups(); // This assumes AccessSchema provides this function
+    // Then add cached roles
+    if (!empty($cached_roles) && is_array($cached_roles)) {
+        foreach ($cached_roles as $role) {
+            if (!isset($all_options[$role])) {
+                $all_options[$role] = false; // false means not selected by default
+            }
+        }
+    }
     
     ?>
     <select id="wpvp-allowed-voters" name="allowed_roles[]" class="wpvp-select2-tags" multiple="multiple" style="width: 100%;">
-        <?php foreach ($groups as $group) : ?>
-            <option value="<?php echo esc_attr($group->id); ?>" 
-                    <?php selected(in_array($group->id, $selected) || (empty($selected) && in_array($group->id, $default_groups))); ?>>
-                <?php echo esc_html($group->name); ?>
-            </option>
-        <?php endforeach; ?>
+        <?php 
+        foreach ($all_options as $option => $is_selected) {
+            // Check if this option should be selected
+            $should_select = $is_selected || in_array($option, $effective_selected);
+            $selected_attr = $should_select ? 'selected="selected"' : '';
+            
+            echo '<option value="' . esc_attr($option) . '" ' . $selected_attr . '>' . esc_html($option) . '</option>';
+        }
+        ?>
     </select>
     <p class="description">
-        <?php _e('Select AccessSchema groups or add new ones. Default groups are pre-selected based on settings.', 'wp-voting-plugin'); ?>
+        <?php _e('Select AccessSchema groups or type to add new ones. Supports wildcards (* and **).', 'wp-voting-plugin'); ?>
+        <?php if (empty($cached_roles)): ?>
+            <br><span style="color: #d63638;"><?php _e('No cached roles found. Visit Settings > AccessSchema to fetch roles.', 'wp-voting-plugin'); ?></span>
+        <?php else: ?>
+            <br><span style="color: #00a32a;"><?php printf(__('Using cached roles (last updated: %s)', 'wp-voting-plugin'), human_time_diff(get_option('wpvp_accessschema_roles_cache_time', time()), current_time('timestamp')) . ' ago'); ?></span>
+        <?php endif; ?>
     </p>
     <?php
 }
@@ -433,6 +458,9 @@ function wpvp_render_vote_access_box($vote = null) {
     $allowed_roles = $vote ? json_decode($vote->allowed_roles, true) : array();
     $visibility = $vote ? $vote->visibility : 'private';
     
+    // Get the permission system from settings
+    $permission_mode = get_option('wpvp_permission_mode', 'wordpress');
+    
     // Get all WordPress roles
     global $wp_roles;
     $all_roles = $wp_roles->roles;
@@ -450,17 +478,40 @@ function wpvp_render_vote_access_box($vote = null) {
             </p>
             
             <div id="allowed-roles-section" style="<?php echo $visibility === 'restricted' ? '' : 'display:none;'; ?>">
-                <p><strong><?php _e('Allowed Roles:', 'wp-voting-plugin'); ?></strong></p>
-                <?php foreach ($all_roles as $role_key => $role) : ?>
-                    <label style="display: block; margin-bottom: 5px;">
-                        <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role_key); ?>" 
-                               <?php checked(in_array($role_key, (array)$allowed_roles)); ?>>
-                        <?php echo esc_html(translate_user_role($role['name'])); ?>
-                    </label>
-                <?php endforeach; ?>
+                <?php if ($permission_mode === 'accessschema'): ?>
+                    <p class="notice notice-info" style="padding: 10px;">
+                        <?php _e('Visibility will be limited to users in the AccessSchema groups selected in "Who Can Vote" above.', 'wp-voting-plugin'); ?>
+                    </p>
+                <?php elseif ($permission_mode === 'custom'): ?>
+                    <p class="notice notice-info" style="padding: 10px;">
+                        <?php _e('Visibility will be limited to users selected in "Who Can Vote" above.', 'wp-voting-plugin'); ?>
+                    </p>
+                <?php else: // WordPress mode ?>
+                    <p><strong><?php _e('Allowed Roles:', 'wp-voting-plugin'); ?></strong></p>
+                    <?php foreach ($all_roles as $role_key => $role) : ?>
+                        <label style="display: block; margin-bottom: 5px;">
+                            <input type="checkbox" name="allowed_roles[]" value="<?php echo esc_attr($role_key); ?>" 
+                                   <?php checked(in_array($role_key, (array)$allowed_roles)); ?>>
+                            <?php echo esc_html(translate_user_role($role['name'])); ?>
+                        </label>
+                    <?php endforeach; ?>
+                <?php endif; ?>
             </div>
         </div>
     </div>
+    
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        // Show/hide allowed roles section based on visibility selection
+        $('#visibility').on('change', function() {
+            if ($(this).val() === 'restricted') {
+                $('#allowed-roles-section').show();
+            } else {
+                $('#allowed-roles-section').hide();
+            }
+        });
+    });
+    </script>
     <?php
 }
 
