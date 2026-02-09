@@ -3,6 +3,7 @@
 /** File: includes/render/init.php
  * Text Domain: accessschema-client
  * version 1.2.0
+ *
  * @author greghacke
  * Function: Init render functionality for the plugin
  */

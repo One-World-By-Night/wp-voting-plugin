@@ -1,64 +1,62 @@
 <?php
 /**
- * Uninstall WP Voting Plugin
+ * Fired when the plugin is uninstalled via the WordPress admin.
  *
- * Removes all plugin data when deleted through WordPress admin
- * This file is called automatically when plugin is deleted
- *
- * @package WP_Voting_Plugin
- * @version 2.0.0
+ * Only runs if the user opted to remove data in Settings → Advanced.
  */
 
-// Exit if not called by WordPress
-if (!defined('WP_UNINSTALL_PLUGIN')) {
-    exit;
+// Safety: only run through WordPress uninstall mechanism.
+if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
+	exit;
 }
 
-// Load the db-setup file to get access to wpvp_drop_tables()
-require_once plugin_dir_path(__FILE__) . 'includes/helper/db-setup.php';
-
-// Check if user wants to keep data
-$keep_data = get_option('wpvp_keep_data_on_uninstall', false);
-
-if (!$keep_data) {
-    // Remove all plugin tables
-    wpvp_drop_tables();
+// Check whether the admin chose to remove all data.
+if ( ! get_option( 'wpvp_remove_data_on_uninstall', false ) ) {
+	return;
 }
 
-// Remove all plugin options
-$options_to_delete = [
-    'wpvp_version',
-    'wpvp_settings',
-    'wpvp_capabilities',
-    'wpvp_page_ids',
-    'wpvp_show_migration_notice',
-    'wpvp_db_version',
-    'wpvp_permission_mode',
-    'wpvp_can_vote_users'
-];
+// Drop custom tables.
+require_once plugin_dir_path( __FILE__ ) . 'includes/class-database.php';
+WPVP_Database::drop_tables();
 
-foreach ($options_to_delete as $option) {
-    delete_option($option);
+// Remove plugin options.
+$options = array(
+	'wpvp_db_version',
+	'wpvp_default_voting_type',
+	'wpvp_require_login',
+	'wpvp_show_results_before_close',
+	'wpvp_enable_email_notifications',
+	'wpvp_remove_data_on_uninstall',
+	'wpvp_timezone',
+	'wpvp_accessschema_mode',
+	'wpvp_accessschema_client_url',
+	'wpvp_accessschema_client_key',
+	'wpvp_capability_map',
+	'wpvp_wp_capabilities',
+	'wpvp_page_ids',
+);
+
+foreach ( $options as $option ) {
+	delete_option( $option );
 }
 
-// Remove plugin pages
-$page_ids = get_option('wpvp_page_ids', []);
-foreach ($page_ids as $page_id) {
-    wp_delete_post($page_id, true); // true = force delete (skip trash)
+// Remove transients.
+delete_transient( 'wpvp_accessschema_roles' );
+
+// Remove pages created by the plugin.
+$page_ids = get_option( 'wpvp_page_ids', array() );
+foreach ( $page_ids as $page_id ) {
+	wp_delete_post( $page_id, true );
 }
 
-// Remove any custom capabilities from roles
-$roles = ['administrator', 'editor', 'author', 'contributor', 'subscriber'];
-$caps = ['wpvp_create_votes', 'wpvp_manage_votes', 'wpvp_cast_votes', 'wpvp_view_results'];
+// Remove custom capabilities from all roles.
+$caps = array( 'wpvp_create_votes', 'wpvp_manage_votes', 'wpvp_cast_votes', 'wpvp_view_results' );
 
-foreach ($roles as $role_name) {
-    $role = get_role($role_name);
-    if ($role) {
-        foreach ($caps as $cap) {
-            $role->remove_cap($cap);
-        }
-    }
+foreach ( wp_roles()->roles as $role_name => $role_info ) {
+	$role = get_role( $role_name );
+	if ( $role ) {
+		foreach ( $caps as $cap ) {
+			$role->remove_cap( $cap );
+		}
+	}
 }
-
-// Clear any cached data
-wp_cache_flush();

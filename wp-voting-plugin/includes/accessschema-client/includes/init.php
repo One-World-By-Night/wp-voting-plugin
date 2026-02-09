@@ -3,29 +3,27 @@
 /** File: includes/init.php
  * Text Domain: accessschema-client
  * version 1.2.0
+ *
  * @author greghacke
  * Function:  Porvide a single entry point to load all plugin components in standard and class-based structure
  */
 
-defined('ABSPATH') || exit;
+defined( 'ABSPATH' ) || exit;
 
 // Load plugin core bootstraps first
 require_once __DIR__ . '/core/init.php';    // e.g., register client plugin, hooks, etc.
 
 // Autoload classes (optional PSR-like loader for 'classes/' dir)
-$classes = glob(__DIR__ . '/classes/*.php');
-if ($classes) {
-    foreach ($classes as $class_file) {
-        require_once $class_file;
-    }
+$classes = glob( __DIR__ . '/classes/*.php' );
+if ( $classes ) {
+	foreach ( $classes as $class_file ) {
+		require_once $class_file;
+	}
 }
 
 // Load helper functions (used by later modules)
 require_once __DIR__ . '/helper/static-data.php';
 require_once __DIR__ . '/helper/init.php';
-
-// Load field definitions (used by render, save, etc.)
-require_once __DIR__ . '/fields.php';
 
 // Load admin functionality (menus, settings, enqueue)
 require_once __DIR__ . '/admin/init.php';
@@ -50,4 +48,4 @@ require_once __DIR__ . '/tools/init.php';
 require_once __DIR__ . '/utils/init.php';
 
 // Plugin-level init hook
-do_action('wppluginname_loaded');
+do_action( 'wppluginname_loaded' );
