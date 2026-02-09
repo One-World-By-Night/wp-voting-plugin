@@ -3,6 +3,7 @@
 /** File: includes/languages/init.php
  * Text Domain: accessschema-client
  * version 1.2.0
+ *
  * @author greghacke
  * Function: Init languages functionality for the plugin
  */

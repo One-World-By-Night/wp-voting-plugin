@@ -1,0 +1,674 @@
+/**
+ * WP Voting Plugin — Public / Frontend Styles
+ *
+ * Scoped via .wpvp-* class prefix.
+ * Minimal, theme-neutral styles that work with any theme or Elementor.
+ */
+
+/* === Common === */
+.wpvp-btn {
+    display: inline-block;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+    text-decoration: none;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.wpvp-btn--primary {
+    background: #2271b1;
+    color: #fff;
+    border-color: #2271b1;
+}
+
+.wpvp-btn--primary:hover,
+.wpvp-btn--primary:focus {
+    background: #135e96;
+    border-color: #135e96;
+    color: #fff;
+}
+
+.wpvp-btn--secondary {
+    background: #f0f0f1;
+    color: #2c3338;
+    border-color: #c3c4c7;
+}
+
+.wpvp-btn--secondary:hover,
+.wpvp-btn--secondary:focus {
+    background: #dcdcde;
+    color: #1d2327;
+}
+
+.wpvp-btn:disabled,
+.wpvp-btn[aria-disabled="true"] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.wpvp-error {
+    padding: 12px;
+    background: #fce4e4;
+    border-left: 4px solid #d63638;
+    color: #8a1f1f;
+}
+
+/* === Badges (public) === */
+.wpvp-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    vertical-align: middle;
+}
+
+.wpvp-badge--draft   { background: #f0f0f1; color: #50575e; }
+.wpvp-badge--open    { background: #dff0d8; color: #3c763d; }
+.wpvp-badge--closed  { background: #fcf8e3; color: #8a6d3b; }
+.wpvp-badge--completed { background: #d9edf7; color: #31708f; }
+.wpvp-badge--archived  { background: #e8e8e8; color: #666; }
+
+/* === Notices === */
+.wpvp-notice {
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 16px;
+}
+
+.wpvp-notice p {
+    margin: 0;
+}
+
+.wpvp-notice--info {
+    background: #e8f0fe;
+    border-left: 4px solid #2271b1;
+    color: #1d2327;
+}
+
+.wpvp-notice--success {
+    background: #ecf7ed;
+    border-left: 4px solid #46b450;
+    color: #1e4620;
+}
+
+.wpvp-notice--warning {
+    background: #fff8e5;
+    border-left: 4px solid #dba617;
+    color: #654b00;
+}
+
+.wpvp-notice--error {
+    background: #fce4e4;
+    border-left: 4px solid #d63638;
+    color: #8a1f1f;
+}
+
+/* === Vote List (shortcode) === */
+.wpvp-vote-list {
+    display: grid;
+    gap: 16px;
+}
+
+.wpvp-vote-list__empty {
+    padding: 24px;
+    text-align: center;
+    color: #646970;
+}
+
+.wpvp-vote-card {
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 16px;
+    background: #fff;
+    transition: box-shadow 0.2s;
+}
+
+.wpvp-vote-card:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.wpvp-vote-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.wpvp-vote-card__title {
+    margin: 0;
+    font-size: 18px;
+    line-height: 1.3;
+}
+
+.wpvp-vote-card__meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 8px;
+}
+
+.wpvp-vote-card__excerpt {
+    font-size: 14px;
+    color: #3c434a;
+    margin-bottom: 12px;
+}
+
+.wpvp-vote-card__actions {
+    margin-top: 8px;
+}
+
+/* === Vote Detail === */
+.wpvp-vote-detail {
+    max-width: 800px;
+}
+
+.wpvp-vote-detail__header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.wpvp-vote-detail__title {
+    margin: 0;
+    font-size: 24px;
+}
+
+.wpvp-vote-detail__meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 16px;
+}
+
+.wpvp-vote-detail__description {
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.wpvp-vote-detail__type-desc {
+    color: #646970;
+    margin-bottom: 20px;
+}
+
+.wpvp-vote-detail__results {
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid #dcdcde;
+}
+
+/* === Ballot Form === */
+.wpvp-ballot {
+    margin: 24px 0;
+}
+
+.wpvp-ballot__form {
+    background: #f9f9f9;
+    border: 1px solid #dcdcde;
+    border-radius: 6px;
+    padding: 20px;
+}
+
+.wpvp-ballot__fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wpvp-ballot__legend {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    padding: 0;
+}
+
+/* Radio options */
+.wpvp-ballot__option {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid #dcdcde;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color 0.15s, background-color 0.15s;
+}
+
+.wpvp-ballot__option:hover {
+    border-color: #2271b1;
+    background: #f0f6fc;
+}
+
+.wpvp-ballot__option--selected,
+.wpvp-ballot__option:has(input:checked) {
+    border-color: #2271b1;
+    background: #e8f0fe;
+}
+
+.wpvp-ballot__radio {
+    margin-top: 3px;
+    flex-shrink: 0;
+}
+
+.wpvp-ballot__option-text {
+    font-weight: 600;
+    display: block;
+}
+
+.wpvp-ballot__option-desc {
+    display: block;
+    font-size: 13px;
+    color: #646970;
+    margin-top: 2px;
+}
+
+/* Ranked / Sortable */
+.wpvp-ballot__ranked {
+    margin-bottom: 16px;
+}
+
+.wpvp-ballot__instructions {
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 12px;
+}
+
+.wpvp-ballot__ranked-header {
+    padding: 8px 12px;
+    background: #f0f0f1;
+    border-radius: 4px 4px 0 0;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.wpvp-ballot__sortable {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    border: 1px solid #dcdcde;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+}
+
+.wpvp-ballot__sortable-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: #fff;
+    border-bottom: 1px solid #f0f0f1;
+    cursor: grab;
+    user-select: none;
+    transition: background-color 0.15s;
+}
+
+.wpvp-ballot__sortable-item:last-child {
+    border-bottom: none;
+}
+
+.wpvp-ballot__sortable-item:hover {
+    background: #f6f7f7;
+}
+
+.wpvp-ballot__sortable-item.dragging {
+    opacity: 0.5;
+    background: #e8f0fe;
+}
+
+.wpvp-ballot__sortable-item.drag-over {
+    border-top: 2px solid #2271b1;
+}
+
+.wpvp-ballot__rank-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #2271b1;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.wpvp-ballot__drag-handle {
+    font-size: 16px;
+    color: #a7aaad;
+    flex-shrink: 0;
+    cursor: grab;
+}
+
+.wpvp-ballot__sortable-text {
+    flex: 1;
+    font-weight: 600;
+}
+
+.wpvp-ballot__sortable-desc {
+    font-size: 12px;
+    color: #646970;
+}
+
+.wpvp-ballot__rank-up,
+.wpvp-ballot__rank-down {
+    background: none;
+    border: 1px solid #dcdcde;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-size: 14px;
+    cursor: pointer;
+    color: #50575e;
+    flex-shrink: 0;
+}
+
+.wpvp-ballot__rank-up:hover,
+.wpvp-ballot__rank-down:hover {
+    background: #f0f0f1;
+    border-color: #8c8f94;
+}
+
+/* Submit area */
+.wpvp-ballot__submit {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #dcdcde;
+}
+
+.wpvp-ballot__status {
+    font-size: 14px;
+}
+
+.wpvp-ballot__status.success {
+    color: #3c763d;
+}
+
+.wpvp-ballot__status.error {
+    color: #d63638;
+}
+
+/* === Results === */
+.wpvp-results {
+    margin: 16px 0;
+}
+
+.wpvp-results__banner {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 16px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    font-size: 16px;
+}
+
+.wpvp-results__banner--winner {
+    background: #ecf7ed;
+    border: 1px solid #46b450;
+    color: #1e4620;
+}
+
+.wpvp-results__banner--tie {
+    background: #fcf8e3;
+    border: 1px solid #dba617;
+    color: #654b00;
+}
+
+.wpvp-results__banner strong {
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.wpvp-results__banner span {
+    font-size: 18px;
+    font-weight: 700;
+}
+
+/* Results table */
+.wpvp-results__table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 16px;
+}
+
+.wpvp-results__table th,
+.wpvp-results__table td {
+    padding: 8px 12px;
+    text-align: left;
+    border-bottom: 1px solid #f0f0f1;
+}
+
+.wpvp-results__table th {
+    background: #f6f7f7;
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #50575e;
+}
+
+.wpvp-results__table--compact th,
+.wpvp-results__table--compact td {
+    padding: 4px 8px;
+    font-size: 13px;
+}
+
+/* Bar chart */
+.wpvp-bar {
+    background: #f0f0f1;
+    border-radius: 3px;
+    height: 20px;
+    min-width: 100px;
+    overflow: hidden;
+}
+
+.wpvp-bar__fill {
+    background: #2271b1;
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+    min-width: 2px;
+}
+
+/* Rounds */
+.wpvp-round {
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f9f9f9;
+    border-radius: 4px;
+}
+
+.wpvp-round h5 {
+    margin: 0 0 8px;
+    font-size: 14px;
+}
+
+.wpvp-round__eliminated {
+    font-weight: 400;
+    color: #d63638;
+    font-size: 13px;
+}
+
+/* Rankings */
+.wpvp-rankings {
+    margin: 8px 0 16px;
+    padding-left: 24px;
+}
+
+.wpvp-rankings li {
+    padding: 4px 0;
+}
+
+/* Meta */
+.wpvp-results__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    padding-top: 12px;
+    border-top: 1px solid #dcdcde;
+    font-size: 13px;
+    color: #646970;
+}
+
+.wpvp-results__seats {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 16px;
+}
+
+/* Event log */
+.wpvp-results__log {
+    margin-top: 16px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.wpvp-results__log summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 13px;
+    color: #50575e;
+}
+
+.wpvp-results__log ol {
+    margin: 8px 0 0;
+    padding-left: 20px;
+    font-size: 12px;
+    font-family: monospace;
+    color: #3c434a;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.wpvp-results__log li {
+    padding: 2px 0;
+}
+
+/* Consent ballot */
+.wpvp-ballot__fieldset--consent .wpvp-ballot__instructions {
+    background: #fff8e5;
+    border-left: 4px solid #dba617;
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    margin-bottom: 0;
+    color: #654b00;
+}
+
+.wpvp-btn--danger {
+    background: #d63638;
+    border-color: #d63638;
+    color: #fff;
+}
+
+.wpvp-btn--danger:hover,
+.wpvp-btn--danger:focus {
+    background: #a02224;
+    border-color: #a02224;
+    color: #fff;
+}
+
+/* Consent results */
+.wpvp-results__consent {
+    margin-bottom: 16px;
+}
+
+.wpvp-results__consent-status {
+    padding: 16px 20px;
+    border-radius: 6px;
+    margin-bottom: 16px;
+}
+
+.wpvp-results__consent-status strong {
+    display: block;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.wpvp-results__consent-status p {
+    margin: 0;
+    font-size: 14px;
+}
+
+.wpvp-results__consent-status--passed {
+    background: #ecf7ed;
+    border: 1px solid #46b450;
+    color: #1e4620;
+}
+
+.wpvp-results__consent-status--objected {
+    background: #fce4e4;
+    border: 1px solid #d63638;
+    color: #8a1f1f;
+}
+
+.wpvp-results__objectors {
+    margin: 8px 0 0;
+    padding-left: 20px;
+}
+
+.wpvp-results__objectors li {
+    padding: 2px 0;
+}
+
+/* Results wrap (shortcode) */
+.wpvp-results-wrap__title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+/* === Responsive === */
+@media screen and (max-width: 600px) {
+    .wpvp-vote-detail__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wpvp-vote-detail__meta {
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .wpvp-vote-card__header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wpvp-results__banner {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .wpvp-results__meta {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .wpvp-ballot__sortable-item {
+        flex-wrap: wrap;
+    }
+
+    .wpvp-ballot__sortable-desc {
+        width: 100%;
+        margin-left: 38px;
+    }
+}

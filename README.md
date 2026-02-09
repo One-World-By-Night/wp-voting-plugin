@@ -1,3 +1,6 @@
+> **Current Version**: 2.0.0 (Production Release - February 2026)
+> **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
+> **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

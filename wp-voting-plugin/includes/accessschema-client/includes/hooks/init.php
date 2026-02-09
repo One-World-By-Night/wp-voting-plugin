@@ -3,6 +3,7 @@
 /** File: includes/hooks/init.php
  * Text Domain: accessschema-client
  * version 1.2.0
+ *
  * @author greghacke
  * Function: Init hooks functionality for the plugin
  */
