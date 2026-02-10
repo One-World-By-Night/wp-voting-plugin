@@ -12,6 +12,7 @@ class WPVP_Settings {
 		add_action( 'wp_ajax_wpvp_test_connection', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_wpvp_fetch_roles', array( $this, 'ajax_fetch_roles' ) );
 		add_action( 'wp_ajax_wpvp_process_closed_votes', array( $this, 'ajax_process_closed_votes' ) );
+		add_action( 'wp_ajax_wpvp_guide_create_vote', array( $this, 'ajax_guide_create_vote' ) );
 
 		// Whitelist option groups for multisite (must be in constructor, not in register_settings).
 		add_filter( 'allowed_options', array( $this, 'whitelist_options' ), 1 );
@@ -162,6 +163,35 @@ class WPVP_Settings {
 		return $allowed_options;
 	}
 
+	/**
+	 * Handle manual settings save (bypasses options.php for multisite compatibility).
+	 *
+	 * @param string $tab The active tab being saved.
+	 */
+	private function handle_save( string $tab ): void {
+		switch ( $tab ) {
+			case 'general':
+				update_option( 'wpvp_default_voting_type', isset( $_POST['wpvp_default_voting_type'] ) ? sanitize_key( $_POST['wpvp_default_voting_type'] ) : 'singleton' );
+				update_option( 'wpvp_require_login', isset( $_POST['wpvp_require_login'] ) );
+				update_option( 'wpvp_show_results_before_close', isset( $_POST['wpvp_show_results_before_close'] ) );
+				update_option( 'wpvp_enable_email_notifications', isset( $_POST['wpvp_enable_email_notifications'] ) );
+				break;
+
+			case 'permissions':
+				update_option( 'wpvp_accessschema_mode', isset( $_POST['wpvp_accessschema_mode'] ) ? sanitize_key( $_POST['wpvp_accessschema_mode'] ) : 'none' );
+				update_option( 'wpvp_accessschema_client_url', isset( $_POST['wpvp_accessschema_client_url'] ) ? esc_url_raw( wp_unslash( $_POST['wpvp_accessschema_client_url'] ) ) : '' );
+				update_option( 'wpvp_accessschema_client_key', isset( $_POST['wpvp_accessschema_client_key'] ) ? sanitize_text_field( wp_unslash( $_POST['wpvp_accessschema_client_key'] ) ) : '' );
+				update_option( 'wpvp_capability_map', isset( $_POST['wpvp_capability_map'] ) ? $this->sanitize_capability_map( wp_unslash( $_POST['wpvp_capability_map'] ) ) : array() );
+				update_option( 'wpvp_wp_capabilities', isset( $_POST['wpvp_wp_capabilities'] ) ? $this->sanitize_wp_capabilities( wp_unslash( $_POST['wpvp_wp_capabilities'] ) ) : array() );
+				break;
+
+			case 'advanced':
+				update_option( 'wpvp_remove_data_on_uninstall', isset( $_POST['wpvp_remove_data_on_uninstall'] ) );
+				update_option( 'wpvp_timezone', isset( $_POST['wpvp_timezone'] ) ? sanitize_text_field( wp_unslash( $_POST['wpvp_timezone'] ) ) : 'UTC' );
+				break;
+		}
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Render.
@@ -178,6 +208,12 @@ class WPVP_Settings {
 			$active_tab = 'general';
 		}
 
+		// Handle form submission manually (bypass options.php for multisite compatibility).
+		if ( isset( $_POST['wpvp_settings_submit'] ) && check_admin_referer( 'wpvp_settings_' . $active_tab ) ) {
+			$this->handle_save( $active_tab );
+			echo '<div class="notice notice-success is-dismissible"><p>' . esc_html__( 'Settings saved.', 'wp-voting-plugin' ) . '</p></div>';
+		}
+
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'WP Voting Settings', 'wp-voting-plugin' ); ?></h1>
@@ -191,24 +227,23 @@ class WPVP_Settings {
 				<?php endforeach; ?>
 			</nav>
 
-			<form method="post" action="options.php">
+			<form method="post" action="">
 				<?php
+				wp_nonce_field( 'wpvp_settings_' . $active_tab );
+
 				switch ( $active_tab ) {
 					case 'permissions':
-						settings_fields( 'wpvp_permissions' );
 						$this->render_permissions_tab();
 						break;
 					case 'advanced':
-						settings_fields( 'wpvp_advanced' );
 						$this->render_advanced_tab();
 						break;
 					default:
-						settings_fields( 'wpvp_general' );
 						$this->render_general_tab();
 						break;
 				}
 
-				submit_button();
+				submit_button( null, 'primary', 'wpvp_settings_submit' );
 				?>
 			</form>
 		</div>
@@ -548,6 +583,92 @@ class WPVP_Settings {
 					__( 'Processed %d votes.', 'wp-voting-plugin' ),
 					$processed
 				),
+			)
+		);
+	}
+
+	/**
+	 * AJAX: Create vote from Guide builder form.
+	 */
+	public function ajax_guide_create_vote(): void {
+		check_ajax_referer( 'wpvp_guide_create_vote', 'nonce' );
+
+		if ( ! WPVP_Permissions::can_create_vote() ) {
+			wp_send_json_error( __( 'Permission denied.', 'wp-voting-plugin' ) );
+		}
+
+		// Sanitize and collect form data.
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-field.
+		$raw_options = isset( $_POST['voting_options'] ) ? (array) wp_unslash( $_POST['voting_options'] ) : array();
+		$options     = array();
+		foreach ( $raw_options as $opt ) {
+			if ( ! is_array( $opt ) ) {
+				continue;
+			}
+			$text = sanitize_text_field( $opt['text'] ?? '' );
+			if ( '' === $text ) {
+				continue;
+			}
+			$options[] = array(
+				'text'        => $text,
+				'description' => sanitize_text_field( $opt['description'] ?? '' ),
+			);
+		}
+
+		// Parse allowed roles from comma-separated string.
+		$allowed_roles = array();
+		if ( ! empty( $_POST['allowed_roles'] ) ) {
+			$roles_raw = sanitize_text_field( wp_unslash( $_POST['allowed_roles'] ) );
+			$roles_arr = array_map( 'trim', explode( ',', $roles_raw ) );
+			$allowed_roles = array_filter( $roles_arr );
+		}
+
+		// Build settings array.
+		$settings = array(
+			'allow_revote'                 => ! empty( $_POST['settings']['allow_revote'] ),
+			'show_results_before_closing'  => ! empty( $_POST['settings']['show_results_before_closing'] ),
+			'anonymous_voting'             => ! empty( $_POST['settings']['anonymous_voting'] ),
+		);
+
+		$data = array(
+			'proposal_name'        => sanitize_text_field( wp_unslash( $_POST['proposal_name'] ?? '' ) ),
+			'proposal_description' => wp_kses_post( wp_unslash( $_POST['proposal_description'] ?? '' ) ),
+			'voting_type'          => sanitize_key( wp_unslash( $_POST['voting_type'] ?? 'singleton' ) ),
+			'voting_options'       => $options,
+			'number_of_winners'    => max( 1, absint( $_POST['number_of_winners'] ?? 1 ) ),
+			'allowed_roles'        => $allowed_roles,
+			'visibility'           => sanitize_key( wp_unslash( $_POST['visibility'] ?? 'private' ) ),
+			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'draft' ) ),
+			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
+			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),
+			'settings'             => $settings,
+		);
+
+		// Basic validation.
+		if ( empty( $data['proposal_name'] ) ) {
+			wp_send_json_error( __( 'Title is required.', 'wp-voting-plugin' ) );
+		}
+
+		$valid_types = array_keys( WPVP_Database::get_vote_types() );
+		if ( ! in_array( $data['voting_type'], $valid_types, true ) ) {
+			wp_send_json_error( __( 'Invalid voting type.', 'wp-voting-plugin' ) );
+		}
+
+		if ( count( $data['voting_options'] ) < 2 && ! in_array( $data['voting_type'], array( 'disciplinary', 'consent' ), true ) ) {
+			wp_send_json_error( __( 'At least two options are required.', 'wp-voting-plugin' ) );
+		}
+
+		// Save vote.
+		$new_id = WPVP_Database::save_vote( $data );
+		if ( ! $new_id ) {
+			wp_send_json_error( __( 'Failed to create vote. Please try again.', 'wp-voting-plugin' ) );
+		}
+
+		wp_send_json_success(
+			array(
+				'vote_id'      => $new_id,
+				'edit_url'     => admin_url( 'admin.php?page=wpvp-vote-edit&id=' . $new_id ),
+				'message'      => __( 'Vote created successfully!', 'wp-voting-plugin' ),
 			)
 		);
 	}
