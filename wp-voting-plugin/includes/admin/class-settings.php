@@ -25,6 +25,17 @@ class WPVP_Settings {
 		add_settings_section( 'wpvp_permissions_section', '', '__return_empty_string', 'wpvp_permissions' );
 		add_settings_section( 'wpvp_advanced_section', '', '__return_empty_string', 'wpvp_advanced' );
 
+		// Explicitly whitelist our option groups for multisite compatibility.
+		add_filter(
+			'allowed_options',
+			function ( $allowed_options ) {
+				$allowed_options['wpvp_general']     = array( 'wpvp_default_voting_type', 'wpvp_require_login', 'wpvp_show_results_before_close', 'wpvp_enable_email_notifications' );
+				$allowed_options['wpvp_permissions'] = array( 'wpvp_accessschema_mode', 'wpvp_accessschema_client_url', 'wpvp_accessschema_client_key', 'wpvp_capability_map', 'wpvp_wp_capabilities' );
+				$allowed_options['wpvp_advanced']    = array( 'wpvp_remove_data_on_uninstall' );
+				return $allowed_options;
+			}
+		);
+
 		// General tab.
 		register_setting(
 			'wpvp_general',
