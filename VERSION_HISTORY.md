@@ -1,6 +1,22 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.4 (Current - February 2026)
+## Version 2.0.5 (Current - February 2026)
+
+**Critical fix: Settings now save properly on multisite installations.**
+
+### Changes
+- ✅ **Multisite settings whitelist**: Added explicit `allowed_options` filter to whitelist all plugin option groups
+- ✅ **Permissions tab now saves**: AccessSchema URL, API key, and all permission settings now persist correctly
+- ✅ **Test connection works**: With settings saving properly, the connection test button now functions as intended
+
+### Bug Fix
+On WordPress multisite, the Settings API was rejecting option saves with "The wpvp_permissions options page is not in the allowed options list" error. While v2.0.2 added settings sections, multisite requires explicit whitelisting via the `allowed_options` filter. All three option groups (wpvp_general, wpvp_permissions, wpvp_advanced) are now properly whitelisted, allowing settings to save on both single-site and multisite installations.
+
+**Technical Detail**: WordPress multisite has stricter validation for option updates. The `register_setting()` calls alone don't guarantee the option group will be in the allowed list. The `allowed_options` filter explicitly adds our option groups and their associated option names to the whitelist checked during form submission to `options.php`.
+
+---
+
+## Version 2.0.4 (February 2026)
 
 **Removed duplicate AccessSchema admin menu to eliminate confusion.**
 
