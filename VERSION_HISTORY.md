@@ -1,6 +1,20 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.3 (Current - February 2026)
+## Version 2.0.4 (Current - February 2026)
+
+**Removed duplicate AccessSchema admin menu to eliminate confusion.**
+
+### Changes
+- ✅ **Disabled embedded client admin UI**: The accessSchema client no longer creates a separate "WPVP ASC" menu under Users
+- ✅ **Unified settings interface**: All AccessSchema configuration is now exclusively in Voting → Settings → Permissions tab
+- ✅ **Cleaner admin experience**: One settings location instead of two conflicting interfaces
+
+### Bug Fix
+The embedded accessSchema client was creating its own basic admin page under Users → "WPVP ASC", which duplicated and conflicted with the voting plugin's comprehensive AccessSchema settings in the Permissions tab. The client's page lacked features like connection testing and was causing confusion. By disabling the client's admin UI, users now have a single, complete interface for all AccessSchema configuration.
+
+---
+
+## Version 2.0.3 (February 2026)
 
 **PHP 7.4 compatibility fix for str_contains() usage.**
 
