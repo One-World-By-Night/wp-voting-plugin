@@ -33,6 +33,7 @@ class WPVP_Guide {
 				<div class="wpvp-guide-content">
 					<?php
 					$this->render_overview();
+					$this->render_vote_builder_intro();
 					$this->render_creating_a_vote();
 					$this->render_voting_types();
 					$this->render_managing_votes();
@@ -409,6 +410,10 @@ class WPVP_Guide {
 				</div>
 
 			</div><!-- .wpvp-wizard -->
+
+			<!-- Interactive Vote Builder Form -->
+			<?php $this->render_interactive_form(); ?>
+
 		</section>
 		<?php
 	}
@@ -1182,6 +1187,203 @@ class WPVP_Guide {
 		<p class="description">
 			<?php esc_html_e( 'Wildcards are expanded against cached AccessSchema roles. Run Settings > Permissions > Test Connection to refresh the role cache.', 'wp-voting-plugin' ); ?>
 		</p>
+		<?php
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Interactive Vote Builder.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Introduction to the interactive vote builder.
+	 */
+	private function render_vote_builder_intro(): void {
+		?>
+		<section class="wpvp-guide-section wpvp-guide-builder-intro" id="wpvp-guide-builder">
+			<div class="wpvp-guide-callout wpvp-guide-callout--primary">
+				<h2><?php esc_html_e( '✨ Interactive Vote Builder', 'wp-voting-plugin' ); ?></h2>
+				<p>
+					<?php esc_html_e( 'Want to learn by doing? Scroll through the walkthrough below, then use the "Try It Now" form at the end to create a real vote.', 'wp-voting-plugin' ); ?>
+				</p>
+				<p>
+					<?php
+					printf(
+						/* translators: %s: Link to vote editor */
+						esc_html__( 'Prefer to skip the tutorial? %s', 'wp-voting-plugin' ),
+						'<a href="' . esc_url( admin_url( 'admin.php?page=wpvp-vote-edit' ) ) . '" class="button">' . esc_html__( 'Go to Vote Editor', 'wp-voting-plugin' ) . '</a>'
+					);
+					?>
+				</p>
+			</div>
+		</section>
+		<?php
+	}
+
+	/**
+	 * Render the interactive vote builder form.
+	 */
+	private function render_interactive_form(): void {
+		$vote_types = $this->data['vote_types'];
+		$stages     = $this->data['vote_stages'];
+		$vis_opts   = $this->data['visibility'];
+		?>
+		<div class="wpvp-guide-callout wpvp-guide-callout--primary" style="margin-top: 30px;">
+			<h3><?php esc_html_e( '💡 Try It Now', 'wp-voting-plugin' ); ?></h3>
+			<p><?php esc_html_e( 'Practice what you learned by creating a test vote right here. Fill in the fields below and click "Create This Vote" to save it.', 'wp-voting-plugin' ); ?></p>
+
+			<form id="wpvp-guide-builder-form" style="margin-top: 20px;">
+				<?php wp_nonce_field( 'wpvp_guide_create_vote', 'wpvp_guide_nonce' ); ?>
+
+				<div class="wpvp-guide-form-section">
+					<h4><?php esc_html_e( '1. Title & Description', 'wp-voting-plugin' ); ?></h4>
+					<p>
+						<label for="wpvp_gb_title"><?php esc_html_e( 'Vote Title', 'wp-voting-plugin' ); ?> <span class="required">*</span></label><br>
+						<input type="text" id="wpvp_gb_title" name="proposal_name" class="regular-text" required placeholder="<?php esc_attr_e( 'e.g., Election for Chronicle Coordinator', 'wp-voting-plugin' ); ?>">
+					</p>
+					<p>
+						<label for="wpvp_gb_description"><?php esc_html_e( 'Description', 'wp-voting-plugin' ); ?></label><br>
+						<textarea id="wpvp_gb_description" name="proposal_description" rows="4" class="large-text" placeholder="<?php esc_attr_e( 'Provide context and details for voters...', 'wp-voting-plugin' ); ?>"></textarea>
+					</p>
+				</div>
+
+				<div class="wpvp-guide-form-section">
+					<h4><?php esc_html_e( '2. Voting Type', 'wp-voting-plugin' ); ?></h4>
+					<p>
+						<label for="wpvp_gb_type"><?php esc_html_e( 'Select Voting Method', 'wp-voting-plugin' ); ?></label><br>
+						<select id="wpvp_gb_type" name="voting_type" class="regular-text">
+							<?php foreach ( $vote_types as $key => $type ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>">
+									<?php echo esc_html( $type['label'] ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</p>
+				</div>
+
+				<div class="wpvp-guide-form-section" id="wpvp_gb_options_section">
+					<h4><?php esc_html_e( '3. Voting Options', 'wp-voting-plugin' ); ?></h4>
+					<div id="wpvp_gb_options_list">
+						<p class="wpvp-gb-option-row">
+							<input type="text" name="voting_options[0][text]" class="regular-text" placeholder="<?php esc_attr_e( 'Option 1', 'wp-voting-plugin' ); ?>" required>
+							<input type="text" name="voting_options[0][description]" class="regular-text" placeholder="<?php esc_attr_e( 'Description (optional)', 'wp-voting-plugin' ); ?>">
+						</p>
+						<p class="wpvp-gb-option-row">
+							<input type="text" name="voting_options[1][text]" class="regular-text" placeholder="<?php esc_attr_e( 'Option 2', 'wp-voting-plugin' ); ?>" required>
+							<input type="text" name="voting_options[1][description]" class="regular-text" placeholder="<?php esc_attr_e( 'Description (optional)', 'wp-voting-plugin' ); ?>">
+						</p>
+					</div>
+					<button type="button" id="wpvp_gb_add_option" class="button"><?php esc_html_e( '+ Add Option', 'wp-voting-plugin' ); ?></button>
+
+					<p id="wpvp_gb_num_winners" style="margin-top: 15px; display: none;">
+						<label for="wpvp_gb_winners"><?php esc_html_e( 'Number of Winners (for STV)', 'wp-voting-plugin' ); ?></label><br>
+						<input type="number" id="wpvp_gb_winners" name="number_of_winners" min="1" value="1" class="small-text">
+					</p>
+				</div>
+
+				<div class="wpvp-guide-form-section">
+					<h4><?php esc_html_e( '4. Schedule', 'wp-voting-plugin' ); ?></h4>
+					<p>
+						<label for="wpvp_gb_status"><?php esc_html_e( 'Status', 'wp-voting-plugin' ); ?></label><br>
+						<select id="wpvp_gb_status" name="voting_stage" class="regular-text">
+							<?php foreach ( $stages as $key => $label ) : ?>
+								<?php if ( 'completed' !== $key ) : ?>
+									<option value="<?php echo esc_attr( $key ); ?>">
+										<?php echo esc_html( $label ); ?>
+									</option>
+								<?php endif; ?>
+							<?php endforeach; ?>
+						</select>
+					</p>
+					<p>
+						<label for="wpvp_gb_open"><?php esc_html_e( 'Opens (optional)', 'wp-voting-plugin' ); ?></label><br>
+						<input type="datetime-local" id="wpvp_gb_open" name="opening_date" class="regular-text">
+					</p>
+					<p>
+						<label for="wpvp_gb_close"><?php esc_html_e( 'Closes (optional)', 'wp-voting-plugin' ); ?></label><br>
+						<input type="datetime-local" id="wpvp_gb_close" name="closing_date" class="regular-text">
+					</p>
+				</div>
+
+				<div class="wpvp-guide-form-section">
+					<h4><?php esc_html_e( '5. Visibility & Access', 'wp-voting-plugin' ); ?></h4>
+					<p>
+						<label for="wpvp_gb_visibility"><?php esc_html_e( 'Visibility', 'wp-voting-plugin' ); ?></label><br>
+						<select id="wpvp_gb_visibility" name="visibility" class="regular-text">
+							<?php foreach ( $vis_opts as $key => $label ) : ?>
+								<option value="<?php echo esc_attr( $key ); ?>">
+									<?php echo esc_html( $label ); ?>
+								</option>
+							<?php endforeach; ?>
+						</select>
+					</p>
+					<p id="wpvp_gb_roles_section" style="display: none;">
+						<label for="wpvp_gb_roles"><?php esc_html_e( 'Allowed Roles (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
+						<input type="text" id="wpvp_gb_roles" name="allowed_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
+						<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
+					</p>
+				</div>
+
+				<div class="wpvp-guide-form-section">
+					<h4><?php esc_html_e( '6. Settings', 'wp-voting-plugin' ); ?></h4>
+					<p>
+						<label>
+							<input type="checkbox" name="settings[allow_revote]" value="1">
+							<?php esc_html_e( 'Allow voters to change their vote', 'wp-voting-plugin' ); ?>
+						</label>
+					</p>
+					<p>
+						<label>
+							<input type="checkbox" name="settings[show_results_before_closing]" value="1">
+							<?php esc_html_e( 'Show results while voting is open', 'wp-voting-plugin' ); ?>
+						</label>
+					</p>
+					<p>
+						<label>
+							<input type="checkbox" name="settings[anonymous_voting]" value="1">
+							<?php esc_html_e( 'Anonymous voting (hide voter names)', 'wp-voting-plugin' ); ?>
+						</label>
+					</p>
+				</div>
+
+				<div class="wpvp-guide-form-section" style="border-top: 2px solid #ddd; padding-top: 20px; margin-top: 20px;">
+					<p>
+						<button type="submit" class="button button-primary button-large" id="wpvp_gb_submit">
+							<?php esc_html_e( '🚀 Create This Vote', 'wp-voting-plugin' ); ?>
+						</button>
+						<span class="spinner" id="wpvp_gb_spinner" style="float: none; margin-left: 10px;"></span>
+					</p>
+					<p id="wpvp_gb_message" class="description" style="display: none;"></p>
+				</div>
+			</form>
+		</div>
+
+		<style>
+			.wpvp-guide-form-section {
+				margin-bottom: 25px;
+				padding-bottom: 20px;
+				border-bottom: 1px solid #e0e0e0;
+			}
+			.wpvp-guide-form-section:last-child {
+				border-bottom: none;
+			}
+			.wpvp-guide-form-section h4 {
+				margin-top: 0;
+				margin-bottom: 15px;
+				color: #1d2327;
+			}
+			.wpvp-gb-option-row {
+				display: flex;
+				gap: 10px;
+				margin-bottom: 10px;
+			}
+			.wpvp-gb-option-row input[type="text"] {
+				flex: 1;
+			}
+			.required {
+				color: #d63638;
+			}
+		</style>
 		<?php
 	}
 }

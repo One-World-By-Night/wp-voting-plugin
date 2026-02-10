@@ -1,6 +1,66 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.6 (Current - February 2026)
+## Version 2.1.0 (Current - February 2026)
+
+**Interactive Vote Builder: Learn by doing with the new Guide feature.**
+
+### New Features
+
+- ✅ **Interactive vote builder in Guide**: Added "Try It Now" form at the end of the Creating a Vote walkthrough
+- ✅ **Inline vote creation**: Users can fill out vote details while reading the tutorial
+- ✅ **One-click save**: Submit button creates the vote and redirects to the editor
+- ✅ **Form validation**: Client-side and server-side validation with helpful error messages
+- ✅ **Dynamic form behavior**: Options and settings automatically show/hide based on voting type and visibility
+
+### Changes
+
+- Enhanced Guide page with collapsible interactive form
+- Added AJAX endpoint `wpvp_guide_create_vote` for form submission
+- JavaScript form handler with spinner and success/error feedback
+- Auto-redirect to vote editor after successful creation
+
+### Use Case
+
+New users can learn about vote creation by reading the step-by-step guide, then immediately practice by creating a test vote using the integrated form - all without leaving the Guide page.
+
+---
+
+## Version 2.0.8 (February 2026)
+
+**Critical bug fix: AJAX handlers now register correctly on all admin requests.**
+
+### Changes
+
+- ✅ **Fixed AJAX handler registration**: Moved Settings class instantiation from page render to Admin constructor
+- ✅ **Test connection now works**: AJAX actions are registered on every admin request, not just when viewing settings page
+- ✅ **Settings save fixed**: Form submission now properly triggers validation and save logic
+
+### Bug Fix
+
+AJAX handlers (test connection, fetch roles, process closed votes) were only registered when the Settings page was being rendered. On AJAX requests, the Settings class was never instantiated, so WordPress returned 400 errors for all AJAX calls. Moving the Settings instantiation to the Admin class constructor ensures AJAX actions are registered on every admin page load, including AJAX requests themselves.
+
+**Root Cause**: WordPress processes AJAX requests through `admin-ajax.php`, which doesn't render any admin pages. The Settings class was only instantiated inside `render_settings_page()`, so AJAX actions were never registered during AJAX requests. The fix ensures the Settings constructor (where `add_action('wp_ajax_*')` calls live) runs on every admin request.
+
+---
+
+## Version 2.0.7 (February 2026)
+
+**NUCLEAR OPTION: Bypassed options.php entirely with manual save handler.**
+
+### Changes
+- ✅ **Manual save handler**: Settings now save directly using `update_option()` instead of going through `options.php`
+- ✅ **Custom form processing**: Form submits to itself with nonce verification, bypassing WordPress Settings API completely
+- ✅ **No more whitelist errors**: The "options page is not in the allowed options list" error is impossible since we don't use the whitelist anymore
+- ✅ **100% multisite compatible**: Direct option updates work identically on single-site and multisite
+
+### Breaking Change
+This version **completely abandons the WordPress Settings API** for form processing. While we still use `register_setting()` for sanitization callbacks, the actual save process no longer goes through `options.php`. This is a nuclear option, but the Settings API's multisite whitelist validation was proving impossible to work around.
+
+**Why This Works**: Instead of fighting with WordPress's option whitelist, we handle POST data directly in the `render()` method, validate the nonce, sanitize each field, and call `update_option()` manually. This approach is more explicit, easier to debug, and works identically on single-site and multisite without any whitelist concerns.
+
+---
+
+## Version 2.0.6 (February 2026)
 
 **Fixed filter timing issue that prevented settings from saving on multisite.**
 

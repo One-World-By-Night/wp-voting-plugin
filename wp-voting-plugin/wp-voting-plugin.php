@@ -3,7 +3,7 @@
  * Plugin Name: WP Voting Plugin
  * Plugin URI:  https://github.com/One-World-By-Night/wp-voting-plugin
  * Description: A voting system supporting multiple algorithms (FPTP, RCV, STV, Condorcet, Disciplinary) with AccessSchema role-based permissions and WordPress capability fallback.
- * Version:     2.0.8
+ * Version:     2.1.0
  * Author:      One World By Night
  * Author URI:  https://www.owbn.net
  * License:     GPL-2.0-or-later
@@ -17,7 +17,7 @@
 defined( 'ABSPATH' ) || exit;
 
 // Plugin constants.
-define( 'WPVP_VERSION', '2.0.8' );
+define( 'WPVP_VERSION', '2.1.0' );
 define( 'WPVP_PLUGIN_FILE', __FILE__ );
 define( 'WPVP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPVP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );

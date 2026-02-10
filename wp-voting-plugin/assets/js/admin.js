@@ -401,4 +401,128 @@
         });
     }
 
+    /* ------------------------------------------------------------------
+     *  Guide: Interactive Vote Builder
+     * ----------------------------------------------------------------*/
+
+    var $guideForm = $('#wpvp-guide-builder-form');
+
+    if ($guideForm.length) {
+        // Add option button.
+        $('#wpvp_gb_add_option').on('click', function () {
+            var index = $('#wpvp_gb_options_list .wpvp-gb-option-row').length;
+            var row = $(
+                '<p class="wpvp-gb-option-row">' +
+                    '<input type="text" name="voting_options[' + index + '][text]" class="regular-text" ' +
+                        'placeholder="Option ' + (index + 1) + '" required> ' +
+                    '<input type="text" name="voting_options[' + index + '][description]" class="regular-text" ' +
+                        'placeholder="Description (optional)">' +
+                '</p>'
+            );
+            $('#wpvp_gb_options_list').append(row);
+        });
+
+        // Show/hide options and num-winners based on type.
+        $('#wpvp_gb_type').on('change', function () {
+            var type = $(this).val();
+
+            if (type === 'consent') {
+                $('#wpvp_gb_options_section').hide();
+            } else {
+                $('#wpvp_gb_options_section').show();
+            }
+
+            if (type === 'stv') {
+                $('#wpvp_gb_num_winners').show();
+            } else {
+                $('#wpvp_gb_num_winners').hide();
+            }
+        }).trigger('change');
+
+        // Show/hide roles field based on visibility.
+        $('#wpvp_gb_visibility').on('change', function () {
+            if ($(this).val() === 'restricted') {
+                $('#wpvp_gb_roles_section').show();
+            } else {
+                $('#wpvp_gb_roles_section').hide();
+            }
+        }).trigger('change');
+
+        // Form submission.
+        $guideForm.on('submit', function (e) {
+            e.preventDefault();
+
+            var $btn = $('#wpvp_gb_submit');
+            var $spinner = $('#wpvp_gb_spinner');
+            var $message = $('#wpvp_gb_message');
+
+            $btn.prop('disabled', true);
+            $spinner.addClass('is-active');
+            $message.hide().removeClass('success error');
+
+            // Collect form data.
+            var formData = {
+                action: 'wpvp_guide_create_vote',
+                nonce: $('#wpvp_guide_nonce').val(),
+                proposal_name: $('#wpvp_gb_title').val(),
+                proposal_description: $('#wpvp_gb_description').val(),
+                voting_type: $('#wpvp_gb_type').val(),
+                voting_stage: $('#wpvp_gb_status').val(),
+                opening_date: $('#wpvp_gb_open').val(),
+                closing_date: $('#wpvp_gb_close').val(),
+                visibility: $('#wpvp_gb_visibility').val(),
+                allowed_roles: $('#wpvp_gb_roles').val(),
+                number_of_winners: $('#wpvp_gb_winners').val(),
+                voting_options: [],
+                settings: {
+                    allow_revote: $('input[name="settings[allow_revote]"]').is(':checked') ? '1' : '',
+                    show_results_before_closing: $('input[name="settings[show_results_before_closing]"]').is(':checked') ? '1' : '',
+                    anonymous_voting: $('input[name="settings[anonymous_voting]"]').is(':checked') ? '1' : ''
+                }
+            };
+
+            // Collect voting options.
+            $('#wpvp_gb_options_list .wpvp-gb-option-row').each(function () {
+                var text = $(this).find('input[name*="[text]"]').val();
+                var desc = $(this).find('input[name*="[description]"]').val();
+                if (text) {
+                    formData.voting_options.push({
+                        text: text,
+                        description: desc || ''
+                    });
+                }
+            });
+
+            $.post(wpvp.ajax_url, formData)
+                .done(function (response) {
+                    if (response.success) {
+                        $message
+                            .text(response.data.message + ' Redirecting...')
+                            .addClass('success')
+                            .show();
+
+                        // Redirect to edit page after 1 second.
+                        setTimeout(function () {
+                            window.location.href = response.data.edit_url;
+                        }, 1000);
+                    } else {
+                        $message
+                            .text(response.data || 'Failed to create vote.')
+                            .addClass('error')
+                            .show();
+                        $btn.prop('disabled', false);
+                        $spinner.removeClass('is-active');
+                    }
+                })
+                .fail(function () {
+                    $message
+                        .text('Request failed. Please try again.')
+                        .addClass('error')
+                        .show();
+                    $btn.prop('disabled', false);
+                    $spinner.removeClass('is-active');
+                });
+        });
+    }
+
 })(jQuery);
