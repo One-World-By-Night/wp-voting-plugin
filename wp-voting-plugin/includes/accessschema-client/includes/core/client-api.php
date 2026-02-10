@@ -39,7 +39,7 @@ if ( ! function_exists( 'accessSchema_client_get_remote_url' ) ) {
 		$url = rtrim( $url, '/' );
 
 		// If the URL already contains the API path, strip it to get the base URL.
-		if ( str_contains( $url, '/wp-json/access-schema/v1' ) ) {
+		if ( false !== strpos( $url, '/wp-json/access-schema/v1' ) ) {
 			$url = preg_replace( '#/wp-json/access-schema/v1.*$#', '', $url );
 		}
 

@@ -408,7 +408,7 @@ class WPVP_Settings {
 
 		// Normalize URL: if it already contains the API path, use it as-is; otherwise append the path.
 		$api_url = $url;
-		if ( ! str_contains( $url, '/wp-json/access-schema/v1' ) ) {
+		if ( false === strpos( $url, '/wp-json/access-schema/v1' ) ) {
 			$api_url = trailingslashit( $url ) . 'wp-json/access-schema/v1';
 		}
 		$api_url = trailingslashit( $api_url ) . 'roles/all';
