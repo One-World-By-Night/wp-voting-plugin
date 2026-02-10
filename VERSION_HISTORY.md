@@ -1,6 +1,19 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.2 (Current - February 2026)
+## Version 2.0.3 (Current - February 2026)
+
+**PHP 7.4 compatibility fix for str_contains() usage.**
+
+### Changes
+- ✅ **PHP 7.4 compatibility**: Replaced `str_contains()` (PHP 8.0+) with `strpos()` for broader compatibility
+- ✅ **Fixes both URL handling functions**: Test connection and permission check URL normalization now work on PHP 7.4+
+
+### Bug Fix
+The v2.0.2 release inadvertently used `str_contains()` which is only available in PHP 8.0+, causing silent failures on servers running PHP 7.4-7.9. This version restores compatibility with the plugin's minimum PHP requirement of 7.4.
+
+---
+
+## Version 2.0.2 (February 2026)
 
 **Bug fixes for multisite settings and AccessSchema URL handling.**
 
