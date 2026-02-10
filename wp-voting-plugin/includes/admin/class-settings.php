@@ -20,6 +20,11 @@ class WPVP_Settings {
 	 * ----------------------------------------------------------------*/
 
 	public function register_settings(): void {
+		// Register option groups (required for multisite).
+		add_settings_section( 'wpvp_general_section', '', '__return_empty_string', 'wpvp_general' );
+		add_settings_section( 'wpvp_permissions_section', '', '__return_empty_string', 'wpvp_permissions' );
+		add_settings_section( 'wpvp_advanced_section', '', '__return_empty_string', 'wpvp_advanced' );
+
 		// General tab.
 		register_setting(
 			'wpvp_general',
@@ -401,8 +406,15 @@ class WPVP_Settings {
 			wp_send_json_error( __( 'URL and API key are required.', 'wp-voting-plugin' ) );
 		}
 
+		// Normalize URL: if it already contains the API path, use it as-is; otherwise append the path.
+		$api_url = $url;
+		if ( ! str_contains( $url, '/wp-json/access-schema/v1' ) ) {
+			$api_url = trailingslashit( $url ) . 'wp-json/access-schema/v1';
+		}
+		$api_url = trailingslashit( $api_url ) . 'roles/all';
+
 		$response = wp_remote_get(
-			trailingslashit( $url ) . 'wp-json/access-schema/v1/roles/all',
+			$api_url,
 			array(
 				'headers'   => array( 'x-api-key' => $key ),
 				'timeout'   => 15,
