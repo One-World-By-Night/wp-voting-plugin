@@ -1,6 +1,42 @@
 # WP Voting Plugin - Version History
 
-## Version 2.1.0 (Current - February 2026)
+## Version 2.2.0 (Current - February 2026)
+
+**Independent visibility and voting eligibility controls: Separate who can VIEW from who can VOTE.**
+
+### New Features
+
+- ✅ **Separate visibility and voting eligibility**: Visibility controls who can VIEW a vote; voting eligibility controls who can VOTE
+- ✅ **New database fields**: Added `voting_eligibility` (public/private/restricted) and `voting_roles` (JSON array)
+- ✅ **Independent permission checks**: New `user_can_view_vote()` and `user_can_vote_on()` functions replace combined `user_passes_vote_access()`
+- ✅ **Updated vote editor**: New "Who Can Vote" section in sidebar with voting eligibility dropdown and roles field
+- ✅ **Updated Guide builder**: Step 5 now has separate sections for "Who Can View" and "Who Can Vote"
+- ✅ **Automatic migration**: Existing votes automatically copy `visibility` → `voting_eligibility` and `allowed_roles` → `voting_roles` on upgrade
+
+### Changes
+
+- Split permission logic into view access vs. voting access
+- Updated vote editor form to include voting eligibility controls
+- Updated Guide builder Step 5 to separate viewing and voting permissions
+- Updated AJAX handler to process new voting eligibility fields
+- Added `WPVP_Database::get_voting_eligibility_options()` method
+- Updated visibility option labels to clarify they control viewing
+
+### Use Cases
+
+**Example configurations now possible:**
+- **Public visibility, restricted voting**: Everyone can see election results, only CMs can cast ballots
+- **Private visibility, public voting**: Logged-in users see internal poll, anyone can vote
+- **Restricted visibility, different restricted voting**: Coordinators can see proposal, only admins can vote
+- **Public visibility, public voting**: Open referendum visible and votable by anyone
+
+### Backward Compatibility
+
+All existing votes are automatically migrated on upgrade. The migration copies existing `visibility` settings to `voting_eligibility` and `allowed_roles` to `voting_roles`, preserving current behavior. After migration, you can customize viewing and voting permissions independently.
+
+---
+
+## Version 2.1.0 (February 2026)
 
 **Interactive Vote Builder: Learn by doing with the new Guide feature.**
 

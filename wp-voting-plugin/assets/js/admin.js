@@ -172,6 +172,15 @@
                 $('#wpvp-roles-section').hide();
             }
         });
+
+        // Voting eligibility → show/hide voting roles section.
+        $('#voting_eligibility').on('change', function () {
+            if ($(this).val() === 'restricted') {
+                $('#wpvp-voting-roles-section').show();
+            } else {
+                $('#wpvp-voting-roles-section').hide();
+            }
+        });
     }
 
     /* ------------------------------------------------------------------
@@ -180,6 +189,14 @@
 
     function initSelect2() {
         $('.wpvp-select2-roles').select2({
+            tags: true,
+            tokenSeparators: [','],
+            placeholder: wpvp.i18n.select_roles || 'Select roles...',
+            allowClear: true,
+            width: '100%'
+        });
+
+        $('.wpvp-select2-voting-roles').select2({
             tags: true,
             tokenSeparators: [','],
             placeholder: wpvp.i18n.select_roles || 'Select roles...',
@@ -448,6 +465,15 @@
             }
         }).trigger('change');
 
+        // Show/hide voting roles field based on voting eligibility.
+        $('#wpvp_gb_voting_eligibility').on('change', function () {
+            if ($(this).val() === 'restricted') {
+                $('#wpvp_gb_voting_roles_section').show();
+            } else {
+                $('#wpvp_gb_voting_roles_section').hide();
+            }
+        }).trigger('change');
+
         // Form submission.
         $guideForm.on('submit', function (e) {
             e.preventDefault();
@@ -472,6 +498,8 @@
                 closing_date: $('#wpvp_gb_close').val(),
                 visibility: $('#wpvp_gb_visibility').val(),
                 allowed_roles: $('#wpvp_gb_roles').val(),
+                voting_eligibility: $('#wpvp_gb_voting_eligibility').val(),
+                voting_roles: $('#wpvp_gb_voting_roles').val(),
                 number_of_winners: $('#wpvp_gb_winners').val(),
                 voting_options: [],
                 settings: {

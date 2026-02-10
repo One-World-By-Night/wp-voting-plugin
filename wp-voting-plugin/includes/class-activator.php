@@ -39,6 +39,12 @@ class WPVP_Activator {
 		if ( version_compare( $stored, WPVP_VERSION, '<' ) ) {
 			WPVP_Database::create_tables(); // dbDelta is safe to re-run.
 			self::add_capabilities();
+
+			// Version-specific upgrades.
+			if ( version_compare( $stored, '2.2.0', '<' ) ) {
+				WPVP_Database::upgrade_to_220();
+			}
+
 			update_option( 'wpvp_db_version', WPVP_VERSION );
 		}
 	}

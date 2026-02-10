@@ -51,6 +51,8 @@ class WPVP_Database {
             number_of_winners int NOT NULL DEFAULT 1,
             allowed_roles text,
             visibility varchar(50) NOT NULL DEFAULT 'private',
+            voting_roles text,
+            voting_eligibility varchar(50) NOT NULL DEFAULT 'private',
             voting_stage varchar(50) NOT NULL DEFAULT 'draft',
             created_by bigint(20) unsigned NOT NULL,
             created_at datetime NOT NULL,
@@ -102,6 +104,40 @@ class WPVP_Database {
 		dbDelta( $sql_results );
 	}
 
+	/**
+	 * Upgrade to version 2.2.0: Add voting eligibility columns and migrate data.
+	 * Separates visibility (who can VIEW) from voting eligibility (who can VOTE).
+	 */
+	public static function upgrade_to_220(): void {
+		global $wpdb;
+
+		$table = self::votes_table();
+
+		// Check if columns already exist.
+		$columns = $wpdb->get_col( "DESC {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		$needs_voting_eligibility = ! in_array( 'voting_eligibility', $columns, true );
+		$needs_voting_roles       = ! in_array( 'voting_roles', $columns, true );
+
+		// Add missing columns.
+		if ( $needs_voting_eligibility ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN voting_eligibility varchar(50) NOT NULL DEFAULT 'private' AFTER visibility" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( $needs_voting_roles ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN voting_roles text AFTER visibility" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// Migrate existing data: copy visibility → voting_eligibility, allowed_roles → voting_roles.
+		// Only update rows where the new fields are empty/default.
+		$wpdb->query(
+			"UPDATE {$table}
+			SET voting_eligibility = visibility,
+			    voting_roles = allowed_roles
+			WHERE voting_eligibility = 'private' AND voting_roles IS NULL"
+		); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Votes — CRUD.
@@ -121,6 +157,8 @@ class WPVP_Database {
 			'number_of_winners'    => max( 1, intval( $data['number_of_winners'] ?? 1 ) ),
 			'allowed_roles'        => wp_json_encode( $data['allowed_roles'] ?? array() ),
 			'visibility'           => sanitize_key( $data['visibility'] ?? 'private' ),
+			'voting_roles'         => wp_json_encode( $data['voting_roles'] ?? array() ),
+			'voting_eligibility'   => sanitize_key( $data['voting_eligibility'] ?? 'private' ),
 			'voting_stage'         => self::sanitize_stage( $data['voting_stage'] ?? 'draft' ),
 			'created_by'           => get_current_user_id(),
 			'created_at'           => current_time( 'mysql' ),
@@ -135,6 +173,8 @@ class WPVP_Database {
 			'%s',
 			'%s',
 			'%d',
+			'%s',
+			'%s',
 			'%s',
 			'%s',
 			'%s',
@@ -159,9 +199,10 @@ class WPVP_Database {
 		$formats = array();
 
 		$string_fields = array(
-			'proposal_name' => 'sanitize_text_field',
-			'voting_type'   => 'sanitize_key',
-			'visibility'    => 'sanitize_key',
+			'proposal_name'      => 'sanitize_text_field',
+			'voting_type'        => 'sanitize_key',
+			'visibility'         => 'sanitize_key',
+			'voting_eligibility' => 'sanitize_key',
 		);
 
 		foreach ( $string_fields as $field => $sanitizer ) {
@@ -189,6 +230,11 @@ class WPVP_Database {
 		if ( isset( $data['allowed_roles'] ) ) {
 			$row['allowed_roles'] = wp_json_encode( $data['allowed_roles'] );
 			$formats[]            = '%s';
+		}
+
+		if ( isset( $data['voting_roles'] ) ) {
+			$row['voting_roles'] = wp_json_encode( $data['voting_roles'] );
+			$formats[]           = '%s';
 		}
 
 		if ( isset( $data['voting_stage'] ) ) {
@@ -694,13 +740,24 @@ class WPVP_Database {
 	}
 
 	/**
-	 * Valid visibility options.
+	 * Valid visibility options (who can VIEW).
 	 */
 	public static function get_visibility_options(): array {
 		return array(
-			'public'     => __( 'Public', 'wp-voting-plugin' ),
-			'private'    => __( 'Logged-in Users', 'wp-voting-plugin' ),
-			'restricted' => __( 'Restricted to Roles', 'wp-voting-plugin' ),
+			'public'     => __( 'Public (anyone can view)', 'wp-voting-plugin' ),
+			'private'    => __( 'Private (logged-in users can view)', 'wp-voting-plugin' ),
+			'restricted' => __( 'Restricted (specific roles can view)', 'wp-voting-plugin' ),
+		);
+	}
+
+	/**
+	 * Valid voting eligibility options (who can VOTE).
+	 */
+	public static function get_voting_eligibility_options(): array {
+		return array(
+			'public'     => __( 'Anyone (public voting)', 'wp-voting-plugin' ),
+			'private'    => __( 'Logged-in users only', 'wp-voting-plugin' ),
+			'restricted' => __( 'Specific roles/groups', 'wp-voting-plugin' ),
 		);
 	}
 

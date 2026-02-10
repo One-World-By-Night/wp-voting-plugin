@@ -135,6 +135,10 @@ class WPVP_Vote_Editor {
 		$raw_roles     = isset( $_POST['allowed_roles'] ) ? (array) wp_unslash( $_POST['allowed_roles'] ) : array();
 		$allowed_roles = array_values( array_filter( array_map( 'sanitize_text_field', $raw_roles ) ) );
 
+		// Sanitise voting roles.
+		$raw_voting_roles = isset( $_POST['voting_roles'] ) ? (array) wp_unslash( $_POST['voting_roles'] ) : array();
+		$voting_roles     = array_values( array_filter( array_map( 'sanitize_text_field', $raw_voting_roles ) ) );
+
 		return array(
 			'proposal_name'        => sanitize_text_field( wp_unslash( $_POST['proposal_name'] ?? '' ) ),
 			'proposal_description' => wp_kses_post( wp_unslash( $_POST['proposal_description'] ?? '' ) ),
@@ -143,6 +147,8 @@ class WPVP_Vote_Editor {
 			'number_of_winners'    => max( 1, absint( $_POST['number_of_winners'] ?? 1 ) ),
 			'allowed_roles'        => $allowed_roles,
 			'visibility'           => sanitize_key( wp_unslash( $_POST['visibility'] ?? 'private' ) ),
+			'voting_roles'         => $voting_roles,
+			'voting_eligibility'   => sanitize_key( wp_unslash( $_POST['voting_eligibility'] ?? 'private' ) ),
 			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'draft' ) ),
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
 			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),
@@ -203,6 +209,7 @@ class WPVP_Vote_Editor {
 		$vote_types = WPVP_Database::get_vote_types();
 		$stages     = WPVP_Database::get_vote_stages();
 		$vis_opts   = WPVP_Database::get_visibility_options();
+		$voting_opts = WPVP_Database::get_voting_eligibility_options();
 
 		// Decode existing data.
 		if ( $is_edit ) {
@@ -212,10 +219,13 @@ class WPVP_Vote_Editor {
 			$settings         = $decoded_settings ? $decoded_settings : array();
 			$decoded_roles    = json_decode( $this->vote->allowed_roles, true );
 			$roles            = $decoded_roles ? $decoded_roles : array();
+			$decoded_voting_roles = json_decode( $this->vote->voting_roles, true );
+			$voting_roles     = $decoded_voting_roles ? $decoded_voting_roles : array();
 		} else {
-			$options  = array();
-			$settings = array();
-			$roles    = array();
+			$options      = array();
+			$settings     = array();
+			$roles        = array();
+			$voting_roles = array();
 		}
 
 		// Check for redirect notice.
@@ -414,6 +424,39 @@ class WPVP_Vote_Editor {
 											<?php esc_html_e( 'Enter role paths, wildcards, or WP role slugs. Use * for one segment, ** for any depth.', 'wp-voting-plugin' ); ?>
 											<br>
 											<code>Chronicle/*/CM</code> &nbsp; <code>Players/**</code> &nbsp; <code>editor</code>
+										</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Voting Eligibility Box -->
+							<div class="postbox">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Who Can Vote', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<p>
+										<label for="voting_eligibility"><?php esc_html_e( 'Voting Eligibility:', 'wp-voting-plugin' ); ?></label>
+										<select name="voting_eligibility" id="voting_eligibility" style="width:100%;">
+											<?php foreach ( $voting_opts as $key => $label ) : ?>
+												<option value="<?php echo esc_attr( $key ); ?>"
+													<?php selected( $is_edit ? $this->vote->voting_eligibility : 'private', $key ); ?>>
+													<?php echo esc_html( $label ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									</p>
+									<div id="wpvp-voting-roles-section" style="<?php echo ( $is_edit && 'restricted' !== $this->vote->voting_eligibility ) ? 'display:none;' : ''; ?>">
+										<label><?php esc_html_e( 'Who Can Vote (Roles / Groups):', 'wp-voting-plugin' ); ?></label>
+										<select name="voting_roles[]" multiple class="wpvp-select2-voting-roles" style="width:100%;">
+											<?php foreach ( $voting_roles as $role ) : ?>
+												<option value="<?php echo esc_attr( $role ); ?>" selected>
+													<?php echo esc_html( $role ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<p class="description">
+											<?php esc_html_e( 'Enter role paths, wildcards, or WP role slugs. Use * for one segment, ** for any depth.', 'wp-voting-plugin' ); ?>
+											<br>
+											<code>Chronicle/*/CM</code> &nbsp; <code>Players/**</code> &nbsp; <code>administrator</code>
 										</p>
 									</div>
 								</div>
