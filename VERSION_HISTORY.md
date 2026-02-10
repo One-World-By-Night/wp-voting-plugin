@@ -1,6 +1,28 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.0 (Current - February 2026)
+## Version 2.0.1 (Current - February 2026)
+
+**Multisite support enabled with per-site data isolation.**
+
+### Changes
+- ✅ **Multisite support**: Plugin now works on WordPress multisite/network installations
+- ✅ **Per-site data isolation**: Each site in the network has its own votes, ballots, and results (isolated via `$wpdb->prefix`)
+- ✅ **No shared data**: Data is completely isolated per site, no cross-site access
+
+### Technical Details
+The database layer already used `$wpdb->prefix` for all table names, which WordPress automatically makes site-specific in multisite environments:
+- Site 1: `wp_wpvp_votes`, `wp_wpvp_ballots`, `wp_wpvp_results`
+- Site 2: `wp_2_wpvp_votes`, `wp_2_wpvp_ballots`, `wp_2_wpvp_results`
+- Site 3: `wp_3_wpvp_votes`, etc.
+
+This ensures complete data isolation between sites with no additional code changes required.
+
+### Migration Notes
+If you were unable to use this plugin on multisite before, you can now activate it on individual sites within your network. Each site will have its own isolated voting system.
+
+---
+
+## Version 2.0.0 (February 2026)
 
 **Complete rebuild of the voting plugin with improved architecture, security, and maintainability.**
 

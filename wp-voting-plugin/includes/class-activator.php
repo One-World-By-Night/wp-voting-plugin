@@ -11,14 +11,6 @@ class WPVP_Activator {
 	 * Plugin activation callback.
 	 */
 	public static function activate(): void {
-		if ( is_multisite() ) {
-			wp_die(
-				esc_html__( 'WP Voting Plugin is designed for single-site installations only.', 'wp-voting-plugin' ),
-				'Plugin Activation Error',
-				array( 'back_link' => true )
-			);
-		}
-
 		require_once WPVP_PLUGIN_DIR . 'includes/class-database.php';
 
 		WPVP_Database::create_tables();
