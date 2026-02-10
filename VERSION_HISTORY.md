@@ -1,6 +1,22 @@
 # WP Voting Plugin - Version History
 
-## Version 2.2.0 (Current - February 2026)
+## Version 2.2.1 (Current - February 2026)
+
+**UI Enhancement: Rich text editor for Guide description field.**
+
+### Changes
+
+- ✅ **Guide builder Step 1**: Replaced plain textarea with wp_editor for proposal description
+- ✅ **Consistent rich text support**: Description field now properly supports bold, italic, links, and lists as documented
+- ✅ **Improved user experience**: Teeny mode provides simplified but functional rich text editing
+
+### Bug Fix
+
+The Guide builder instructions stated that "The description field supports rich text (bold, italic, links, lists)" but was only providing a plain textarea. This version adds the wp_editor (WordPress TinyMCE) integration to deliver the promised rich text editing functionality.
+
+---
+
+## Version 2.2.0 (February 2026)
 
 **Independent visibility and voting eligibility controls: Separate who can VIEW from who can VOTE.**
 
