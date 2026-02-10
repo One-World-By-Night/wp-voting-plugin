@@ -10,9 +10,16 @@ class WPVP_Admin {
 	/** @var string[] Page hook suffixes for our admin pages. */
 	private $page_hooks = array();
 
+	/** @var WPVP_Settings Settings instance (always loaded for AJAX handlers). */
+	private $settings;
+
 	public function __construct() {
 		add_action( 'admin_menu', array( $this, 'register_menus' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+
+		// Instantiate settings early so AJAX actions are registered.
+		require_once WPVP_PLUGIN_DIR . 'includes/admin/class-settings.php';
+		$this->settings = new WPVP_Settings();
 	}
 
 	/**
@@ -133,8 +140,7 @@ class WPVP_Admin {
 	}
 
 	public function render_settings_page(): void {
-		$settings = new WPVP_Settings();
-		$settings->render();
+		$this->settings->render();
 	}
 
 	public function render_guide_page(): void {
