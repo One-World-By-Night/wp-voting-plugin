@@ -210,10 +210,22 @@ class WPVP_Guide {
 								<label for="wpvp_gb_title"><?php esc_html_e( 'Vote Title', 'wp-voting-plugin' ); ?> <span class="required">*</span></label><br>
 								<input type="text" id="wpvp_gb_title" name="proposal_name" class="regular-text" required placeholder="<?php esc_attr_e( 'e.g., Election for Chronicle Coordinator', 'wp-voting-plugin' ); ?>">
 							</p>
-							<p>
-								<label for="wpvp_gb_description"><?php esc_html_e( 'Description', 'wp-voting-plugin' ); ?></label><br>
-								<textarea id="wpvp_gb_description" name="proposal_description" rows="4" class="large-text" placeholder="<?php esc_attr_e( 'Provide context and details for voters...', 'wp-voting-plugin' ); ?>"></textarea>
-							</p>
+							<div>
+								<label for="wpvp_gb_description"><?php esc_html_e( 'Description', 'wp-voting-plugin' ); ?></label>
+								<?php
+								wp_editor(
+									'',
+									'wpvp_gb_description',
+									array(
+										'textarea_name' => 'proposal_description',
+										'textarea_rows' => 6,
+										'media_buttons' => false,
+										'teeny'         => true,
+										'quicktags'     => true,
+									)
+								);
+								?>
+							</div>
 						</div>
 
 						<div class="wpvp-wizard-step__nav">
