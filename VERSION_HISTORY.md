@@ -1,6 +1,28 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.1 (Current - February 2026)
+## Version 2.0.2 (Current - February 2026)
+
+**Bug fixes for multisite settings and AccessSchema URL handling.**
+
+### Changes
+- ✅ **Settings page fix**: Register required settings sections for WordPress Settings API (required for multisite)
+- ✅ **Flexible URL handling**: AccessSchema connection now accepts either base URL or full API URL
+  - Base URL format: `https://example.com`
+  - Full API URL format: `https://example.com/wp-json/access-schema/v1/`
+  - Both formats automatically normalized for consistent API calls
+
+### Technical Details
+- Added `add_settings_section()` calls for `wpvp_general`, `wpvp_permissions`, and `wpvp_advanced` option groups
+- Updated `accessSchema_client_get_remote_url()` to strip API path if present in URL
+- Updated test connection AJAX handler to normalize URLs before building API endpoint
+
+### Bug Fixes
+- Fixed "wpvp_permissions options page is not in the allowed options list" error when saving settings on multisite
+- Fixed test connection failure when full API URL provided instead of base URL
+
+---
+
+## Version 2.0.1 (February 2026)
 
 **Multisite support enabled with per-site data isolation.**
 

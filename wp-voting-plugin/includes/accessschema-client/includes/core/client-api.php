@@ -23,9 +23,27 @@ if ( ! function_exists( 'accessSchema_is_remote_mode' ) ) {
 }
 
 if ( ! function_exists( 'accessSchema_client_get_remote_url' ) ) {
+	/**
+	 * Get the remote AccessSchema base URL.
+	 *
+	 * Normalizes the URL to ensure it's just the base site URL without the API path.
+	 * Accepts either:
+	 *   - Base URL: https://example.com
+	 *   - Full API URL: https://example.com/wp-json/access-schema/v1/
+	 *
+	 * @param string $client_id The client ID.
+	 * @return string The normalized base URL.
+	 */
 	function accessSchema_client_get_remote_url( $client_id ) {
 		$url = trim( get_option( "{$client_id}_accessschema_client_url" ) );
-		return rtrim( $url, '/' );
+		$url = rtrim( $url, '/' );
+
+		// If the URL already contains the API path, strip it to get the base URL.
+		if ( str_contains( $url, '/wp-json/access-schema/v1' ) ) {
+			$url = preg_replace( '#/wp-json/access-schema/v1.*$#', '', $url );
+		}
+
+		return $url;
 	}
 }
 
