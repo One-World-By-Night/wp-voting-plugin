@@ -1,6 +1,23 @@
 # WP Voting Plugin - Version History
 
-## Version 2.0.5 (Current - February 2026)
+## Version 2.0.6 (Current - February 2026)
+
+**Fixed filter timing issue that prevented settings from saving on multisite.**
+
+### Changes
+- ✅ **Moved filter to constructor**: The `allowed_options` filter is now registered in the constructor with priority 1, ensuring it's available before WordPress checks it
+- ✅ **Added dual filter support**: Registered both `allowed_options` (WP 5.5+) and `whitelist_options` (pre-5.5) for maximum compatibility
+- ✅ **Proper method implementation**: Created dedicated `whitelist_options()` method instead of anonymous function for better debugging
+- ✅ **Fixed missing timezone**: Added `wpvp_timezone` to the advanced options whitelist
+
+### Bug Fix
+The v2.0.5 approach of adding the filter inside `register_settings()` (which is hooked to `admin_init`) had a timing issue - the filter needs to be registered earlier in the WordPress lifecycle. By moving it to the constructor and setting priority 1, the whitelist is guaranteed to be in place when WordPress validates the form submission to `options.php`. Additionally, using a named method instead of an anonymous function improves debugging and stack traces.
+
+**Root Cause**: WordPress processes option saves through `options.php`, which checks the `allowed_options` global array very early. Filters added during `admin_init` may not execute early enough to modify this array before the check happens, especially on multisite where the validation is stricter.
+
+---
+
+## Version 2.0.5 (February 2026)
 
 **Critical fix: Settings now save properly on multisite installations.**
 
