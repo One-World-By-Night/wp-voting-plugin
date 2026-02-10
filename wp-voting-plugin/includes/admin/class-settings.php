@@ -623,6 +623,14 @@ class WPVP_Settings {
 			$allowed_roles = array_filter( $roles_arr );
 		}
 
+		// Parse voting roles from comma-separated string.
+		$voting_roles = array();
+		if ( ! empty( $_POST['voting_roles'] ) ) {
+			$roles_raw = sanitize_text_field( wp_unslash( $_POST['voting_roles'] ) );
+			$roles_arr = array_map( 'trim', explode( ',', $roles_raw ) );
+			$voting_roles = array_filter( $roles_arr );
+		}
+
 		// Build settings array.
 		$settings = array(
 			'allow_revote'                 => ! empty( $_POST['settings']['allow_revote'] ),
@@ -638,6 +646,8 @@ class WPVP_Settings {
 			'number_of_winners'    => max( 1, absint( $_POST['number_of_winners'] ?? 1 ) ),
 			'allowed_roles'        => $allowed_roles,
 			'visibility'           => sanitize_key( wp_unslash( $_POST['visibility'] ?? 'private' ) ),
+			'voting_roles'         => $voting_roles,
+			'voting_eligibility'   => sanitize_key( wp_unslash( $_POST['voting_eligibility'] ?? 'private' ) ),
 			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'draft' ) ),
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
 			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),

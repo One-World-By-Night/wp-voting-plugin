@@ -430,6 +430,7 @@ class WPVP_Guide {
 						<?php endif; ?>
 
 						<div class="wpvp-guide-form-section">
+							<h4><?php esc_html_e( 'Who Can View This Vote', 'wp-voting-plugin' ); ?></h4>
 							<p>
 								<label for="wpvp_gb_visibility"><?php esc_html_e( 'Visibility', 'wp-voting-plugin' ); ?></label><br>
 								<select id="wpvp_gb_visibility" name="visibility" class="regular-text">
@@ -441,8 +442,25 @@ class WPVP_Guide {
 								</select>
 							</p>
 							<p id="wpvp_gb_roles_section" style="display: none;">
-								<label for="wpvp_gb_roles"><?php esc_html_e( 'Allowed Roles (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
+								<label for="wpvp_gb_roles"><?php esc_html_e( 'Who Can View (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" id="wpvp_gb_roles" name="allowed_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
+								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
+							</p>
+						</div>
+
+						<div class="wpvp-guide-form-section" style="margin-top: 20px;">
+							<h4><?php esc_html_e( 'Who Can Vote', 'wp-voting-plugin' ); ?></h4>
+							<p>
+								<label for="wpvp_gb_voting_eligibility"><?php esc_html_e( 'Voting Eligibility', 'wp-voting-plugin' ); ?></label><br>
+								<select id="wpvp_gb_voting_eligibility" name="voting_eligibility" class="regular-text">
+									<option value="public"><?php esc_html_e( 'Anyone (public voting)', 'wp-voting-plugin' ); ?></option>
+									<option value="private" selected><?php esc_html_e( 'Logged-in users only', 'wp-voting-plugin' ); ?></option>
+									<option value="restricted"><?php esc_html_e( 'Specific roles/groups', 'wp-voting-plugin' ); ?></option>
+								</select>
+							</p>
+							<p id="wpvp_gb_voting_roles_section" style="display: none;">
+								<label for="wpvp_gb_voting_roles"><?php esc_html_e( 'Who Can Vote (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" id="wpvp_gb_voting_roles" name="voting_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
 								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
 							</p>
 						</div>

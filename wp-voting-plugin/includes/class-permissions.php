@@ -101,8 +101,8 @@ class WPVP_Permissions {
 			}
 		}
 
-		// Visibility / role check.
-		return self::user_passes_vote_access( $user_id, $vote );
+		// Voting eligibility check.
+		return self::user_can_vote_on( $user_id, $vote );
 	}
 
 	/**
@@ -139,8 +139,8 @@ class WPVP_Permissions {
 			if ( WPVP_Database::user_has_voted( $user_id, $vote_id ) ) {
 				return true;
 			}
-			// Is an eligible voter (even if they didn't vote)?
-			return self::user_passes_vote_access( $user_id, $vote );
+			// Was an eligible voter (even if they didn't vote)?
+			return self::user_can_vote_on( $user_id, $vote );
 		}
 
 		// Open vote with "show results before close" enabled.
@@ -148,7 +148,7 @@ class WPVP_Permissions {
 			$settings = json_decode( $vote->settings, true );
 			$settings = $settings ? $settings : array();
 			if ( ! empty( $settings['show_results_before_closing'] ) ) {
-				return self::user_passes_vote_access( $user_id, $vote );
+				return self::user_can_vote_on( $user_id, $vote );
 			}
 		}
 
@@ -164,25 +164,27 @@ class WPVP_Permissions {
 
 	/*
 	------------------------------------------------------------------
-	 *  Internal: priority-chain access check.
+	 *  Internal: priority-chain access checks (view vs vote).
 	 * ----------------------------------------------------------------*/
 
 	/**
-	 * Does the user pass the access requirements for a specific vote?
+	 * Can the user VIEW this vote?
+	 *
+	 * Checks visibility + allowed_roles (who can SEE the vote).
 	 *
 	 * Priority chain:
-	 *  1. Public visibility → everyone passes.
-	 *  2. Private visibility → any logged-in user.
-	 *  3. Restricted visibility → check allowed_roles via AccessSchema (if
-	 *     configured) then fall back to WordPress capabilities.
+	 *  1. Public visibility → everyone can view.
+	 *  2. Private visibility → any logged-in user can view.
+	 *  3. Restricted visibility → check allowed_roles via AccessSchema
+	 *     (if configured) then fall back to WordPress capabilities.
 	 */
-	private static function user_passes_vote_access( int $user_id, object $vote ): bool {
-		// Public votes are open to everyone.
+	private static function user_can_view_vote( int $user_id, object $vote ): bool {
+		// Public votes are visible to everyone.
 		if ( 'public' === $vote->visibility ) {
 			return true;
 		}
 
-		// Private = any logged-in user.
+		// Private = any logged-in user can view.
 		if ( 'private' === $vote->visibility ) {
 			return $user_id > 0;
 		}
@@ -190,18 +192,65 @@ class WPVP_Permissions {
 		// Restricted: check allowed_roles.
 		$allowed_roles = json_decode( $vote->allowed_roles, true );
 		if ( empty( $allowed_roles ) ) {
-			// No roles configured → only admins (already handled above).
+			return false;
+		}
+
+		return self::check_roles( $user_id, $allowed_roles );
+	}
+
+	/**
+	 * Can the user VOTE on this vote?
+	 *
+	 * Checks voting_eligibility + voting_roles (who can CAST a ballot).
+	 *
+	 * Priority chain:
+	 *  1. Public voting → anyone can vote (even non-logged-in if allowed).
+	 *  2. Private voting → any logged-in user can vote.
+	 *  3. Restricted voting → check voting_roles via AccessSchema
+	 *     (if configured) then fall back to WordPress capabilities.
+	 */
+	private static function user_can_vote_on( int $user_id, object $vote ): bool {
+		// Public voting is open to everyone.
+		if ( 'public' === $vote->voting_eligibility ) {
+			return true;
+		}
+
+		// Private = any logged-in user can vote.
+		if ( 'private' === $vote->voting_eligibility ) {
+			return $user_id > 0;
+		}
+
+		// Restricted: check voting_roles.
+		$voting_roles = json_decode( $vote->voting_roles, true );
+		if ( empty( $voting_roles ) ) {
+			return false;
+		}
+
+		return self::check_roles( $user_id, $voting_roles );
+	}
+
+	/**
+	 * Check if user has any of the specified roles.
+	 *
+	 * Tries AccessSchema first (if configured), then falls back to WP roles.
+	 *
+	 * @param int   $user_id User ID.
+	 * @param array $roles   Role paths, slugs, or capabilities.
+	 * @return bool
+	 */
+	private static function check_roles( int $user_id, array $roles ): bool {
+		if ( empty( $roles ) ) {
 			return false;
 		}
 
 		// Try AccessSchema first.
-		$asc_result = self::check_accessschema( $user_id, $allowed_roles );
+		$asc_result = self::check_accessschema( $user_id, $roles );
 		if ( null !== $asc_result ) {
 			return $asc_result; // AccessSchema gave a definitive answer.
 		}
 
 		// Fallback: WordPress role/capability check.
-		return self::check_wp_roles( $user_id, $allowed_roles );
+		return self::check_wp_roles( $user_id, $roles );
 	}
 
 	/**
