@@ -12,6 +12,10 @@ class WPVP_Settings {
 		add_action( 'wp_ajax_wpvp_test_connection', array( $this, 'ajax_test_connection' ) );
 		add_action( 'wp_ajax_wpvp_fetch_roles', array( $this, 'ajax_fetch_roles' ) );
 		add_action( 'wp_ajax_wpvp_process_closed_votes', array( $this, 'ajax_process_closed_votes' ) );
+
+		// Whitelist option groups for multisite (must be in constructor, not in register_settings).
+		add_filter( 'allowed_options', array( $this, 'whitelist_options' ), 1 );
+		add_filter( 'whitelist_options', array( $this, 'whitelist_options' ), 1 ); // Pre-WP 5.5 compatibility.
 	}
 
 	/*
@@ -24,17 +28,6 @@ class WPVP_Settings {
 		add_settings_section( 'wpvp_general_section', '', '__return_empty_string', 'wpvp_general' );
 		add_settings_section( 'wpvp_permissions_section', '', '__return_empty_string', 'wpvp_permissions' );
 		add_settings_section( 'wpvp_advanced_section', '', '__return_empty_string', 'wpvp_advanced' );
-
-		// Explicitly whitelist our option groups for multisite compatibility.
-		add_filter(
-			'allowed_options',
-			function ( $allowed_options ) {
-				$allowed_options['wpvp_general']     = array( 'wpvp_default_voting_type', 'wpvp_require_login', 'wpvp_show_results_before_close', 'wpvp_enable_email_notifications' );
-				$allowed_options['wpvp_permissions'] = array( 'wpvp_accessschema_mode', 'wpvp_accessschema_client_url', 'wpvp_accessschema_client_key', 'wpvp_capability_map', 'wpvp_wp_capabilities' );
-				$allowed_options['wpvp_advanced']    = array( 'wpvp_remove_data_on_uninstall' );
-				return $allowed_options;
-			}
-		);
 
 		// General tab.
 		register_setting(
@@ -136,6 +129,37 @@ class WPVP_Settings {
 				'default'           => get_option( 'timezone_string', 'UTC' ),
 			)
 		);
+	}
+
+	/**
+	 * Whitelist our option groups for WordPress multisite.
+	 *
+	 * This filter ensures the Settings API allows saves for our custom option groups.
+	 * Must be registered early (priority 1) in the constructor, not in admin_init.
+	 *
+	 * @param array $allowed_options Array of allowed option groups and their options.
+	 * @return array Modified allowed options.
+	 */
+	public function whitelist_options( array $allowed_options ): array {
+		$allowed_options['wpvp_general']     = array(
+			'wpvp_default_voting_type',
+			'wpvp_require_login',
+			'wpvp_show_results_before_close',
+			'wpvp_enable_email_notifications',
+		);
+		$allowed_options['wpvp_permissions'] = array(
+			'wpvp_accessschema_mode',
+			'wpvp_accessschema_client_url',
+			'wpvp_accessschema_client_key',
+			'wpvp_capability_map',
+			'wpvp_wp_capabilities',
+		);
+		$allowed_options['wpvp_advanced']    = array(
+			'wpvp_remove_data_on_uninstall',
+			'wpvp_timezone',
+		);
+
+		return $allowed_options;
 	}
 
 	/*
