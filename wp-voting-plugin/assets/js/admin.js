@@ -92,8 +92,12 @@
         // Consent: hide options section (no custom options needed).
         if (type === 'consent') {
             $('#wpvp-options-box').hide();
+            // Remove required attribute to prevent silent validation blocking
+            $optList.find('input[name$="[text]"]').prop('required', false);
         } else {
             $('#wpvp-options-box').show();
+            // Restore required attribute for standard voting types
+            $optList.find('input[name$="[text]"]').prop('required', true);
         }
 
         // Hide majority threshold for ranked/algorithmic voting types that determine winners internally.
@@ -580,8 +584,12 @@
 
             if (type === 'consent') {
                 $('#wpvp_gb_options_section').hide();
+                // Remove required attribute to prevent silent validation blocking
+                $('#wpvp_gb_options_list').find('input[name$="[text]"]').prop('required', false);
             } else {
                 $('#wpvp_gb_options_section').show();
+                // Restore required attribute for standard voting types
+                $('#wpvp_gb_options_list').find('input[name$="[text]"]').prop('required', true);
             }
 
             if (type === 'stv') {
