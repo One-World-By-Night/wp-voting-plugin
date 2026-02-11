@@ -27,9 +27,9 @@
         var row = $(
             '<div class="wpvp-option-row" data-index="' + index + '">' +
                 '<input type="text" name="voting_options[' + index + '][text]" ' +
-                    'placeholder="Option text" class="regular-text" required> ' +
+                    'placeholder="' + wpvp.i18n.option_text + '" class="regular-text" required> ' +
                 '<input type="text" name="voting_options[' + index + '][description]" ' +
-                    'placeholder="Description (optional)" class="regular-text"> ' +
+                    'placeholder="' + wpvp.i18n.description_optional + '" class="regular-text"> ' +
                 '<button type="button" class="button wpvp-remove-option">&times;</button>' +
             '</div>'
         );
@@ -121,14 +121,14 @@
      */
     function autoPopulateDisciplinary() {
         var punishments = [
-            { text: 'Permanent Ban', description: 'Permanent removal from the organization' },
-            { text: 'Indefinite Ban / 3 Strikes', description: 'Indefinite ban equivalent to 3 strikes' },
-            { text: 'Temporary Ban', description: 'Temporary ban for a defined period' },
-            { text: '2 Strikes', description: 'Second formal strike' },
-            { text: '1 Strike', description: 'First formal strike' },
-            { text: 'Probation', description: 'Placed on probationary status' },
-            { text: 'Censure', description: 'Formal censure on record' },
-            { text: 'Condemnation', description: 'Formal condemnation statement' }
+            { text: wpvp.i18n.permanent_ban, description: wpvp.i18n.permanent_ban_desc },
+            { text: wpvp.i18n.indefinite_ban, description: wpvp.i18n.indefinite_ban_desc },
+            { text: wpvp.i18n.temporary_ban, description: wpvp.i18n.temporary_ban_desc },
+            { text: wpvp.i18n.two_strikes, description: wpvp.i18n.two_strikes_desc },
+            { text: wpvp.i18n.one_strike, description: wpvp.i18n.one_strike_desc },
+            { text: wpvp.i18n.probation, description: wpvp.i18n.probation_desc },
+            { text: wpvp.i18n.censure, description: wpvp.i18n.censure_desc },
+            { text: wpvp.i18n.condemnation, description: wpvp.i18n.condemnation_desc }
         ];
 
         // Only auto-populate if current options are empty or generic.
@@ -140,7 +140,7 @@
             }
         });
 
-        if (hasCustom && !confirm('Replace current options with standard disciplinary levels?')) {
+        if (hasCustom && !confirm(wpvp.i18n.replace_disciplinary)) {
             return;
         }
 
@@ -321,7 +321,7 @@
         var $result = $('#wpvp-connection-result');
 
         $btn.prop('disabled', true);
-        $result.text('Testing...').removeClass('success error');
+        $result.text(wpvp.i18n.testing).removeClass('success error');
 
         $.post(wpvp.ajax_url, {
             action: 'wpvp_test_connection',
@@ -333,11 +333,11 @@
                     .text(response.data.message + ' (' + response.data.role_count + ' roles)')
                     .addClass('success');
             } else {
-                $result.text(response.data || 'Connection failed.').addClass('error');
+                $result.text(response.data || wpvp.i18n.connection_failed).addClass('error');
             }
         })
         .fail(function () {
-            $result.text('Request failed.').addClass('error');
+            $result.text(wpvp.i18n.request_failed).addClass('error');
         })
         .always(function () {
             $btn.prop('disabled', false);
@@ -361,12 +361,12 @@
         var $btn    = $(this);
         var $result = $('#wpvp-process-result');
 
-        if (!confirm('Process all closed votes now?')) {
+        if (!confirm(wpvp.i18n.confirm_process)) {
             return;
         }
 
         $btn.prop('disabled', true);
-        $result.text('Processing...').removeClass('success error');
+        $result.text(wpvp.i18n.processing).removeClass('success error');
 
         $.post(wpvp.ajax_url, {
             action: 'wpvp_process_closed_votes',
@@ -376,11 +376,11 @@
             if (response.success) {
                 $result.text(response.data.message).addClass('success');
             } else {
-                $result.text(response.data || 'Failed.').addClass('error');
+                $result.text(response.data || wpvp.i18n.failed).addClass('error');
             }
         })
         .fail(function () {
-            $result.text('Request failed.').addClass('error');
+            $result.text(wpvp.i18n.request_failed).addClass('error');
         })
         .always(function () {
             $btn.prop('disabled', false);
@@ -397,7 +397,7 @@
         var $runBtn = $('#wpvp-run-migration');
 
         $btn.prop('disabled', true);
-        $result.text('Checking...').removeClass('success error');
+        $result.text(wpvp.i18n.checking).removeClass('success error');
         $runBtn.hide();
 
         $.post(wpvp.ajax_url, {
@@ -411,11 +411,11 @@
                     $runBtn.show();
                 }
             } else {
-                $result.text(response.data || 'No data found.').addClass('error');
+                $result.text(response.data || wpvp.i18n.no_data).addClass('error');
             }
         })
         .fail(function () {
-            $result.text('Request failed.').addClass('error');
+            $result.text(wpvp.i18n.request_failed).addClass('error');
         })
         .always(function () {
             $btn.prop('disabled', false);
@@ -427,12 +427,12 @@
         var $result = $('#wpvp-migration-result');
         var $log    = $('#wpvp-migration-log');
 
-        if (!confirm('Run the migration now? This will import v1 data into v2 tables.')) {
+        if (!confirm(wpvp.i18n.confirm_migration)) {
             return;
         }
 
         $btn.prop('disabled', true);
-        $result.text('Migrating...').removeClass('success error');
+        $result.text(wpvp.i18n.migrating).removeClass('success error');
         $log.hide().empty();
 
         $.post(wpvp.ajax_url, {
@@ -450,11 +450,11 @@
                     $log.html(html).show();
                 }
             } else {
-                $result.text(response.data || 'Migration failed.').addClass('error');
+                $result.text(response.data || wpvp.i18n.migration_failed).addClass('error');
             }
         })
         .fail(function () {
-            $result.text('Request failed.').addClass('error');
+            $result.text(wpvp.i18n.request_failed).addClass('error');
         })
         .always(function () {
             $btn.prop('disabled', false);
@@ -572,9 +572,9 @@
             var row = $(
                 '<p class="wpvp-gb-option-row">' +
                     '<input type="text" name="voting_options[' + index + '][text]" class="regular-text" ' +
-                        'placeholder="Option ' + (index + 1) + '" required> ' +
+                        'placeholder="' + wpvp.i18n.option_n.replace('%d', index + 1) + '" required> ' +
                     '<input type="text" name="voting_options[' + index + '][description]" class="regular-text" ' +
-                        'placeholder="Description (optional)">' +
+                        'placeholder="' + wpvp.i18n.description_optional + '">' +
                 '</p>'
             );
             $('#wpvp_gb_options_list').append(row);
@@ -673,7 +673,7 @@
                 .done(function (response) {
                     if (response.success) {
                         $message
-                            .text(response.data.message + ' Redirecting...')
+                            .text(response.data.message + ' ' + wpvp.i18n.redirecting)
                             .addClass('success')
                             .show();
 
@@ -683,7 +683,7 @@
                         }, 1000);
                     } else {
                         $message
-                            .text(response.data || 'Failed to create vote.')
+                            .text(response.data || wpvp.i18n.create_vote_failed)
                             .addClass('error')
                             .show();
                         $btn.prop('disabled', false);
@@ -692,7 +692,7 @@
                 })
                 .fail(function () {
                     $message
-                        .text('Request failed. Please try again.')
+                        .text(wpvp.i18n.request_failed_retry)
                         .addClass('error')
                         .show();
                     $btn.prop('disabled', false);
