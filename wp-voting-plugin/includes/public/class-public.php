@@ -113,8 +113,10 @@ class WPVP_Public {
 			'wpvp_votes'
 		);
 
+		$limit = max( 1, intval( $atts['limit'] ) );
+
 		$args = array(
-			'per_page' => max( 1, intval( $atts['limit'] ) ),
+			'per_page' => $limit * 3, // Over-fetch to account for permission filtering.
 			'page'     => 1,
 		);
 
@@ -122,7 +124,19 @@ class WPVP_Public {
 			$args['status'] = sanitize_key( $atts['status'] );
 		}
 
-		$votes = WPVP_Database::get_votes( $args );
+		$all_votes = WPVP_Database::get_votes( $args );
+		$user_id   = get_current_user_id();
+
+		// Filter to only votes the current user can view.
+		$votes = array();
+		foreach ( $all_votes as $vote ) {
+			if ( WPVP_Permissions::can_view_vote( $user_id, $vote ) ) {
+				$votes[] = $vote;
+			}
+			if ( count( $votes ) >= $limit ) {
+				break;
+			}
+		}
 
 		ob_start();
 		include WPVP_PLUGIN_DIR . 'templates/public/vote-list.php';
@@ -135,9 +149,12 @@ class WPVP_Public {
 	public function shortcode_vote( $atts ): string {
 		$this->flag_enqueue();
 
+		// Check URL parameter first, then shortcode attribute.
+		$vote_id_from_url = isset( $_GET['wpvp_vote'] ) ? absint( $_GET['wpvp_vote'] ) : 0;
+
 		$atts = shortcode_atts(
 			array(
-				'id' => 0,
+				'id' => $vote_id_from_url,
 			),
 			$atts,
 			'wpvp_vote'
@@ -166,9 +183,12 @@ class WPVP_Public {
 	public function shortcode_results( $atts ): string {
 		$this->flag_enqueue();
 
+		// Check URL parameter first, then shortcode attribute.
+		$vote_id_from_url = isset( $_GET['wpvp_vote'] ) ? absint( $_GET['wpvp_vote'] ) : 0;
+
 		$atts = shortcode_atts(
 			array(
-				'id' => 0,
+				'id' => $vote_id_from_url,
 			),
 			$atts,
 			'wpvp_results'

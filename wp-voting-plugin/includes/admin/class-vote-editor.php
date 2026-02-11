@@ -153,6 +153,11 @@ class WPVP_Vote_Editor {
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
 			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),
 			'settings'             => $settings,
+			'classification'       => sanitize_text_field( wp_unslash( $_POST['classification'] ?? '' ) ),
+			'proposed_by'          => sanitize_text_field( wp_unslash( $_POST['proposed_by'] ?? '' ) ),
+			'seconded_by'          => sanitize_text_field( wp_unslash( $_POST['seconded_by'] ?? '' ) ),
+			'objection_by'         => sanitize_text_field( wp_unslash( $_POST['objection_by'] ?? '' ) ),
+			'majority_threshold'   => sanitize_key( wp_unslash( $_POST['majority_threshold'] ?? 'simple' ) ),
 		);
 	}
 
@@ -319,6 +324,20 @@ class WPVP_Vote_Editor {
 							<div class="postbox">
 								<div class="postbox-header"><h2><?php esc_html_e( 'Vote Settings', 'wp-voting-plugin' ); ?></h2></div>
 								<div class="inside">
+									<?php $threshold_opts = WPVP_Database::get_majority_threshold_options(); ?>
+									<p>
+										<label for="majority_threshold"><?php esc_html_e( 'Majority Threshold:', 'wp-voting-plugin' ); ?></label>
+										<select name="majority_threshold" id="majority_threshold" style="width:100%;">
+											<?php foreach ( $threshold_opts as $key => $label ) : ?>
+												<option value="<?php echo esc_attr( $key ); ?>"
+													<?php selected( $is_edit && isset( $this->vote->majority_threshold ) ? $this->vote->majority_threshold : 'simple', $key ); ?>>
+													<?php echo esc_html( $label ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<span class="description"><?php esc_html_e( 'Required threshold for passing votes (affects FPTP and other algorithms)', 'wp-voting-plugin' ); ?></span>
+									</p>
+									<hr style="margin: 15px 0;">
 									<label style="display:block; margin-bottom:8px;">
 										<input type="checkbox" name="settings[allow_revote]" value="1"
 											<?php checked( ! empty( $settings['allow_revote'] ) ); ?>>
@@ -412,6 +431,21 @@ class WPVP_Vote_Editor {
 										</select>
 									</p>
 									<div id="wpvp-roles-section" style="<?php echo ( $is_edit && 'restricted' !== $this->vote->visibility ) ? 'display:none;' : ''; ?>">
+										<?php $role_templates = WPVP_Database::get_role_templates(); ?>
+										<?php if ( ! empty( $role_templates ) ) : ?>
+											<div class="wpvp-template-loader" style="margin-bottom: 8px;">
+												<label><?php esc_html_e( 'Load from template:', 'wp-voting-plugin' ); ?></label>
+												<select class="wpvp-template-select" data-target="allowed_roles" style="min-width: 200px;">
+													<option value=""><?php esc_html_e( '-- Select template --', 'wp-voting-plugin' ); ?></option>
+													<?php foreach ( $role_templates as $tmpl ) : ?>
+														<option value="<?php echo esc_attr( $tmpl->id ); ?>">
+															<?php echo esc_html( $tmpl->template_name ); ?>
+														</option>
+													<?php endforeach; ?>
+												</select>
+												<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
+											</div>
+										<?php endif; ?>
 										<label><?php esc_html_e( 'Allowed Roles / Groups:', 'wp-voting-plugin' ); ?></label>
 										<select name="allowed_roles[]" multiple class="wpvp-select2-roles" style="width:100%;">
 											<?php foreach ( $roles as $role ) : ?>
@@ -445,6 +479,20 @@ class WPVP_Vote_Editor {
 										</select>
 									</p>
 									<div id="wpvp-voting-roles-section" style="<?php echo ( $is_edit && 'restricted' !== $this->vote->voting_eligibility ) ? 'display:none;' : ''; ?>">
+										<?php if ( ! empty( $role_templates ) ) : ?>
+											<div class="wpvp-template-loader" style="margin-bottom: 8px;">
+												<label><?php esc_html_e( 'Load from template:', 'wp-voting-plugin' ); ?></label>
+												<select class="wpvp-template-select" data-target="voting_roles" style="min-width: 200px;">
+													<option value=""><?php esc_html_e( '-- Select template --', 'wp-voting-plugin' ); ?></option>
+													<?php foreach ( $role_templates as $tmpl ) : ?>
+														<option value="<?php echo esc_attr( $tmpl->id ); ?>">
+															<?php echo esc_html( $tmpl->template_name ); ?>
+														</option>
+													<?php endforeach; ?>
+												</select>
+												<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
+											</div>
+										<?php endif; ?>
 										<label><?php esc_html_e( 'Who Can Vote (Roles / Groups):', 'wp-voting-plugin' ); ?></label>
 										<select name="voting_roles[]" multiple class="wpvp-select2-voting-roles" style="width:100%;">
 											<?php foreach ( $voting_roles as $role ) : ?>
@@ -459,6 +507,45 @@ class WPVP_Vote_Editor {
 											<code>Chronicle/*/CM</code> &nbsp; <code>Players/**</code> &nbsp; <code>administrator</code>
 										</p>
 									</div>
+								</div>
+							</div>
+
+							<!-- Proposal Metadata Box -->
+							<div class="postbox">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Proposal Metadata', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<?php $classifications = WPVP_Database::get_classifications(); ?>
+									<p>
+										<label for="classification"><?php esc_html_e( 'Classification:', 'wp-voting-plugin' ); ?></label>
+										<select name="classification" id="classification" style="width:100%;">
+											<option value=""><?php esc_html_e( '-- None --', 'wp-voting-plugin' ); ?></option>
+											<?php foreach ( $classifications as $class ) : ?>
+												<option value="<?php echo esc_attr( $class->classification_name ); ?>"
+													<?php selected( $is_edit ? $this->vote->classification : '', $class->classification_name ); ?>>
+													<?php echo esc_html( $class->classification_name ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									</p>
+									<p>
+										<label for="proposed_by"><?php esc_html_e( 'Proposed By:', 'wp-voting-plugin' ); ?></label>
+										<input type="text" name="proposed_by" id="proposed_by" class="regular-text"
+												value="<?php echo esc_attr( $is_edit && isset( $this->vote->proposed_by ) ? $this->vote->proposed_by : '' ); ?>"
+												placeholder="<?php esc_attr_e( 'Person who proposed this vote', 'wp-voting-plugin' ); ?>">
+									</p>
+									<p>
+										<label for="seconded_by"><?php esc_html_e( 'Seconded By:', 'wp-voting-plugin' ); ?></label>
+										<input type="text" name="seconded_by" id="seconded_by" class="regular-text"
+												value="<?php echo esc_attr( $is_edit && isset( $this->vote->seconded_by ) ? $this->vote->seconded_by : '' ); ?>"
+												placeholder="<?php esc_attr_e( 'Person who seconded this vote', 'wp-voting-plugin' ); ?>">
+									</p>
+									<p>
+										<label for="objection_by"><?php esc_html_e( 'Objection By:', 'wp-voting-plugin' ); ?></label>
+										<input type="text" name="objection_by" id="objection_by" class="regular-text"
+												value="<?php echo esc_attr( $is_edit && isset( $this->vote->objection_by ) ? $this->vote->objection_by : '' ); ?>"
+												placeholder="<?php esc_attr_e( 'Person who objected (consent agenda)', 'wp-voting-plugin' ); ?>">
+										<span class="description"><?php esc_html_e( 'For consent agenda votes that were objected to', 'wp-voting-plugin' ); ?></span>
+									</p>
 								</div>
 							</div>
 						</div>

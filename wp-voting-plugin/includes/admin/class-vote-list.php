@@ -21,6 +21,37 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 		);
 	}
 
+	protected function get_views(): array {
+		$stages   = WPVP_Database::get_vote_stages();
+		$current  = isset( $_REQUEST['status'] ) ? sanitize_key( $_REQUEST['status'] ) : '';
+		$base_url = admin_url( 'admin.php?page=wpvp-votes' );
+		$total    = WPVP_Database::get_vote_count( array() );
+
+		$views        = array();
+		$views['all'] = sprintf(
+			'<a href="%s"%s>%s <span class="count">(%d)</span></a>',
+			esc_url( $base_url ),
+			'' === $current ? ' class="current"' : '',
+			esc_html__( 'All', 'wp-voting-plugin' ),
+			$total
+		);
+
+		foreach ( $stages as $key => $label ) {
+			$count = WPVP_Database::get_vote_count( array( 'status' => $key ) );
+			if ( $count > 0 ) {
+				$views[ $key ] = sprintf(
+					'<a href="%s"%s>%s <span class="count">(%d)</span></a>',
+					esc_url( add_query_arg( 'status', $key, $base_url ) ),
+					$key === $current ? ' class="current"' : '',
+					esc_html( $label ),
+					$count
+				);
+			}
+		}
+
+		return $views;
+	}
+
 	public function get_columns(): array {
 		return array(
 			'cb'            => '<input type="checkbox" />',
@@ -73,6 +104,12 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 				'total_pages' => ceil( $total_items / $per_page ),
 			)
 		);
+
+		// Explicitly set column headers.
+		$columns               = $this->get_columns();
+		$hidden                = array();
+		$sortable              = $this->get_sortable_columns();
+		$this->_column_headers = array( $columns, $hidden, $sortable );
 	}
 
 	protected function column_cb( $item ): string {
@@ -147,6 +184,18 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 		return esc_html( $item->$column_name ?? '' );
 	}
 
+	public function single_row( $item ) {
+		echo sprintf( '<tr id="vote-%d">', $item->id );
+		$this->single_row_columns( $item );
+		echo '</tr>';
+	}
+
+	public function display_rows() {
+		foreach ( $this->items as $item ) {
+			$this->single_row( $item );
+		}
+	}
+
 	protected function extra_tablenav( $which ): void {
 		if ( 'top' !== $which ) {
 			return;
@@ -185,6 +234,14 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 		echo '</select>';
 
 		submit_button( __( 'Filter', 'wp-voting-plugin' ), '', 'filter_action', false );
+
+		if ( ! empty( $current_status ) || ! empty( $current_type ) ) {
+			printf(
+				' <a href="%s" class="button">%s</a>',
+				esc_url( admin_url( 'admin.php?page=wpvp-votes' ) ),
+				esc_html__( 'Clear Filters', 'wp-voting-plugin' )
+			);
+		}
 		echo '</div>';
 	}
 }
@@ -214,8 +271,21 @@ class WPVP_Vote_List {
 
 			<?php $this->render_notices(); ?>
 
+			<?php $table->views(); ?>
+
 			<form method="post">
+				<input type="hidden" name="page" value="<?php echo esc_attr( $_GET['page'] ?? 'wpvp-votes' ); ?>">
 				<?php
+				// Preserve GET parameters for filters.
+				if ( ! empty( $_GET['status'] ) ) {
+					echo '<input type="hidden" name="status" value="' . esc_attr( sanitize_key( $_GET['status'] ) ) . '">';
+				}
+				if ( ! empty( $_GET['type'] ) ) {
+					echo '<input type="hidden" name="type" value="' . esc_attr( sanitize_key( $_GET['type'] ) ) . '">';
+				}
+				if ( ! empty( $_GET['s'] ) ) {
+					echo '<input type="hidden" name="s" value="' . esc_attr( sanitize_text_field( $_GET['s'] ) ) . '">';
+				}
 				$table->search_box( __( 'Search Votes', 'wp-voting-plugin' ), 'wpvp-search' );
 				$table->display();
 				?>

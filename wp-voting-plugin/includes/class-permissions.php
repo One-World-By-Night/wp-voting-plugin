@@ -178,7 +178,12 @@ class WPVP_Permissions {
 	 *  3. Restricted visibility → check allowed_roles via AccessSchema
 	 *     (if configured) then fall back to WordPress capabilities.
 	 */
-	private static function user_can_view_vote( int $user_id, object $vote ): bool {
+	public static function can_view_vote( int $user_id, object $vote ): bool {
+		// Admins can always view.
+		if ( $user_id && user_can( $user_id, 'manage_options' ) ) {
+			return true;
+		}
+
 		// Public votes are visible to everyone.
 		if ( 'public' === $vote->visibility ) {
 			return true;
@@ -428,6 +433,13 @@ class WPVP_Permissions {
 	 * @param array $cached Raw transient data.
 	 * @return string[]
 	 */
+	/**
+	 * Public accessor for extracting role paths from cached data.
+	 */
+	public static function extract_role_paths( array $cached ): array {
+		return self::extract_cached_paths( $cached );
+	}
+
 	private static function extract_cached_paths( array $cached ): array {
 		// If the data has a 'roles' key, unwrap it.
 		if ( isset( $cached['roles'] ) && is_array( $cached['roles'] ) ) {

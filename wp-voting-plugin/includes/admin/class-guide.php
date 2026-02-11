@@ -230,7 +230,7 @@ class WPVP_Guide {
 
 						<div class="wpvp-wizard-step__nav">
 							<span></span>
-							<button type="button" class="button wpvp-wizard-next"><?php esc_html_e( 'Next: Voting Type &rarr;', 'wp-voting-plugin' ); ?></button>
+							<button type="button" class="button wpvp-wizard-next"><?php esc_html_e( 'Next: Proposal Metadata &rarr;', 'wp-voting-plugin' ); ?></button>
 						</div>
 					</div>
 				</div>
@@ -239,6 +239,52 @@ class WPVP_Guide {
 				<div class="wpvp-wizard-step" data-step="2">
 					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
 						<span class="wpvp-wizard-step__number">2</span>
+						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Proposal Metadata', 'wp-voting-plugin' ); ?></span>
+						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
+					</button>
+					<div class="wpvp-wizard-step__body">
+						<p><?php esc_html_e( 'Optionally categorize this vote and track who proposed and seconded it. These fields are all optional but help organize and document your voting history.', 'wp-voting-plugin' ); ?></p>
+
+						<div class="wpvp-guide-form-section">
+							<?php $classifications = WPVP_Database::get_classifications(); ?>
+							<p>
+								<label for="wpvp_gb_classification"><?php esc_html_e( 'Classification', 'wp-voting-plugin' ); ?></label><br>
+								<select id="wpvp_gb_classification" name="classification" class="regular-text">
+									<option value=""><?php esc_html_e( '-- None --', 'wp-voting-plugin' ); ?></option>
+									<?php foreach ( $classifications as $class ) : ?>
+										<option value="<?php echo esc_attr( $class->classification_name ); ?>">
+											<?php echo esc_html( $class->classification_name ); ?>
+										</option>
+									<?php endforeach; ?>
+								</select>
+								<span class="description"><?php esc_html_e( 'Type of vote (Chronicle Admission, Bylaw Revision, etc.)', 'wp-voting-plugin' ); ?></span>
+							</p>
+							<p>
+								<label for="wpvp_gb_proposed_by"><?php esc_html_e( 'Proposed By', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" id="wpvp_gb_proposed_by" name="proposed_by" class="regular-text" placeholder="<?php esc_attr_e( 'Person who proposed this vote', 'wp-voting-plugin' ); ?>">
+							</p>
+							<p>
+								<label for="wpvp_gb_seconded_by"><?php esc_html_e( 'Seconded By', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" id="wpvp_gb_seconded_by" name="seconded_by" class="regular-text" placeholder="<?php esc_attr_e( 'Person who seconded this vote', 'wp-voting-plugin' ); ?>">
+							</p>
+							<p>
+								<label for="wpvp_gb_objection_by"><?php esc_html_e( 'Objection By', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" id="wpvp_gb_objection_by" name="objection_by" class="regular-text" placeholder="<?php esc_attr_e( 'Person who objected (for consent agenda)', 'wp-voting-plugin' ); ?>">
+								<span class="description"><?php esc_html_e( 'For consent agenda votes that were objected to', 'wp-voting-plugin' ); ?></span>
+							</p>
+						</div>
+
+						<div class="wpvp-wizard-step__nav">
+							<button type="button" class="button wpvp-wizard-prev"><?php esc_html_e( '&larr; Back', 'wp-voting-plugin' ); ?></button>
+							<button type="button" class="button wpvp-wizard-next"><?php esc_html_e( 'Next: Voting Type &rarr;', 'wp-voting-plugin' ); ?></button>
+						</div>
+					</div>
+				</div>
+
+				<!-- Step 3 -->
+				<div class="wpvp-wizard-step" data-step="3">
+					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
+						<span class="wpvp-wizard-step__number">3</span>
 						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Voting Type', 'wp-voting-plugin' ); ?></span>
 						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
 					</button>
@@ -291,10 +337,10 @@ class WPVP_Guide {
 					</div>
 				</div>
 
-				<!-- Step 3 -->
-				<div class="wpvp-wizard-step" data-step="3">
+				<!-- Step 4 -->
+				<div class="wpvp-wizard-step" data-step="4">
 					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
-						<span class="wpvp-wizard-step__number">3</span>
+						<span class="wpvp-wizard-step__number">4</span>
 						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Voting Options', 'wp-voting-plugin' ); ?></span>
 						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
 					</button>
@@ -327,10 +373,10 @@ class WPVP_Guide {
 					</div>
 				</div>
 
-				<!-- Step 4 -->
-				<div class="wpvp-wizard-step" data-step="4">
+				<!-- Step 5 -->
+				<div class="wpvp-wizard-step" data-step="5">
 					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
-						<span class="wpvp-wizard-step__number">4</span>
+						<span class="wpvp-wizard-step__number">5</span>
 						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Status & Schedule', 'wp-voting-plugin' ); ?></span>
 						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
 					</button>
@@ -381,10 +427,10 @@ class WPVP_Guide {
 					</div>
 				</div>
 
-				<!-- Step 5 -->
-				<div class="wpvp-wizard-step" data-step="5">
+				<!-- Step 6 -->
+				<div class="wpvp-wizard-step" data-step="6">
 					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
-						<span class="wpvp-wizard-step__number">5</span>
+						<span class="wpvp-wizard-step__number">6</span>
 						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Visibility & Eligible Voters', 'wp-voting-plugin' ); ?></span>
 						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
 					</button>
@@ -484,10 +530,10 @@ class WPVP_Guide {
 					</div>
 				</div>
 
-				<!-- Step 6 -->
-				<div class="wpvp-wizard-step" data-step="6">
+				<!-- Step 7 -->
+				<div class="wpvp-wizard-step" data-step="7">
 					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
-						<span class="wpvp-wizard-step__number">6</span>
+						<span class="wpvp-wizard-step__number">7</span>
 						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Vote Settings', 'wp-voting-plugin' ); ?></span>
 						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
 					</button>
@@ -536,10 +582,10 @@ class WPVP_Guide {
 					</div>
 				</div>
 
-				<!-- Step 7 -->
-				<div class="wpvp-wizard-step" data-step="7">
+				<!-- Step 8 -->
+				<div class="wpvp-wizard-step" data-step="8">
 					<button type="button" class="wpvp-wizard-step__header" aria-expanded="false">
-						<span class="wpvp-wizard-step__number">7</span>
+						<span class="wpvp-wizard-step__number">8</span>
 						<span class="wpvp-wizard-step__title"><?php esc_html_e( 'Save', 'wp-voting-plugin' ); ?></span>
 						<span class="wpvp-wizard-step__toggle" aria-hidden="true"></span>
 					</button>
