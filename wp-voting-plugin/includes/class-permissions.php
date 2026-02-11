@@ -289,17 +289,19 @@ class WPVP_Permissions {
 			return null; // Not configured.
 		}
 
-		// Ensure the client function exists (module may not be loaded).
-		if ( ! function_exists( 'accessSchema_client_remote_check_access' ) ) {
-			return null;
-		}
-
 		$user = get_userdata( $user_id );
 		if ( ! $user || empty( $user->user_email ) ) {
 			return null;
 		}
 
 		$client_id = defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp';
+
+		// Get user's cached roles from user meta.
+		$user_roles = get_user_meta( $user_id, "{$client_id}_accessschema_cached_roles", true );
+		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
+			// No cached roles — return null to fall back to WordPress capabilities.
+			return null;
+		}
 
 		// Check each allowed role path — user needs to match at least one.
 		foreach ( $role_paths as $role_path ) {
@@ -308,33 +310,48 @@ class WPVP_Permissions {
 				continue;
 			}
 
-			// Wildcard pattern — expand against cached roles.
+			// Wildcard pattern — expand against global cached roles.
 			if ( false !== strpos( $role_path, '*' ) ) {
 				$concrete_paths = self::expand_wildcard_pattern( $role_path );
+				// Check if user has any of the expanded paths.
 				foreach ( $concrete_paths as $concrete ) {
-					$has_access = accessSchema_client_remote_check_access(
-						$user->user_email,
-						$concrete,
-						$client_id,
-						true
-					);
-					if ( $has_access ) {
+					if ( self::user_has_cached_role( $user_roles, $concrete, true ) ) {
 						return true;
 					}
 				}
 				continue;
 			}
 
-			// Literal path — check directly.
-			$has_access = accessSchema_client_remote_check_access(
-				$user->user_email,
-				$role_path,
-				$client_id,
-				true // include_children
-			);
-
-			if ( $has_access ) {
+			// Literal path — check against user's cached roles (with children support).
+			if ( self::user_has_cached_role( $user_roles, $role_path, true ) ) {
 				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Check if user has a cached role, optionally including child roles.
+	 *
+	 * @param array  $user_roles      User's cached role paths.
+	 * @param string $target_role     Role path to check for.
+	 * @param bool   $include_children Whether to match child roles.
+	 * @return bool
+	 */
+	private static function user_has_cached_role( array $user_roles, string $target_role, bool $include_children = false ): bool {
+		// Direct match.
+		if ( in_array( $target_role, $user_roles, true ) ) {
+			return true;
+		}
+
+		// Check for child roles (user has target_role/something).
+		if ( $include_children ) {
+			$target_prefix = $target_role . '/';
+			foreach ( $user_roles as $user_role ) {
+				if ( 0 === strpos( $user_role, $target_prefix ) ) {
+					return true;
+				}
 			}
 		}
 
