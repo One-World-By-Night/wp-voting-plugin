@@ -1,6 +1,26 @@
 # WP Voting Plugin - Version History
 
-## Version 2.4.2 (Current - February 2026)
+## Version 2.4.3 (Current - February 2026)
+
+**Bug fixes for vote creation and editing UX issues.**
+
+### Bug Fixes
+
+- ✅ **Fixed revoting confirmation message**: Votes with revoting enabled now show "Update your vote?" instead of misleading "This cannot be changed" message
+- ✅ **Fixed Consent Agenda creation**: Removed silent form validation blocking caused by hidden required fields when creating consent agenda votes
+- ✅ **Fixed disciplinary auto-populate prompt**: Auto-populate prompt no longer appears when editing existing disciplinary votes, only when actively switching to disciplinary type
+
+### Technical Details
+
+**Revoting message fix**: Added `data-allow-revote` attribute to ballot container and updated JavaScript to check the vote's revoting setting instead of just presence of revote notice.
+
+**Consent Agenda fix**: When consent type is selected, the voting options section is hidden (since consent votes don't use options). However, hidden option inputs retained their `required` attribute, causing browser HTML5 validation to silently block form submission. The fix removes the `required` attribute when consent or disciplinary type is selected.
+
+**Disciplinary prompt fix**: Added `isUserAction` parameter to `onTypeChange()` function to distinguish between initial page load and user-initiated type changes. Auto-populate only triggers on actual user selection of disciplinary type.
+
+---
+
+## Version 2.4.2 (February 2026)
 
 **Critical security and performance fix for AccessSchema permission checks.**
 
