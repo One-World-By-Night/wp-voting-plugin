@@ -21,7 +21,7 @@
 defined( 'ABSPATH' ) || exit;
 ?>
 
-<div class="wpvp-ballot" data-vote-id="<?php echo esc_attr( $vote->id ); ?>" data-vote-type="<?php echo esc_attr( $vote->voting_type ); ?>">
+<div class="wpvp-ballot" data-vote-id="<?php echo esc_attr( $vote->id ); ?>" data-vote-type="<?php echo esc_attr( $vote->voting_type ); ?>" data-allow-revote="<?php echo $allow_revote ? '1' : '0'; ?>">
 
 	<?php if ( $has_voted && ! $allow_revote ) : ?>
 		<div class="wpvp-notice wpvp-notice--success">
