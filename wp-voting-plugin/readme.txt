@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 2.5.8
+Stable tag: 2.6.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,13 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 2.6.0 =
+* Full internationalization (i18n) support for TranslatePress and other translation plugins
+* All JavaScript-generated strings now pass through WordPress translation functions via wp_localize_script
+* Public UI strings localized: modal messages, revote button, loading states, error messages, accessibility labels
+* Admin UI strings localized: option placeholders, disciplinary levels, status messages, confirmation dialogs
+* Fixes untranslated buttons, select placeholders, and status text when using TranslatePress or similar tools
 
 = 2.5.8 =
 * Fixed revoting on ranked votes (RCV, STV, Condorcet) not restoring previous ranking order

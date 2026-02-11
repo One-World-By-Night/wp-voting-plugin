@@ -92,14 +92,14 @@
 
                 // If revoting is allowed, keep form visible and update button
                 if (allowRevote) {
-                    $btn.text('Change Vote').removeClass('wpvp-btn--primary').addClass('wpvp-btn--secondary');
+                    $btn.text(wpvp_public.i18n.change_vote).removeClass('wpvp-btn--primary').addClass('wpvp-btn--secondary');
                     $btn.prop('disabled', false);
 
                     // Add info message about being able to change vote
                     if (!$form.find('.wpvp-revote-notice').length) {
                         $status.after(
                             '<p class="wpvp-revote-notice" style="margin-top: 8px; font-size: 13px; color: #646970;">' +
-                            'You can change your vote at any time before voting closes.' +
+                            wpvp_public.i18n.revote_notice +
                             '</p>'
                         );
                     }
@@ -188,7 +188,7 @@
             var rank = i + 1;
             $(this).find('.wpvp-ballot__rank-number').text(rank);
             $(this).attr('aria-label',
-                $(this).find('.wpvp-ballot__sortable-text').text() + ' — Rank ' + rank
+                wpvp_public.i18n.rank_aria.replace('%1$s', $(this).find('.wpvp-ballot__sortable-text').text()).replace('%2$d', rank)
             );
         });
     }
@@ -261,7 +261,7 @@
             '<div id="wpvp-modal" class="wpvp-modal" style="display:none;">' +
                 '<div class="wpvp-modal__overlay"></div>' +
                 '<div class="wpvp-modal__container">' +
-                    '<button class="wpvp-modal__close" aria-label="Close">&times;</button>' +
+                    '<button class="wpvp-modal__close" aria-label="' + wpvp_public.i18n.close + '">&times;</button>' +
                     '<div class="wpvp-modal__content"></div>' +
                 '</div>' +
             '</div>'
@@ -291,7 +291,7 @@
         var $modal = $('#wpvp-modal');
         var $content = $modal.find('.wpvp-modal__content');
 
-        $content.html('<div class="wpvp-modal__loading">Loading...</div>');
+        $content.html('<div class="wpvp-modal__loading">' + wpvp_public.i18n.loading + '</div>');
         $modal.fadeIn(200);
         $('body').css('overflow', 'hidden');
 
@@ -304,10 +304,10 @@
             if (content) {
                 $content.html(content);
             } else {
-                $content.html('<p>Content could not be loaded.</p>');
+                $content.html('<p>' + wpvp_public.i18n.content_not_loaded + '</p>');
             }
         }).fail(function () {
-            $content.html('<p>Error loading content. Please try again.</p>');
+            $content.html('<p>' + wpvp_public.i18n.error_loading + '</p>');
         });
     }
 
