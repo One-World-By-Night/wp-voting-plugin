@@ -63,6 +63,15 @@ class WPVP_Admin {
 			array( $this, 'render_settings_page' )
 		);
 
+		$this->page_hooks['templates'] = add_submenu_page(
+			'wpvp-votes',
+			__( 'Role & Classification Templates', 'wp-voting-plugin' ),
+			__( 'Templates', 'wp-voting-plugin' ),
+			'manage_options',
+			'wpvp-role-templates',
+			array( $this, 'render_templates_page' )
+		);
+
 		$this->page_hooks['guide'] = add_submenu_page(
 			'wpvp-votes',
 			__( 'Guide', 'wp-voting-plugin' ),
@@ -141,6 +150,11 @@ class WPVP_Admin {
 
 	public function render_settings_page(): void {
 		$this->settings->render();
+	}
+
+	public function render_templates_page(): void {
+		$templates = new WPVP_Role_Templates();
+		$templates->render();
 	}
 
 	public function render_guide_page(): void {

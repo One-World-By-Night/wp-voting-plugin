@@ -45,6 +45,16 @@ class WPVP_Activator {
 				WPVP_Database::upgrade_to_220();
 			}
 
+			if ( version_compare( $stored, '2.3.0', '<' ) ) {
+				// Create new open-votes and closed-votes pages (skips existing).
+				self::create_default_pages();
+			}
+
+			if ( version_compare( $stored, '2.3.2', '<' ) ) {
+				// Add classification system and proposal metadata fields.
+				WPVP_Database::upgrade_to_231();
+			}
+
 			update_option( 'wpvp_db_version', WPVP_VERSION );
 		}
 	}
@@ -95,6 +105,16 @@ class WPVP_Activator {
 			'vote-results'     => array(
 				'title'     => __( 'Vote Results', 'wp-voting-plugin' ),
 				'shortcode' => '[wpvp_results]',
+				'parent'    => 'voting-dashboard',
+			),
+			'open-votes'       => array(
+				'title'     => __( 'Open Votes', 'wp-voting-plugin' ),
+				'shortcode' => '[wpvp_votes status="open" limit="50"]',
+				'parent'    => 'voting-dashboard',
+			),
+			'closed-votes'     => array(
+				'title'     => __( 'Closed Votes', 'wp-voting-plugin' ),
+				'shortcode' => '[wpvp_votes status="closed" limit="50"]',
 				'parent'    => 'voting-dashboard',
 			),
 		);

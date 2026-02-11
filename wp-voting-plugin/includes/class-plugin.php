@@ -52,6 +52,7 @@ class WPVP_Plugin {
 			require_once WPVP_PLUGIN_DIR . 'includes/admin/class-vote-list.php';
 			require_once WPVP_PLUGIN_DIR . 'includes/admin/class-vote-editor.php';
 			require_once WPVP_PLUGIN_DIR . 'includes/admin/class-guide.php';
+			require_once WPVP_PLUGIN_DIR . 'includes/admin/class-role-templates.php';
 		}
 
 		// Notifications and cron.

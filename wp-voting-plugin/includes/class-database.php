@@ -30,6 +30,16 @@ class WPVP_Database {
 		return $wpdb->prefix . 'wpvp_results';
 	}
 
+	public static function role_templates_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'wpvp_role_templates';
+	}
+
+	public static function classifications_table(): string {
+		global $wpdb;
+		return $wpdb->prefix . 'wpvp_classifications';
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Schema — create / upgrade via dbDelta.
@@ -59,6 +69,11 @@ class WPVP_Database {
             opening_date datetime DEFAULT NULL,
             closing_date datetime DEFAULT NULL,
             settings longtext,
+            classification varchar(100) DEFAULT NULL,
+            proposed_by varchar(255) DEFAULT NULL,
+            seconded_by varchar(255) DEFAULT NULL,
+            objection_by varchar(255) DEFAULT NULL,
+            majority_threshold varchar(50) DEFAULT 'simple',
             PRIMARY KEY  (id),
             KEY created_by (created_by),
             KEY voting_stage (voting_stage),
@@ -99,9 +114,34 @@ class WPVP_Database {
             KEY calculated_at (calculated_at)
         ) {$charset};";
 
+		$sql_role_templates = 'CREATE TABLE ' . self::role_templates_table() . " (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            template_name varchar(255) NOT NULL,
+            template_description text,
+            roles longtext NOT NULL,
+            created_by bigint(20) unsigned NOT NULL,
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY template_name (template_name),
+            KEY created_by (created_by)
+        ) {$charset};";
+
+		$sql_classifications = 'CREATE TABLE ' . self::classifications_table() . " (
+            id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+            classification_name varchar(255) NOT NULL,
+            display_order int NOT NULL DEFAULT 0,
+            created_at datetime NOT NULL,
+            PRIMARY KEY  (id),
+            UNIQUE KEY classification_name (classification_name),
+            KEY display_order (display_order)
+        ) {$charset};";
+
 		dbDelta( $sql_votes );
 		dbDelta( $sql_ballots );
 		dbDelta( $sql_results );
+		dbDelta( $sql_role_templates );
+		dbDelta( $sql_classifications );
 	}
 
 	/**
@@ -138,6 +178,48 @@ class WPVP_Database {
 		); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 	}
 
+	/**
+	 * Upgrade to version 2.3.1: Add classification and proposal metadata fields.
+	 */
+	public static function upgrade_to_231(): void {
+		global $wpdb;
+
+		// Create classifications table (if not exists via dbDelta).
+		self::create_tables();
+
+		// Insert default classifications if table is empty.
+		$count = $wpdb->get_var( 'SELECT COUNT(*) FROM ' . self::classifications_table() );
+		if ( 0 === (int) $count ) {
+			$classifications = array(
+				'Chronicle Admission',
+				'Bylaw Revision',
+				'Coordinator Elections (Full Term)',
+				'Coordinator Elections (Special)',
+				'Disciplinary',
+				'Genre Packet',
+				'Global/Meta Plot',
+				'Opinion Poll',
+				'Other Private',
+				'Other Public',
+				'R&U Submission',
+				'Territory',
+			);
+
+			$now = current_time( 'mysql' );
+			foreach ( $classifications as $order => $name ) {
+				$wpdb->insert(
+					self::classifications_table(),
+					array(
+						'classification_name' => $name,
+						'display_order'       => $order,
+						'created_at'          => $now,
+					),
+					array( '%s', '%d', '%s' )
+				);
+			}
+		}
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Votes — CRUD.
@@ -165,6 +247,11 @@ class WPVP_Database {
 			'opening_date'         => self::sanitize_datetime( $data['opening_date'] ?? null ),
 			'closing_date'         => self::sanitize_datetime( $data['closing_date'] ?? null ),
 			'settings'             => wp_json_encode( $data['settings'] ?? array() ),
+			'classification'       => sanitize_text_field( $data['classification'] ?? '' ),
+			'proposed_by'          => sanitize_text_field( $data['proposed_by'] ?? '' ),
+			'seconded_by'          => sanitize_text_field( $data['seconded_by'] ?? '' ),
+			'objection_by'         => sanitize_text_field( $data['objection_by'] ?? '' ),
+			'majority_threshold'   => sanitize_key( $data['majority_threshold'] ?? 'simple' ),
 		);
 
 		$formats = array(
@@ -179,6 +266,11 @@ class WPVP_Database {
 			'%s',
 			'%s',
 			'%d',
+			'%s',
+			'%s',
+			'%s',
+			'%s',
+			'%s',
 			'%s',
 			'%s',
 			'%s',
@@ -203,6 +295,11 @@ class WPVP_Database {
 			'voting_type'        => 'sanitize_key',
 			'visibility'         => 'sanitize_key',
 			'voting_eligibility' => 'sanitize_key',
+			'classification'     => 'sanitize_text_field',
+			'proposed_by'        => 'sanitize_text_field',
+			'seconded_by'        => 'sanitize_text_field',
+			'objection_by'       => 'sanitize_text_field',
+			'majority_threshold' => 'sanitize_key',
 		);
 
 		foreach ( $string_fields as $field => $sanitizer ) {
@@ -414,6 +511,172 @@ class WPVP_Database {
 		}
 
 		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Role Templates — CRUD.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Save a new role template. Returns the new template ID or false on failure.
+	 */
+	public static function save_role_template( array $data ) {
+		global $wpdb;
+
+		$row = array(
+			'template_name'        => sanitize_text_field( $data['template_name'] ?? '' ),
+			'template_description' => sanitize_textarea_field( $data['template_description'] ?? '' ),
+			'roles'                => wp_json_encode( $data['roles'] ?? array() ),
+			'created_by'           => get_current_user_id(),
+			'created_at'           => current_time( 'mysql' ),
+			'updated_at'           => current_time( 'mysql' ),
+		);
+
+		$result = $wpdb->insert( self::role_templates_table(), $row, array( '%s', '%s', '%s', '%d', '%s', '%s' ) );
+		return $result ? $wpdb->insert_id : false;
+	}
+
+	/**
+	 * Update an existing role template.
+	 */
+	public static function update_role_template( int $template_id, array $data ): bool {
+		global $wpdb;
+
+		$row     = array();
+		$formats = array();
+
+		if ( isset( $data['template_name'] ) ) {
+			$row['template_name'] = sanitize_text_field( $data['template_name'] );
+			$formats[]            = '%s';
+		}
+		if ( isset( $data['template_description'] ) ) {
+			$row['template_description'] = sanitize_textarea_field( $data['template_description'] );
+			$formats[]                   = '%s';
+		}
+		if ( isset( $data['roles'] ) ) {
+			$row['roles'] = wp_json_encode( $data['roles'] );
+			$formats[]    = '%s';
+		}
+
+		$row['updated_at'] = current_time( 'mysql' );
+		$formats[]         = '%s';
+
+		$result = $wpdb->update( self::role_templates_table(), $row, array( 'id' => $template_id ), $formats, array( '%d' ) );
+		return false !== $result;
+	}
+
+	/**
+	 * Delete a role template.
+	 */
+	public static function delete_role_template( int $template_id ): bool {
+		global $wpdb;
+		$result = $wpdb->delete( self::role_templates_table(), array( 'id' => $template_id ), array( '%d' ) );
+		return false !== $result;
+	}
+
+	/**
+	 * Get a single role template by ID.
+	 */
+	public static function get_role_template( int $template_id ) {
+		global $wpdb;
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . self::role_templates_table() . ' WHERE id = %d', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$template_id
+			)
+		);
+	}
+
+	/**
+	 * Get all role templates ordered by name.
+	 */
+	public static function get_role_templates(): array {
+		global $wpdb;
+		$results = $wpdb->get_results(
+			'SELECT * FROM ' . self::role_templates_table() . ' ORDER BY template_name ASC' // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		return $results ? $results : array();
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Classifications — CRUD operations.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Save a new classification. Returns the new classification ID or false on failure.
+	 */
+	public static function save_classification( array $data ) {
+		global $wpdb;
+
+		$row = array(
+			'classification_name' => sanitize_text_field( $data['classification_name'] ?? '' ),
+			'display_order'       => intval( $data['display_order'] ?? 0 ),
+			'created_at'          => current_time( 'mysql' ),
+		);
+
+		$result = $wpdb->insert( self::classifications_table(), $row, array( '%s', '%d', '%s' ) );
+		return $result ? $wpdb->insert_id : false;
+	}
+
+	/**
+	 * Update an existing classification.
+	 */
+	public static function update_classification( int $classification_id, array $data ): bool {
+		global $wpdb;
+
+		$row     = array();
+		$formats = array();
+
+		if ( isset( $data['classification_name'] ) ) {
+			$row['classification_name'] = sanitize_text_field( $data['classification_name'] );
+			$formats[]                  = '%s';
+		}
+		if ( isset( $data['display_order'] ) ) {
+			$row['display_order'] = intval( $data['display_order'] );
+			$formats[]            = '%d';
+		}
+
+		if ( empty( $formats ) ) {
+			return false;
+		}
+
+		$result = $wpdb->update( self::classifications_table(), $row, array( 'id' => $classification_id ), $formats, array( '%d' ) );
+		return false !== $result;
+	}
+
+	/**
+	 * Delete a classification.
+	 */
+	public static function delete_classification( int $classification_id ): bool {
+		global $wpdb;
+		$result = $wpdb->delete( self::classifications_table(), array( 'id' => $classification_id ), array( '%d' ) );
+		return false !== $result;
+	}
+
+	/**
+	 * Get a single classification by ID.
+	 */
+	public static function get_classification( int $classification_id ) {
+		global $wpdb;
+		return $wpdb->get_row(
+			$wpdb->prepare(
+				'SELECT * FROM ' . self::classifications_table() . ' WHERE id = %d', // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+				$classification_id
+			)
+		);
+	}
+
+	/**
+	 * Get all classifications ordered by display_order.
+	 */
+	public static function get_classifications(): array {
+		global $wpdb;
+		$results = $wpdb->get_results(
+			'SELECT * FROM ' . self::classifications_table() . ' ORDER BY display_order ASC, classification_name ASC' // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		);
+		return $results ? $results : array();
 	}
 
 	/*
@@ -683,7 +946,7 @@ class WPVP_Database {
 	public static function drop_tables(): void {
 		global $wpdb;
 
-		$tables = array( 'wpvp_results', 'wpvp_ballots', 'wpvp_votes' );
+		$tables = array( 'wpvp_results', 'wpvp_ballots', 'wpvp_votes', 'wpvp_role_templates', 'wpvp_classifications' );
 		foreach ( $tables as $table ) {
 			$wpdb->query( "DROP TABLE IF EXISTS {$wpdb->prefix}{$table}" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		}
@@ -758,6 +1021,18 @@ class WPVP_Database {
 			'public'     => __( 'Anyone (public voting)', 'wp-voting-plugin' ),
 			'private'    => __( 'Logged-in users only', 'wp-voting-plugin' ),
 			'restricted' => __( 'Specific roles/groups', 'wp-voting-plugin' ),
+		);
+	}
+
+	/**
+	 * Valid majority threshold options.
+	 */
+	public static function get_majority_threshold_options(): array {
+		return array(
+			'simple'       => __( 'Simple Majority (50% + 1)', 'wp-voting-plugin' ),
+			'two_thirds'   => __( '2/3 Majority (66.67%)', 'wp-voting-plugin' ),
+			'three_fourths' => __( '3/4 Majority (75%)', 'wp-voting-plugin' ),
+			'custom'       => __( 'Custom Percentage', 'wp-voting-plugin' ),
 		);
 	}
 

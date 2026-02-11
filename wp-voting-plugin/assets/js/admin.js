@@ -210,6 +210,51 @@
     }
 
     /* ------------------------------------------------------------------
+     *  Role Template Loader
+     * ----------------------------------------------------------------*/
+
+    $(document).on('click', '.wpvp-apply-template', function () {
+        var $container = $(this).closest('.wpvp-template-loader');
+        var templateId = $container.find('.wpvp-template-select').val();
+        var target     = $container.find('.wpvp-template-select').data('target');
+
+        if (!templateId) {
+            return;
+        }
+
+        var $select2;
+        if (target === 'allowed_roles') {
+            $select2 = $('.wpvp-select2-roles');
+        } else {
+            $select2 = $('.wpvp-select2-voting-roles');
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true);
+
+        $.post(wpvp.ajax_url, {
+            action: 'wpvp_get_template_roles',
+            nonce:  wpvp.nonce,
+            template_id: templateId
+        })
+        .done(function (response) {
+            if (response.success && response.data.roles) {
+                $.each(response.data.roles, function (i, role) {
+                    if (!$select2.find('option[value="' + role + '"]').length) {
+                        $select2.append(new Option(role, role, true, true));
+                    } else {
+                        $select2.find('option[value="' + role + '"]').prop('selected', true);
+                    }
+                });
+                $select2.trigger('change');
+            }
+        })
+        .always(function () {
+            $btn.prop('disabled', false);
+        });
+    });
+
+    /* ------------------------------------------------------------------
      *  Settings: Connection Test
      * ----------------------------------------------------------------*/
 

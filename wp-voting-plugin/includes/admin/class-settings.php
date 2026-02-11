@@ -13,6 +13,8 @@ class WPVP_Settings {
 		add_action( 'wp_ajax_wpvp_fetch_roles', array( $this, 'ajax_fetch_roles' ) );
 		add_action( 'wp_ajax_wpvp_process_closed_votes', array( $this, 'ajax_process_closed_votes' ) );
 		add_action( 'wp_ajax_wpvp_guide_create_vote', array( $this, 'ajax_guide_create_vote' ) );
+		add_action( 'wp_ajax_wpvp_get_template_roles', array( $this, 'ajax_get_template_roles' ) );
+		add_action( 'wp_ajax_wpvp_get_all_templates', array( $this, 'ajax_get_all_templates' ) );
 
 		// Whitelist option groups for multisite (must be in constructor, not in register_settings).
 		add_filter( 'allowed_options', array( $this, 'whitelist_options' ), 1 );
@@ -723,5 +725,62 @@ class WPVP_Settings {
 			$clean[ $key ] = isset( $input[ $key ] ) ? sanitize_key( $input[ $key ] ) : 'read';
 		}
 		return $clean;
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Role Template AJAX handlers.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * AJAX: Get roles for a specific template (for populating Select2).
+	 */
+	public function ajax_get_template_roles(): void {
+		check_ajax_referer( 'wpvp_admin', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'wpvp_create_votes' ) ) {
+			wp_send_json_error( __( 'Permission denied.', 'wp-voting-plugin' ) );
+		}
+
+		$template_id = absint( $_POST['template_id'] ?? 0 );
+		if ( ! $template_id ) {
+			wp_send_json_error( __( 'Invalid template ID.', 'wp-voting-plugin' ) );
+		}
+
+		$template = WPVP_Database::get_role_template( $template_id );
+		if ( ! $template ) {
+			wp_send_json_error( __( 'Template not found.', 'wp-voting-plugin' ) );
+		}
+
+		$roles = json_decode( $template->roles, true );
+		wp_send_json_success( array(
+			'template_name' => $template->template_name,
+			'roles'         => is_array( $roles ) ? $roles : array(),
+		) );
+	}
+
+	/**
+	 * AJAX: Get all templates (for dropdown population).
+	 */
+	public function ajax_get_all_templates(): void {
+		check_ajax_referer( 'wpvp_admin', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'wpvp_create_votes' ) ) {
+			wp_send_json_error( __( 'Permission denied.', 'wp-voting-plugin' ) );
+		}
+
+		$templates = WPVP_Database::get_role_templates();
+		$result    = array();
+
+		foreach ( $templates as $t ) {
+			$roles    = json_decode( $t->roles, true );
+			$result[] = array(
+				'id'    => (int) $t->id,
+				'name'  => $t->template_name,
+				'roles' => is_array( $roles ) ? $roles : array(),
+			);
+		}
+
+		wp_send_json_success( $result );
 	}
 }
