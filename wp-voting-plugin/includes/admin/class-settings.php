@@ -65,6 +65,14 @@ class WPVP_Settings {
 				'default'           => false,
 			)
 		);
+		register_setting(
+			'wpvp_general',
+			'wpvp_admin_notification_email',
+			array(
+				'sanitize_callback' => 'sanitize_email',
+				'default'           => '',
+			)
+		);
 
 		// Permissions tab.
 		register_setting(
@@ -149,6 +157,7 @@ class WPVP_Settings {
 			'wpvp_require_login',
 			'wpvp_show_results_before_close',
 			'wpvp_enable_email_notifications',
+			'wpvp_admin_notification_email',
 		);
 		$allowed_options['wpvp_permissions'] = array(
 			'wpvp_accessschema_mode',
@@ -177,6 +186,7 @@ class WPVP_Settings {
 				update_option( 'wpvp_require_login', isset( $_POST['wpvp_require_login'] ) );
 				update_option( 'wpvp_show_results_before_close', isset( $_POST['wpvp_show_results_before_close'] ) );
 				update_option( 'wpvp_enable_email_notifications', isset( $_POST['wpvp_enable_email_notifications'] ) );
+				update_option( 'wpvp_admin_notification_email', isset( $_POST['wpvp_admin_notification_email'] ) ? sanitize_email( wp_unslash( $_POST['wpvp_admin_notification_email'] ) ) : '' );
 				break;
 
 			case 'permissions':
@@ -304,6 +314,30 @@ class WPVP_Settings {
 							<?php checked( get_option( 'wpvp_enable_email_notifications', false ) ); ?>>
 						<?php esc_html_e( 'Send email notifications when votes open or close.', 'wp-voting-plugin' ); ?>
 					</label>
+					<p class="description">
+						<?php esc_html_e( 'Voters can opt-in to receive confirmation emails when they cast their ballot.', 'wp-voting-plugin' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="wpvp_admin_notification_email"><?php esc_html_e( 'Admin Notification Email', 'wp-voting-plugin' ); ?></label>
+				</th>
+				<td>
+					<input type="email" id="wpvp_admin_notification_email"
+							name="wpvp_admin_notification_email"
+							value="<?php echo esc_attr( get_option( 'wpvp_admin_notification_email', '' ) ); ?>"
+							class="regular-text"
+							placeholder="<?php echo esc_attr( get_option( 'admin_email' ) ); ?>">
+					<p class="description">
+						<?php
+						printf(
+							/* translators: %s: default admin email */
+							esc_html__( 'Email address for vote opening, closing, and reminder notifications. Defaults to %s if not set.', 'wp-voting-plugin' ),
+							'<code>' . esc_html( get_option( 'admin_email' ) ) . '</code>'
+						);
+						?>
+					</p>
 				</td>
 			</tr>
 		</table>

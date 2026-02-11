@@ -216,6 +216,16 @@ class WPVP_Vote_Editor {
 		$vis_opts   = WPVP_Database::get_visibility_options();
 		$voting_opts = WPVP_Database::get_voting_eligibility_options();
 
+		// Calculate default dates for new votes: 7 days from now (opening), 14 days from now (closing), both at midnight.
+		$default_opening = '';
+		$default_closing = '';
+		if ( ! $is_edit ) {
+			$opening_timestamp = strtotime( '+7 days midnight' );
+			$closing_timestamp = strtotime( '+14 days midnight' );
+			$default_opening   = date( 'Y-m-d\TH:i', $opening_timestamp );
+			$default_closing   = date( 'Y-m-d\TH:i', $closing_timestamp );
+		}
+
 		// Decode existing data.
 		if ( $is_edit ) {
 			$decoded_options  = json_decode( $this->vote->voting_options, true );
@@ -248,10 +258,10 @@ class WPVP_Vote_Editor {
 				<?php wp_nonce_field( 'wpvp_save_vote', 'wpvp_vote_nonce' ); ?>
 
 				<div id="poststuff">
-					<div id="post-body" class="metabox-holder columns-2">
+					<div id="post-body" class="metabox-holder columns-1">
 
 						<!-- Main content -->
-						<div id="post-body-content">
+						<div id="post-body-content" style="max-width:900px;">
 							<!-- Title -->
 							<div id="titlediv">
 								<input type="text" name="proposal_name" id="title" size="30"
@@ -276,8 +286,47 @@ class WPVP_Vote_Editor {
 								?>
 							</div>
 
-							<!-- Voting Type -->
+							<!-- Proposal Metadata Box -->
 							<div class="postbox" style="margin-top:20px;">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Proposal Metadata', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<?php $classifications = WPVP_Database::get_classifications(); ?>
+									<p>
+										<label for="classification"><?php esc_html_e( 'Classification:', 'wp-voting-plugin' ); ?></label>
+										<select name="classification" id="classification" style="width:100%;">
+											<option value=""><?php esc_html_e( '-- None --', 'wp-voting-plugin' ); ?></option>
+											<?php foreach ( $classifications as $class ) : ?>
+												<option value="<?php echo esc_attr( $class->classification_name ); ?>"
+													<?php selected( $is_edit ? $this->vote->classification : '', $class->classification_name ); ?>>
+													<?php echo esc_html( $class->classification_name ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+									</p>
+									<p>
+										<label for="proposed_by"><?php esc_html_e( 'Proposed By:', 'wp-voting-plugin' ); ?></label>
+										<input type="text" name="proposed_by" id="proposed_by" class="regular-text"
+												value="<?php echo esc_attr( $is_edit && isset( $this->vote->proposed_by ) ? $this->vote->proposed_by : '' ); ?>"
+												placeholder="<?php esc_attr_e( 'Person who proposed this vote', 'wp-voting-plugin' ); ?>">
+									</p>
+									<p>
+										<label for="seconded_by"><?php esc_html_e( 'Seconded By:', 'wp-voting-plugin' ); ?></label>
+										<input type="text" name="seconded_by" id="seconded_by" class="regular-text"
+												value="<?php echo esc_attr( $is_edit && isset( $this->vote->seconded_by ) ? $this->vote->seconded_by : '' ); ?>"
+												placeholder="<?php esc_attr_e( 'Person who seconded this vote', 'wp-voting-plugin' ); ?>">
+									</p>
+									<p>
+										<label for="objection_by"><?php esc_html_e( 'Objection By:', 'wp-voting-plugin' ); ?></label>
+										<input type="text" name="objection_by" id="objection_by" class="regular-text"
+												value="<?php echo esc_attr( $is_edit && isset( $this->vote->objection_by ) ? $this->vote->objection_by : '' ); ?>"
+												placeholder="<?php esc_attr_e( 'Person who objected (consent agenda)', 'wp-voting-plugin' ); ?>">
+										<span class="description"><?php esc_html_e( 'For consent agenda votes that were objected to', 'wp-voting-plugin' ); ?></span>
+									</p>
+								</div>
+							</div>
+
+							<!-- Voting Type -->
+							<div class="postbox">
 								<div class="postbox-header"><h2><?php esc_html_e( 'Voting Type', 'wp-voting-plugin' ); ?></h2></div>
 								<div class="inside">
 									<select name="voting_type" id="wpvp-voting-type">
@@ -320,52 +369,13 @@ class WPVP_Vote_Editor {
 								</div>
 							</div>
 
-							<!-- Settings -->
+							<!-- Status & Schedule Box -->
 							<div class="postbox">
-								<div class="postbox-header"><h2><?php esc_html_e( 'Vote Settings', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="postbox-header"><h2><?php esc_html_e( 'Status & Schedule', 'wp-voting-plugin' ); ?></h2></div>
 								<div class="inside">
-									<?php $threshold_opts = WPVP_Database::get_majority_threshold_options(); ?>
 									<p>
-										<label for="majority_threshold"><?php esc_html_e( 'Majority Threshold:', 'wp-voting-plugin' ); ?></label>
-										<select name="majority_threshold" id="majority_threshold" style="width:100%;">
-											<?php foreach ( $threshold_opts as $key => $label ) : ?>
-												<option value="<?php echo esc_attr( $key ); ?>"
-													<?php selected( $is_edit && isset( $this->vote->majority_threshold ) ? $this->vote->majority_threshold : 'simple', $key ); ?>>
-													<?php echo esc_html( $label ); ?>
-												</option>
-											<?php endforeach; ?>
-										</select>
-										<span class="description"><?php esc_html_e( 'Required threshold for passing votes (affects FPTP and other algorithms)', 'wp-voting-plugin' ); ?></span>
-									</p>
-									<hr style="margin: 15px 0;">
-									<label style="display:block; margin-bottom:8px;">
-										<input type="checkbox" name="settings[allow_revote]" value="1"
-											<?php checked( ! empty( $settings['allow_revote'] ) ); ?>>
-										<?php esc_html_e( 'Allow voters to change their vote', 'wp-voting-plugin' ); ?>
-									</label>
-									<label style="display:block; margin-bottom:8px;">
-										<input type="checkbox" name="settings[show_results_before_closing]" value="1"
-											<?php checked( ! empty( $settings['show_results_before_closing'] ) ); ?>>
-										<?php esc_html_e( 'Show results while voting is open', 'wp-voting-plugin' ); ?>
-									</label>
-									<label style="display:block;">
-										<input type="checkbox" name="settings[anonymous_voting]" value="1"
-											<?php checked( ! empty( $settings['anonymous_voting'] ) ); ?>>
-										<?php esc_html_e( 'Anonymous voting (hide voter names in results)', 'wp-voting-plugin' ); ?>
-									</label>
-								</div>
-							</div>
-						</div>
-
-						<!-- Sidebar -->
-						<div id="postbox-container-1" class="postbox-container">
-							<!-- Publish Box -->
-							<div class="postbox">
-								<div class="postbox-header"><h2><?php esc_html_e( 'Publish', 'wp-voting-plugin' ); ?></h2></div>
-								<div class="inside">
-									<div class="misc-pub-section">
 										<label for="voting_stage"><?php esc_html_e( 'Status:', 'wp-voting-plugin' ); ?></label>
-										<select name="voting_stage" id="voting_stage">
+										<select name="voting_stage" id="voting_stage" style="width:100%;">
 											<?php foreach ( $stages as $key => $label ) : ?>
 												<?php
 												if ( 'completed' === $key ) {
@@ -377,40 +387,16 @@ class WPVP_Vote_Editor {
 												</option>
 											<?php endforeach; ?>
 										</select>
-									</div>
-									<div id="major-publishing-actions">
-										<?php if ( $is_edit ) : ?>
-											<div id="delete-action">
-												<a class="submitdelete deletion"
-													href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wpvp-votes&action=delete&vote[]=' . $this->vote->id ), 'bulk-votes' ) ); ?>"
-													onclick="return confirm(wpvp.i18n.confirm_delete);">
-													<?php esc_html_e( 'Delete', 'wp-voting-plugin' ); ?>
-												</a>
-											</div>
-										<?php endif; ?>
-										<div id="publishing-action">
-											<input type="submit" name="wpvp_save_vote"
-													class="button button-primary button-large"
-													value="<?php echo $is_edit ? esc_attr__( 'Update', 'wp-voting-plugin' ) : esc_attr__( 'Create Vote', 'wp-voting-plugin' ); ?>">
-										</div>
-										<div class="clear"></div>
-									</div>
-								</div>
-							</div>
-
-							<!-- Schedule Box -->
-							<div class="postbox">
-								<div class="postbox-header"><h2><?php esc_html_e( 'Schedule', 'wp-voting-plugin' ); ?></h2></div>
-								<div class="inside">
+									</p>
 									<p>
 										<label for="opening_date"><?php esc_html_e( 'Opens:', 'wp-voting-plugin' ); ?></label><br>
 										<input type="datetime-local" name="opening_date" id="opening_date"
-												value="<?php echo esc_attr( $is_edit && $this->vote->opening_date ? date( 'Y-m-d\TH:i', strtotime( $this->vote->opening_date ) ) : '' ); ?>">
+												value="<?php echo esc_attr( $is_edit && $this->vote->opening_date ? date( 'Y-m-d\TH:i', strtotime( $this->vote->opening_date ) ) : $default_opening ); ?>">
 									</p>
 									<p>
 										<label for="closing_date"><?php esc_html_e( 'Closes:', 'wp-voting-plugin' ); ?></label><br>
 										<input type="datetime-local" name="closing_date" id="closing_date"
-												value="<?php echo esc_attr( $is_edit && $this->vote->closing_date ? date( 'Y-m-d\TH:i', strtotime( $this->vote->closing_date ) ) : '' ); ?>">
+												value="<?php echo esc_attr( $is_edit && $this->vote->closing_date ? date( 'Y-m-d\TH:i', strtotime( $this->vote->closing_date ) ) : $default_closing ); ?>">
 									</p>
 								</div>
 							</div>
@@ -510,44 +496,71 @@ class WPVP_Vote_Editor {
 								</div>
 							</div>
 
-							<!-- Proposal Metadata Box -->
+							<!-- Vote Settings -->
 							<div class="postbox">
-								<div class="postbox-header"><h2><?php esc_html_e( 'Proposal Metadata', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="postbox-header"><h2><?php esc_html_e( 'Vote Settings', 'wp-voting-plugin' ); ?></h2></div>
 								<div class="inside">
-									<?php $classifications = WPVP_Database::get_classifications(); ?>
-									<p>
-										<label for="classification"><?php esc_html_e( 'Classification:', 'wp-voting-plugin' ); ?></label>
-										<select name="classification" id="classification" style="width:100%;">
-											<option value=""><?php esc_html_e( '-- None --', 'wp-voting-plugin' ); ?></option>
-											<?php foreach ( $classifications as $class ) : ?>
-												<option value="<?php echo esc_attr( $class->classification_name ); ?>"
-													<?php selected( $is_edit ? $this->vote->classification : '', $class->classification_name ); ?>>
-													<?php echo esc_html( $class->classification_name ); ?>
-												</option>
-											<?php endforeach; ?>
-										</select>
-									</p>
-									<p>
-										<label for="proposed_by"><?php esc_html_e( 'Proposed By:', 'wp-voting-plugin' ); ?></label>
-										<input type="text" name="proposed_by" id="proposed_by" class="regular-text"
-												value="<?php echo esc_attr( $is_edit && isset( $this->vote->proposed_by ) ? $this->vote->proposed_by : '' ); ?>"
-												placeholder="<?php esc_attr_e( 'Person who proposed this vote', 'wp-voting-plugin' ); ?>">
-									</p>
-									<p>
-										<label for="seconded_by"><?php esc_html_e( 'Seconded By:', 'wp-voting-plugin' ); ?></label>
-										<input type="text" name="seconded_by" id="seconded_by" class="regular-text"
-												value="<?php echo esc_attr( $is_edit && isset( $this->vote->seconded_by ) ? $this->vote->seconded_by : '' ); ?>"
-												placeholder="<?php esc_attr_e( 'Person who seconded this vote', 'wp-voting-plugin' ); ?>">
-									</p>
-									<p>
-										<label for="objection_by"><?php esc_html_e( 'Objection By:', 'wp-voting-plugin' ); ?></label>
-										<input type="text" name="objection_by" id="objection_by" class="regular-text"
-												value="<?php echo esc_attr( $is_edit && isset( $this->vote->objection_by ) ? $this->vote->objection_by : '' ); ?>"
-												placeholder="<?php esc_attr_e( 'Person who objected (consent agenda)', 'wp-voting-plugin' ); ?>">
-										<span class="description"><?php esc_html_e( 'For consent agenda votes that were objected to', 'wp-voting-plugin' ); ?></span>
-									</p>
+									<div id="wpvp-majority-threshold-section">
+										<?php $threshold_opts = WPVP_Database::get_majority_threshold_options(); ?>
+										<p>
+											<label for="majority_threshold"><?php esc_html_e( 'Majority Threshold:', 'wp-voting-plugin' ); ?></label>
+											<select name="majority_threshold" id="majority_threshold" style="width:100%;">
+												<?php foreach ( $threshold_opts as $key => $label ) : ?>
+													<option value="<?php echo esc_attr( $key ); ?>"
+														<?php selected( $is_edit && isset( $this->vote->majority_threshold ) ? $this->vote->majority_threshold : 'simple', $key ); ?>>
+														<?php echo esc_html( $label ); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+											<span class="description"><?php esc_html_e( 'Required threshold for passing votes (affects FPTP and other algorithms)', 'wp-voting-plugin' ); ?></span>
+										</p>
+										<hr style="margin: 15px 0;">
+									</div>
+									<label style="display:block; margin-bottom:8px;">
+										<input type="checkbox" name="settings[allow_revote]" value="1"
+											<?php checked( ! empty( $settings['allow_revote'] ) ); ?>>
+										<?php esc_html_e( 'Allow voters to change their vote', 'wp-voting-plugin' ); ?>
+									</label>
+									<label style="display:block; margin-bottom:8px;">
+										<input type="checkbox" name="settings[show_results_before_closing]" value="1"
+											<?php checked( ! empty( $settings['show_results_before_closing'] ) ); ?>>
+										<?php esc_html_e( 'Show results while voting is open', 'wp-voting-plugin' ); ?>
+									</label>
+									<label style="display:block;">
+										<input type="checkbox" name="settings[anonymous_voting]" value="1"
+											<?php checked( ! empty( $settings['anonymous_voting'] ) ); ?>>
+										<?php esc_html_e( 'Anonymous voting (hide voter names in results)', 'wp-voting-plugin' ); ?>
+									</label>
 								</div>
 							</div>
+
+							<!-- Publish Actions -->
+							<div class="postbox">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Publish', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<div id="major-publishing-actions">
+										<?php if ( $is_edit ) : ?>
+											<div id="delete-action">
+												<a class="submitdelete deletion"
+													href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin.php?page=wpvp-votes&action=delete&vote[]=' . $this->vote->id ), 'bulk-votes' ) ); ?>"
+													onclick="return confirm(wpvp.i18n.confirm_delete);">
+													<?php esc_html_e( 'Delete', 'wp-voting-plugin' ); ?>
+												</a>
+											</div>
+										<?php endif; ?>
+										<div id="publishing-action">
+											<input type="submit" name="wpvp_save_vote"
+													class="button button-primary button-large"
+													value="<?php echo $is_edit ? esc_attr__( 'Update', 'wp-voting-plugin' ) : esc_attr__( 'Create Vote', 'wp-voting-plugin' ); ?>">
+										</div>
+										<div class="clear"></div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Sidebar (now empty, but keeping structure for compatibility) -->
+						<div id="postbox-container-1" class="postbox-container" style="display:none;">
 						</div>
 
 					</div>

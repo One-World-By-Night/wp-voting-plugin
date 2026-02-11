@@ -18,84 +18,96 @@ defined( 'ABSPATH' ) || exit;
 			<?php esc_html_e( 'No votes found.', 'wp-voting-plugin' ); ?>
 		</p>
 	<?php else : ?>
-		<?php
-		foreach ( $votes as $vote ) :
-			$decoded_options = json_decode( $vote->voting_options, true );
-			$options         = $decoded_options ? $decoded_options : array();
-			$stages          = WPVP_Database::get_vote_stages();
-			$types           = WPVP_Database::get_vote_types();
-			$type_label      = $types[ $vote->voting_type ]['label'] ?? $vote->voting_type;
-			$stage_label     = $stages[ $vote->voting_stage ] ?? $vote->voting_stage;
-			?>
-			<div class="wpvp-vote-card wpvp-vote-card--<?php echo esc_attr( $vote->voting_stage ); ?>">
-				<div class="wpvp-vote-card__header">
-					<h3 class="wpvp-vote-card__title">
-						<?php echo esc_html( $vote->proposal_name ); ?>
-					</h3>
-					<span class="wpvp-badge wpvp-badge--<?php echo esc_attr( $vote->voting_stage ); ?>">
-						<?php echo esc_html( $stage_label ); ?>
-					</span>
-				</div>
+		<table class="wpvp-vote-table">
+			<thead>
+				<tr>
+					<th><?php esc_html_e( 'Title', 'wp-voting-plugin' ); ?></th>
+					<th><?php esc_html_e( 'Start Date', 'wp-voting-plugin' ); ?></th>
+					<th><?php esc_html_e( 'End Date', 'wp-voting-plugin' ); ?></th>
+					<th><?php esc_html_e( 'Status', 'wp-voting-plugin' ); ?></th>
+					<th><?php esc_html_e( 'Action', 'wp-voting-plugin' ); ?></th>
+				</tr>
+			</thead>
+			<tbody>
+				<?php
+				$date_format = get_option( 'date_format' );
+				$time_format = get_option( 'time_format' );
+				$stages      = WPVP_Database::get_vote_stages();
 
-				<div class="wpvp-vote-card__meta">
-					<span class="wpvp-vote-card__type"><?php echo esc_html( $type_label ); ?></span>
-					<?php if ( $vote->closing_date ) : ?>
-						<span class="wpvp-vote-card__date">
-							<?php
-							if ( 'open' === $vote->voting_stage ) {
-								printf(
-									esc_html__( 'Closes: %s', 'wp-voting-plugin' ),
-									esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->closing_date ) ) )
-								);
-							}
-							?>
-						</span>
-					<?php endif; ?>
-				</div>
+				foreach ( $votes as $vote ) :
+					$stage_label = $stages[ $vote->voting_stage ] ?? $vote->voting_stage;
 
-				<?php if ( ! empty( $vote->proposal_description ) ) : ?>
-					<div class="wpvp-vote-card__excerpt">
-						<?php echo wp_kses_post( wp_trim_words( $vote->proposal_description, 30 ) ); ?>
-					</div>
-				<?php endif; ?>
-
-				<div class="wpvp-vote-card__actions">
-					<?php
-					$page_ids       = get_option( 'wpvp_page_ids', array() );
-					$detail_page    = ! empty( $page_ids['cast-vote'] ) ? $page_ids['cast-vote'] : 0;
-					$results_page   = ! empty( $page_ids['vote-results'] ) ? $page_ids['vote-results'] : 0;
+					$page_ids        = get_option( 'wpvp_page_ids', array() );
+					$detail_page     = ! empty( $page_ids['cast-vote'] ) ? $page_ids['cast-vote'] : 0;
+					$results_page    = ! empty( $page_ids['vote-results'] ) ? $page_ids['vote-results'] : 0;
 					$current_user_id = get_current_user_id();
+					$is_results_context = isset( $is_results_context ) && $is_results_context;
 
 					if ( $detail_page ) {
 						$url = add_query_arg( 'wpvp_vote', $vote->id, get_permalink( $detail_page ) );
 					} else {
 						$url = '#';
 					}
+
+					if ( $results_page ) {
+						$results_url = add_query_arg( 'wpvp_vote', $vote->id, get_permalink( $results_page ) );
+					} else {
+						$results_url = $url;
+					}
 					?>
-					<?php if ( 'open' === $vote->voting_stage ) : ?>
-						<?php if ( $current_user_id && WPVP_Permissions::can_cast_vote( $current_user_id, (int) $vote->id ) ) : ?>
-							<a href="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--primary">
-								<?php esc_html_e( 'Vote Now', 'wp-voting-plugin' ); ?>
+					<tr class="wpvp-vote-row wpvp-vote-row--<?php echo esc_attr( $vote->voting_stage ); ?>">
+						<td class="wpvp-vote-table__title">
+							<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-vote-table__link">
+								<?php echo esc_html( $vote->proposal_name ); ?>
 							</a>
-						<?php else : ?>
-							<a href="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary">
-								<?php esc_html_e( 'View Details', 'wp-voting-plugin' ); ?>
-							</a>
-						<?php endif; ?>
-					<?php elseif ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true ) ) : ?>
-						<?php
-						if ( $results_page ) {
-							$results_url = add_query_arg( 'wpvp_vote', $vote->id, get_permalink( $results_page ) );
-						} else {
-							$results_url = $url;
-						}
-						?>
-						<a href="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary">
-							<?php esc_html_e( 'View Results', 'wp-voting-plugin' ); ?>
-						</a>
-					<?php endif; ?>
-				</div>
-			</div>
-		<?php endforeach; ?>
+						</td>
+						<td class="wpvp-vote-table__date">
+							<?php
+							if ( $vote->opening_date ) {
+								echo esc_html( wp_date( $date_format . ' ' . $time_format, strtotime( $vote->opening_date ) ) );
+							} else {
+								echo '—';
+							}
+							?>
+						</td>
+						<td class="wpvp-vote-table__date">
+							<?php
+							if ( $vote->closing_date ) {
+								echo esc_html( wp_date( $date_format . ' ' . $time_format, strtotime( $vote->closing_date ) ) );
+							} else {
+								echo '—';
+							}
+							?>
+						</td>
+						<td class="wpvp-vote-table__status">
+							<span class="wpvp-badge wpvp-badge--<?php echo esc_attr( $vote->voting_stage ); ?>">
+								<?php echo esc_html( $stage_label ); ?>
+							</span>
+						</td>
+						<td class="wpvp-vote-table__action">
+							<?php if ( 'open' === $vote->voting_stage ) : ?>
+								<?php if ( $is_results_context ) : ?>
+									<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
+										<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
+									</a>
+								<?php elseif ( $current_user_id && WPVP_Permissions::can_cast_vote( $current_user_id, (int) $vote->id ) ) : ?>
+									<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--primary wpvp-btn--small">
+										<?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?>
+									</a>
+								<?php else : ?>
+									<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
+										<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
+									</a>
+								<?php endif; ?>
+							<?php elseif ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true ) ) : ?>
+								<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
+									<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
+								</a>
+							<?php endif; ?>
+						</td>
+					</tr>
+				<?php endforeach; ?>
+			</tbody>
+		</table>
 	<?php endif; ?>
 </div>

@@ -92,30 +92,34 @@ class WPVP_Activator {
 	 */
 	private static function create_default_pages(): void {
 		$pages = array(
+			// Main user-facing pages.
 			'voting-dashboard' => array(
 				'title'     => __( 'Voting Dashboard', 'wp-voting-plugin' ),
 				'shortcode' => '[wpvp_votes]',
 				'parent'    => 0,
 			),
+			'open-votes'       => array(
+				'title'     => __( 'Open Votes', 'wp-voting-plugin' ),
+				'shortcode' => '[wpvp_votes status="open" limit="50"]',
+				'parent'    => 0,
+			),
+			'closed-votes'     => array(
+				'title'     => __( 'Closed Votes', 'wp-voting-plugin' ),
+				'shortcode' => '[wpvp_votes status="closed,completed,archived" limit="50"]',
+				'parent'    => 0,
+			),
+			// Hidden utility pages (loaded via lightbox AJAX).
 			'cast-vote'        => array(
 				'title'     => __( 'Cast Vote', 'wp-voting-plugin' ),
 				'shortcode' => '[wpvp_vote]',
-				'parent'    => 'voting-dashboard',
+				'parent'    => 0,
+				'hidden'    => true,
 			),
 			'vote-results'     => array(
 				'title'     => __( 'Vote Results', 'wp-voting-plugin' ),
 				'shortcode' => '[wpvp_results]',
-				'parent'    => 'voting-dashboard',
-			),
-			'open-votes'       => array(
-				'title'     => __( 'Open Votes', 'wp-voting-plugin' ),
-				'shortcode' => '[wpvp_votes status="open" limit="50"]',
-				'parent'    => 'voting-dashboard',
-			),
-			'closed-votes'     => array(
-				'title'     => __( 'Closed Votes', 'wp-voting-plugin' ),
-				'shortcode' => '[wpvp_votes status="closed" limit="50"]',
-				'parent'    => 'voting-dashboard',
+				'parent'    => 0,
+				'hidden'    => true,
 			),
 		);
 
@@ -148,6 +152,11 @@ class WPVP_Activator {
 
 			if ( ! is_wp_error( $new_page_id ) ) {
 				$created_ids[ $slug ] = $new_page_id;
+
+				// Mark hidden pages to exclude from navigation.
+				if ( ! empty( $page_data['hidden'] ) ) {
+					update_post_meta( $new_page_id, '_wpvp_hidden_page', true );
+				}
 			}
 		}
 

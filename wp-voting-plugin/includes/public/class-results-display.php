@@ -156,13 +156,22 @@ class WPVP_Results_Display {
 			</thead>
 			<tbody>
 				<?php foreach ( $counts as $option => $count ) : ?>
-					<tr>
-						<td><?php echo esc_html( $option ); ?></td>
-						<td><?php echo esc_html( $count ); ?></td>
-						<td><?php echo esc_html( ( $percentages[ $option ] ?? 0 ) . '%' ); ?></td>
+					<?php
+					// Highlight winner (option with max count).
+					$is_winner = ( $count === $max_count && $max_count > 0 );
+					?>
+					<tr<?php echo $is_winner ? ' class="wpvp-results__row--winner"' : ''; ?>>
+						<td>
+							<?php echo esc_html( $option ); ?>
+							<?php if ( $is_winner ) : ?>
+								<span class="wpvp-results__winner-badge"><?php esc_html_e( 'Winner', 'wp-voting-plugin' ); ?></span>
+							<?php endif; ?>
+						</td>
+						<td><strong><?php echo esc_html( $count ); ?></strong></td>
+						<td><strong><?php echo esc_html( number_format( $percentages[ $option ] ?? 0, 1 ) . '%' ); ?></strong></td>
 						<td>
 							<div class="wpvp-bar">
-								<div class="wpvp-bar__fill" style="width:<?php echo esc_attr( $max_count > 0 ? round( ( $count / $max_count ) * 100 ) : 0 ); ?>%;"></div>
+								<div class="wpvp-bar__fill<?php echo $is_winner ? ' wpvp-bar__fill--winner' : ''; ?>" style="width:<?php echo esc_attr( $max_count > 0 ? round( ( $count / $max_count ) * 100 ) : 0 ); ?>%;"></div>
 							</div>
 						</td>
 					</tr>

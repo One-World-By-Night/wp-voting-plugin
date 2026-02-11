@@ -96,6 +96,14 @@
             $('#wpvp-options-box').show();
         }
 
+        // Hide majority threshold for ranked/algorithmic voting types that determine winners internally.
+        // RCV, STV, Condorcet, and Consent use built-in logic, not a majority threshold.
+        if (type === 'rcv' || type === 'stv' || type === 'condorcet' || type === 'consent') {
+            $('#wpvp-majority-threshold-section').hide();
+        } else {
+            $('#wpvp-majority-threshold-section').show();
+        }
+
         // Disciplinary: auto-populate punishment levels.
         if (type === 'disciplinary') {
             autoPopulateDisciplinary();
@@ -181,6 +189,50 @@
                 $('#wpvp-voting-roles-section').hide();
             }
         });
+    }
+
+    /* ------------------------------------------------------------------
+     *  Auto-update closing date when opening date changes
+     * ----------------------------------------------------------------*/
+
+    function updateClosingDate() {
+        var openingDateValue = $('#opening_date').val();
+        var votingType = $('#wpvp-voting-type').val();
+
+        if (openingDateValue) {
+            // Parse the opening date (format: YYYY-MM-DDTHH:mm)
+            var openingDate = new Date(openingDateValue);
+            var closingDate = new Date(openingDate);
+
+            // For consent agenda, closing date = opening date (closes immediately)
+            // For other types, add 7 days
+            if (votingType !== 'consent') {
+                closingDate.setDate(closingDate.getDate() + 7);
+            }
+
+            // Format as YYYY-MM-DDTHH:mm for datetime-local input
+            var year = closingDate.getFullYear();
+            var month = String(closingDate.getMonth() + 1).padStart(2, '0');
+            var day = String(closingDate.getDate()).padStart(2, '0');
+            var hours = String(closingDate.getHours()).padStart(2, '0');
+            var minutes = String(closingDate.getMinutes()).padStart(2, '0');
+
+            var formattedClosingDate = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+
+            // Update the closing date field
+            $('#closing_date').val(formattedClosingDate);
+        }
+    }
+
+    $('#opening_date').on('change', updateClosingDate);
+    $('#wpvp-voting-type').on('change', updateClosingDate);
+
+    // Initialize closing date on page load (handles editing existing votes)
+    if ($('#opening_date').length && $('#wpvp-voting-type').length) {
+        // Only update if we have an opening date but no closing date (new vote scenario)
+        if ($('#opening_date').val() && !$('#closing_date').val()) {
+            updateClosingDate();
+        }
     }
 
     /* ------------------------------------------------------------------
@@ -470,6 +522,44 @@
     var $guideForm = $('#wpvp-guide-builder-form');
 
     if ($guideForm.length) {
+        // Auto-update wizard closing date when opening date or voting type changes
+        function updateWizardClosingDate() {
+            var openingDateValue = $('#wpvp_gb_open').val();
+            var votingType = $('#wpvp_gb_type').val();
+
+            if (openingDateValue) {
+                // Parse the opening date (format: YYYY-MM-DDTHH:mm)
+                var openingDate = new Date(openingDateValue);
+                var closingDate = new Date(openingDate);
+
+                // For consent agenda, closing date = opening date (closes immediately)
+                // For other types, add 7 days
+                if (votingType !== 'consent') {
+                    closingDate.setDate(closingDate.getDate() + 7);
+                }
+
+                // Format as YYYY-MM-DDTHH:mm for datetime-local input
+                var year = closingDate.getFullYear();
+                var month = String(closingDate.getMonth() + 1).padStart(2, '0');
+                var day = String(closingDate.getDate()).padStart(2, '0');
+                var hours = String(closingDate.getHours()).padStart(2, '0');
+                var minutes = String(closingDate.getMinutes()).padStart(2, '0');
+
+                var formattedClosingDate = year + '-' + month + '-' + day + 'T' + hours + ':' + minutes;
+
+                // Update the closing date field
+                $('#wpvp_gb_close').val(formattedClosingDate);
+            }
+        }
+
+        // Event handler for opening date changes
+        $('#wpvp_gb_open').on('change', updateWizardClosingDate);
+
+        // Initialize closing date on page load if opening date has default value
+        if ($('#wpvp_gb_open').val() && $('#wpvp_gb_type').val()) {
+            updateWizardClosingDate();
+        }
+
         // Add option button.
         $('#wpvp_gb_add_option').on('click', function () {
             var index = $('#wpvp_gb_options_list .wpvp-gb-option-row').length;
@@ -499,6 +589,9 @@
             } else {
                 $('#wpvp_gb_num_winners').hide();
             }
+
+            // Update closing date when voting type changes
+            updateWizardClosingDate();
         }).trigger('change');
 
         // Show/hide roles field based on visibility.

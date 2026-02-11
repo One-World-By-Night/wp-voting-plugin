@@ -62,24 +62,45 @@
         $btn.prop('disabled', true);
         $status.text(wpvp_public.i18n.submitting).removeClass('success error');
 
+        // Get notification opt-in preference.
+        var sendConfirmation = $form.find('input[name="send_confirmation"]').is(':checked') ? '1' : '0';
+
         $.ajax({
             url:  wpvp_public.ajax_url,
             type: 'POST',
             data: {
-                action:      'wpvp_cast_ballot',
-                nonce:       wpvp_public.nonce,
-                vote_id:     voteId,
-                ballot_data: JSON.stringify(ballotData)
+                action:            'wpvp_cast_ballot',
+                nonce:             wpvp_public.nonce,
+                vote_id:           voteId,
+                ballot_data:       JSON.stringify(ballotData),
+                send_confirmation: sendConfirmation
             },
             dataType: 'json'
         })
         .done(function (response) {
             if (response.success) {
-                $status.text(response.data.message).removeClass('error').addClass('success');
-                $btn.text(wpvp_public.i18n.success);
+                var allowRevote = response.data.allow_revote;
+                var statusMsg = response.data.message;
 
-                // If this was a first vote, replace form with success message.
-                if (!response.data.revoted) {
+                // Show success message
+                $status.text(statusMsg).removeClass('error').addClass('success');
+
+                // If revoting is allowed, keep form visible and update button
+                if (allowRevote) {
+                    $btn.text('Change Vote').removeClass('wpvp-btn--primary').addClass('wpvp-btn--secondary');
+                    $btn.prop('disabled', false);
+
+                    // Add info message about being able to change vote
+                    if (!$form.find('.wpvp-revote-notice').length) {
+                        $status.after(
+                            '<p class="wpvp-revote-notice" style="margin-top: 8px; font-size: 13px; color: #646970;">' +
+                            'You can change your vote at any time before voting closes.' +
+                            '</p>'
+                        );
+                    }
+                } else {
+                    // No revoting allowed, hide the form
+                    $btn.text(wpvp_public.i18n.success);
                     $form.find('fieldset, .wpvp-ballot__ranked').fadeOut(300);
                     setTimeout(function () {
                         $btn.hide();
@@ -224,5 +245,70 @@
         $fieldset.find('.wpvp-ballot__option').removeClass('wpvp-ballot__option--selected');
         $(this).closest('.wpvp-ballot__option').addClass('wpvp-ballot__option--selected');
     });
+
+    /* ------------------------------------------------------------------
+     *  Vote lightbox / modal
+     * ----------------------------------------------------------------*/
+
+    // Create modal HTML on page load
+    if ($('#wpvp-modal').length === 0) {
+        $('body').append(
+            '<div id="wpvp-modal" class="wpvp-modal" style="display:none;">' +
+                '<div class="wpvp-modal__overlay"></div>' +
+                '<div class="wpvp-modal__container">' +
+                    '<button class="wpvp-modal__close" aria-label="Close">&times;</button>' +
+                    '<div class="wpvp-modal__content"></div>' +
+                '</div>' +
+            '</div>'
+        );
+    }
+
+    // Open lightbox when clicking vote card title or "View" buttons with data-lightbox attribute
+    $(document).on('click', '[data-lightbox-url]', function (e) {
+        e.preventDefault();
+        var url = $(this).data('lightbox-url');
+        openLightbox(url);
+    });
+
+    // Close lightbox
+    $(document).on('click', '.wpvp-modal__close, .wpvp-modal__overlay', function () {
+        closeLightbox();
+    });
+
+    // ESC key closes lightbox
+    $(document).on('keydown', function (e) {
+        if (e.key === 'Escape' && $('#wpvp-modal').is(':visible')) {
+            closeLightbox();
+        }
+    });
+
+    function openLightbox(url) {
+        var $modal = $('#wpvp-modal');
+        var $content = $modal.find('.wpvp-modal__content');
+
+        $content.html('<div class="wpvp-modal__loading">Loading...</div>');
+        $modal.fadeIn(200);
+        $('body').css('overflow', 'hidden');
+
+        // Load content via AJAX
+        $.get(url, function (html) {
+            // Extract just the content we need (vote details or results)
+            var $temp = $('<div>').html(html);
+            var content = $temp.find('.wpvp-ballot, .wpvp-results-wrap, .wpvp-vote-detail').first().html();
+
+            if (content) {
+                $content.html(content);
+            } else {
+                $content.html('<p>Content could not be loaded.</p>');
+            }
+        }).fail(function () {
+            $content.html('<p>Error loading content. Please try again.</p>');
+        });
+    }
+
+    function closeLightbox() {
+        $('#wpvp-modal').fadeOut(200);
+        $('body').css('overflow', '');
+    }
 
 })(jQuery);

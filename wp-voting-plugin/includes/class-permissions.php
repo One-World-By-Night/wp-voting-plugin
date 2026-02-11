@@ -115,21 +115,33 @@ class WPVP_Permissions {
 	 *  - Otherwise: no.
 	 */
 	public static function can_view_results( int $user_id, int $vote_id ): bool {
-		if ( ! $user_id ) {
-			return false;
-		}
-
-		if ( user_can( $user_id, 'manage_options' ) ) {
-			return true;
-		}
-
 		$vote = WPVP_Database::get_vote( $vote_id );
 		if ( ! $vote ) {
 			return false;
 		}
 
+		// Admins can always view results.
+		if ( $user_id && user_can( $user_id, 'manage_options' ) ) {
+			return true;
+		}
+
 		// Vote creator can always view results.
-		if ( (int) ( $vote->created_by ?? 0 ) === $user_id ) {
+		if ( $user_id && (int) ( $vote->created_by ?? 0 ) === $user_id ) {
+			return true;
+		}
+
+		// Public visibility → anyone can view results (including guests).
+		if ( 'public' === $vote->visibility ) {
+			return true;
+		}
+
+		// From here on, user must be logged in.
+		if ( ! $user_id ) {
+			return false;
+		}
+
+		// Private visibility → any logged-in user can view results.
+		if ( 'private' === $vote->visibility ) {
 			return true;
 		}
 

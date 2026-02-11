@@ -5,14 +5,15 @@
  * Renders different form layouts based on voting type.
  *
  * Variables available:
- *   $vote        object  Vote row from database.
- *   $options     array   Decoded voting_options (each has 'text' and 'description').
- *   $settings    array   Decoded vote settings.
- *   $can_vote    bool    Whether the user can currently cast/update a vote.
- *   $has_voted   bool    Whether the user has already voted.
- *   $allow_revote bool   Whether revoting is enabled.
- *   $show_form   bool    Whether to show the ballot form.
- *   $user_id     int     Current user ID.
+ *   $vote            object  Vote row from database.
+ *   $options         array   Decoded voting_options (each has 'text' and 'description').
+ *   $settings        array   Decoded vote settings.
+ *   $can_vote        bool    Whether the user can currently cast/update a vote.
+ *   $has_voted       bool    Whether the user has already voted.
+ *   $allow_revote    bool    Whether revoting is enabled.
+ *   $show_form       bool    Whether to show the ballot form.
+ *   $user_id         int     Current user ID.
+ *   $previous_ballot mixed   User's previous ballot data (string for singleton, array for ranked, null if not voted).
  *
  * @package WP_Voting_Plugin
  */
@@ -59,9 +60,13 @@ defined( 'ABSPATH' ) || exit;
 				<?php endif; ?>
 
 				<?php foreach ( $options as $i => $opt ) : ?>
-					<label class="wpvp-ballot__option wpvp-ballot__option--radio <?php echo 'disciplinary' === $vote->voting_type ? 'wpvp-ballot__option--disciplinary' : ''; ?>">
+					<?php
+					// Check if this option was previously selected.
+					$is_checked = ( $previous_ballot && $previous_ballot === $opt['text'] );
+					?>
+					<label class="wpvp-ballot__option wpvp-ballot__option--radio <?php echo 'disciplinary' === $vote->voting_type ? 'wpvp-ballot__option--disciplinary' : ''; ?> <?php echo $is_checked ? 'wpvp-ballot__option--selected' : ''; ?>">
 						<input type="radio" name="ballot_choice" value="<?php echo esc_attr( $opt['text'] ); ?>"
-								class="wpvp-ballot__radio" required>
+								class="wpvp-ballot__radio" required <?php checked( $is_checked ); ?>>
 						<span class="wpvp-ballot__option-text"><?php echo esc_html( $opt['text'] ); ?></span>
 						<?php if ( ! empty( $opt['description'] ) ) : ?>
 							<span class="wpvp-ballot__option-desc"><?php echo esc_html( $opt['description'] ); ?></span>
@@ -102,7 +107,33 @@ defined( 'ABSPATH' ) || exit;
 
 				<ul class="wpvp-ballot__sortable" id="wpvp-sortable-<?php echo esc_attr( $vote->voting_type ); ?>"
 					role="listbox" aria-label="<?php esc_attr_e( 'Rank options by dragging', 'wp-voting-plugin' ); ?>">
-					<?php foreach ( $options as $i => $opt ) : ?>
+
+				<?php
+				// Reorder options based on previous ballot if available.
+				$ordered_options = array();
+				if ( $previous_ballot && is_array( $previous_ballot ) ) {
+					// First, add previously ranked items in their ranked order.
+					foreach ( $previous_ballot as $ranked_text ) {
+						foreach ( $options as $opt ) {
+							if ( $opt['text'] === $ranked_text ) {
+								$ordered_options[] = $opt;
+								break;
+							}
+						}
+					}
+					// Then, add any unranked items at the end.
+					foreach ( $options as $opt ) {
+						if ( ! in_array( $opt['text'], $previous_ballot, true ) ) {
+							$ordered_options[] = $opt;
+						}
+					}
+				} else {
+					// No previous ballot, use default order.
+					$ordered_options = $options;
+				}
+
+				foreach ( $ordered_options as $i => $opt ) :
+					?>
 						<li class="wpvp-ballot__sortable-item" data-value="<?php echo esc_attr( $opt['text'] ); ?>"
 							draggable="true" role="option" tabindex="0"
 							aria-label="<?php echo esc_attr( sprintf( __( 'Rank %1$d: %2$s', 'wp-voting-plugin' ), $i + 1, $opt['text'] ) ); ?>">
@@ -117,6 +148,19 @@ defined( 'ABSPATH' ) || exit;
 						</li>
 					<?php endforeach; ?>
 				</ul>
+			</div>
+		<?php endif; ?>
+
+		<?php if ( get_option( 'wpvp_enable_email_notifications', false ) ) : ?>
+			<?php
+			// Check if user has already opted in for this vote.
+			$previously_opted_in = get_user_meta( $user_id, 'wpvp_vote_' . $vote->id . '_notify', true );
+			?>
+			<div class="wpvp-ballot__notification-opt-in" style="margin: 16px 0;">
+				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+					<input type="checkbox" name="send_confirmation" value="1" <?php checked( $previously_opted_in ); ?> style="margin: 0;">
+					<span><?php esc_html_e( 'Send me email confirmation when I vote', 'wp-voting-plugin' ); ?></span>
+				</label>
 			</div>
 		<?php endif; ?>
 
