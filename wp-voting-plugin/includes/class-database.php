@@ -432,8 +432,18 @@ class WPVP_Database {
 		}
 
 		if ( ! empty( $args['status'] ) ) {
-			$where[]  = 'v.voting_stage = %s';
-			$values[] = sanitize_key( $args['status'] );
+			if ( is_array( $args['status'] ) ) {
+				// Multiple statuses: use IN clause.
+				$placeholders = implode( ',', array_fill( 0, count( $args['status'] ), '%s' ) );
+				$where[]      = "v.voting_stage IN ($placeholders)";
+				foreach ( $args['status'] as $status ) {
+					$values[] = sanitize_key( $status );
+				}
+			} else {
+				// Single status.
+				$where[]  = 'v.voting_stage = %s';
+				$values[] = sanitize_key( $args['status'] );
+			}
 		}
 
 		if ( ! empty( $args['type'] ) ) {

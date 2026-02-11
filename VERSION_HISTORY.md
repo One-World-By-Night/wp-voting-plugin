@@ -1,6 +1,97 @@
 # WP Voting Plugin - Version History
 
-## Version 2.2.1 (Current - February 2026)
+## Version 2.4.1 (Current - February 2026)
+
+**Bug fix: Admin notification email setting now saves properly.**
+
+### Changes
+
+- ✅ **Fixed email field saving**: Added `wpvp_admin_notification_email` to settings whitelist and manual save handler
+- ✅ **Settings now persist**: Admin notification email field was displayed but not being saved on form submission
+
+### Bug Fix
+
+The admin notification email setting field was registered and displayed in the UI but was missing from both the `whitelist_options()` method and the `handle_save()` method. This meant the setting would appear to save but would not persist to the database. The field is now properly included in both locations with email sanitization.
+
+---
+
+## Version 2.4.0 (February 2026)
+
+**Comprehensive email notification system with voter opt-in and scheduled reminders.**
+
+### New Features
+
+- ✅ **Email to admin when vote opens**: Sends notification to configurable admin email when vote transitions to 'open' stage
+- ✅ **Voter confirmation emails with opt-in**: Voters can choose to receive email confirmation each time they cast or update their ballot
+  - Per-vote opt-in checkbox on ballot form
+  - User preference saved in user meta
+  - Email includes ballot details and vote closing date
+- ✅ **9am closing day reminder**: Scheduled email sent to admin at 9:00 AM on the day a vote closes
+  - Uses WordPress cron (`wp_schedule_single_event`)
+  - Includes current ballot count
+  - Only sent if vote is still open
+- ✅ **Completion notification with results**: Email sent to admin when vote completes with formatted results summary
+  - Winner/winners displayed
+  - Vote counts and percentages
+  - Total votes cast
+- ✅ **Admin notification email setting**: New settings field to configure admin email address (defaults to site admin email)
+
+### Changes
+
+- Extended `WPVP_Notifications` class with new email methods
+- Added `wpvp_ballot_submitted` action hook for voter confirmation emails
+- Added `wpvp_closing_reminder` action hook for scheduled reminders
+- Updated ballot form template with opt-in checkbox
+- Updated JavaScript to send opt-in preference with ballot submission
+- Added `get_admin_notification_email()` helper method with fallback logic
+- Enhanced completion notification with formatted results display
+
+### Technical Details
+
+All email notifications respect the global `wpvp_enable_email_notifications` setting. The admin notification email defaults to an empty string and falls back to `get_option('admin_email')` if not set or invalid. Voter opt-in preferences are stored per-vote using user meta with key format `wpvp_vote_{vote_id}_notify`.
+
+---
+
+## Version 2.3.2 (February 2026)
+
+**Database enhancement: Classification system and proposal metadata fields.**
+
+### Changes
+
+- ✅ **Classification system**: Added support for categorizing and organizing votes
+- ✅ **Proposal metadata**: Enhanced proposal data storage with additional metadata fields
+- ✅ **Automatic upgrade**: Database schema updated via `upgrade_to_231()` method
+
+### Technical Details
+
+The upgrade adds classification-related fields to support better organization and categorization of votes. This upgrade runs automatically when users update from versions prior to 2.3.2.
+
+---
+
+## Version 2.3.0 (February 2026)
+
+**New default pages for improved vote organization.**
+
+### New Features
+
+- ✅ **Open Votes page**: Dedicated page showing only votes with status "open" (limit: 50)
+- ✅ **Closed Votes page**: Dedicated page showing votes with status "closed", "completed", or "archived" (limit: 50)
+- ✅ **Smart page creation**: Pages are only created if they don't already exist
+
+### Changes
+
+- Added `open-votes` page with shortcode: `[wpvp_votes status="open" limit="50"]`
+- Added `closed-votes` page with shortcode: `[wpvp_votes status="closed,completed,archived" limit="50"]`
+- Updated activator to support comma-separated status values in shortcode
+- Enhanced page creation logic to skip existing pages
+
+### Use Cases
+
+These dedicated pages provide better organization for sites with many active and historical votes. Users can now navigate directly to "Open Votes" to see what's currently active, or "Closed Votes" to review past decisions.
+
+---
+
+## Version 2.2.1 (February 2026)
 
 **UI Enhancement: Rich text editor for Guide description field.**
 

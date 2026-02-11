@@ -121,7 +121,13 @@ class WPVP_Public {
 		);
 
 		if ( 'all' !== $atts['status'] ) {
-			$args['status'] = sanitize_key( $atts['status'] );
+			// Support comma-separated status values (e.g., "closed,completed,archived").
+			if ( strpos( $atts['status'], ',' ) !== false ) {
+				$statuses         = array_map( 'sanitize_key', explode( ',', $atts['status'] ) );
+				$args['status']   = array_filter( $statuses );
+			} else {
+				$args['status'] = sanitize_key( $atts['status'] );
+			}
 		}
 
 		$all_votes = WPVP_Database::get_votes( $args );
@@ -162,12 +168,12 @@ class WPVP_Public {
 
 		$vote_id = absint( $atts['id'] );
 		if ( ! $vote_id ) {
-			return '<p class="wpvp-error">' . esc_html__( 'Invalid vote ID.', 'wp-voting-plugin' ) . '</p>';
+			return '<div class="wpvp-vote-detail"><p class="wpvp-error">' . esc_html__( 'Invalid vote ID.', 'wp-voting-plugin' ) . '</p></div>';
 		}
 
 		$vote = WPVP_Database::get_vote( $vote_id );
 		if ( ! $vote ) {
-			return '<p class="wpvp-error">' . esc_html__( 'Vote not found.', 'wp-voting-plugin' ) . '</p>';
+			return '<div class="wpvp-vote-detail"><p class="wpvp-error">' . esc_html__( 'Vote not found.', 'wp-voting-plugin' ) . '</p></div>';
 		}
 
 		$user_id = get_current_user_id();
@@ -179,6 +185,7 @@ class WPVP_Public {
 
 	/**
 	 * [wpvp_results id="123"] — Results display.
+	 * If no ID provided, shows a list of votes with available results.
 	 */
 	public function shortcode_results( $atts ): string {
 		$this->flag_enqueue();
@@ -195,24 +202,172 @@ class WPVP_Public {
 		);
 
 		$vote_id = absint( $atts['id'] );
+
+		// If no vote ID, show list of votes with available results.
 		if ( ! $vote_id ) {
-			return '<p class="wpvp-error">' . esc_html__( 'Invalid vote ID.', 'wp-voting-plugin' ) . '</p>';
+			return $this->render_results_list();
 		}
 
 		$user_id = get_current_user_id();
 		if ( ! WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) {
-			return '<p class="wpvp-error">' . esc_html__( 'You do not have permission to view these results.', 'wp-voting-plugin' ) . '</p>';
+			return '<div class="wpvp-results-wrap"><p class="wpvp-error">' . esc_html__( 'You do not have permission to view these results.', 'wp-voting-plugin' ) . '</p></div>';
 		}
 
-		$vote    = WPVP_Database::get_vote( $vote_id );
+		$vote = WPVP_Database::get_vote( $vote_id );
+		if ( ! $vote ) {
+			return '<div class="wpvp-results-wrap"><p class="wpvp-error">' . esc_html__( 'Vote not found.', 'wp-voting-plugin' ) . '</p></div>';
+		}
+
 		$results = WPVP_Database::get_results( $vote_id );
 
-		if ( ! $vote || ! $results ) {
-			return '<p class="wpvp-error">' . esc_html__( 'Results are not yet available.', 'wp-voting-plugin' ) . '</p>';
+		// If no saved results, check if we should calculate live results for open votes.
+		if ( ! $results && 'open' === $vote->voting_stage ) {
+			$decoded_settings = json_decode( $vote->settings, true );
+			$settings         = $decoded_settings ? $decoded_settings : array();
+			$show_live        = ! empty( $settings['show_results_before_closing'] );
+
+			if ( $show_live ) {
+				try {
+					// Calculate results on-the-fly WITHOUT saving (to avoid modifying the vote).
+					$algo = WPVP_Processor::get_algorithm( $vote->voting_type );
+
+					if ( ! $algo ) {
+						error_log( sprintf( 'WPVP live results: No algorithm found for voting type "%s" (vote ID: %d)', $vote->voting_type, $vote_id ) );
+					}
+
+					if ( $algo ) {
+						// Load ballots.
+						$ballots = WPVP_Database::get_ballots( $vote_id );
+
+						// Only calculate if there are ballots.
+						if ( ! empty( $ballots ) ) {
+							// Build the flat list of valid option strings.
+							$raw_options = json_decode( $vote->voting_options, true );
+							if ( is_array( $raw_options ) && ! empty( $raw_options ) ) {
+								$options = array_column( $raw_options, 'text' );
+
+								// Algorithm config.
+								$config = array(
+									'num_seats' => max( 1, intval( $vote->number_of_winners ) ),
+								);
+
+								// Run the algorithm (calculation only, no saving).
+								$calculated = $algo->process( $ballots, $options, $config );
+
+								// Create temporary results object with validated data.
+								if ( ! $calculated || ! is_array( $calculated ) ) {
+									error_log( sprintf( 'WPVP live results: Algorithm returned invalid data for vote ID %d', $vote_id ) );
+								}
+
+								if ( $calculated && is_array( $calculated ) ) {
+									// Ensure all expected keys exist and are arrays.
+									$final_results = isset( $calculated['final'] ) && is_array( $calculated['final'] )
+										? $calculated['final']
+										: array();
+									$winner_data   = isset( $calculated['winner'] ) && is_array( $calculated['winner'] )
+										? $calculated['winner']
+										: array();
+									$rounds_data   = isset( $calculated['rounds'] ) && is_array( $calculated['rounds'] )
+										? $calculated['rounds']
+										: array();
+									$statistics    = isset( $calculated['stats'] ) && is_array( $calculated['stats'] )
+										? $calculated['stats']
+										: array();
+
+									$results = (object) array(
+										'vote_id'       => $vote_id,
+										'total_votes'   => count( $ballots ),
+										'total_voters'  => count( $ballots ),
+										'final_results' => $final_results,
+										'winner_data'   => $winner_data,
+										'rounds_data'   => $rounds_data,
+										'statistics'    => $statistics,
+										'calculated_at' => current_time( 'mysql' ),
+										'is_live'       => true,
+									);
+								}
+							}
+						}
+					}
+				} catch ( Exception $e ) {
+					// Log the error but don't crash the page.
+					error_log( 'WPVP live results calculation error: ' . $e->getMessage() );
+				}
+			}
 		}
 
+		if ( ! $results ) {
+			return '<div class="wpvp-results-wrap"><p class="wpvp-error">' . esc_html__( 'Results are not yet available.', 'wp-voting-plugin' ) . '</p></div>';
+		}
+
+		// Wrap template rendering in try-catch to prevent uncaught errors.
+		try {
+			ob_start();
+			include WPVP_PLUGIN_DIR . 'templates/public/results.php';
+			return ob_get_clean();
+		} catch ( Exception $e ) {
+			error_log( 'WPVP results template error: ' . $e->getMessage() );
+			return '<div class="wpvp-results-wrap"><p class="wpvp-error">' . esc_html__( 'An error occurred while displaying results.', 'wp-voting-plugin' ) . '</p></div>';
+		}
+	}
+
+	/**
+	 * Render a list of votes with available results.
+	 */
+	private function render_results_list(): string {
+		$user_id = get_current_user_id();
+
+		// Fetch completed and closed votes.
+		$args = array(
+			'per_page' => 100,
+			'page'     => 1,
+		);
+
+		$all_votes = WPVP_Database::get_votes( $args );
+
+		// Filter to votes with results that user can view.
+		$votes_with_results = array();
+		foreach ( $all_votes as $vote ) {
+			// Include completed, closed, or open votes with "show results before closing" enabled.
+			$is_completed_or_closed = in_array( $vote->voting_stage, array( 'completed', 'closed' ), true );
+
+			$show_open_results = false;
+			if ( 'open' === $vote->voting_stage ) {
+				$settings = json_decode( $vote->settings, true );
+				$settings = $settings ? $settings : array();
+				$show_open_results = ! empty( $settings['show_results_before_closing'] );
+			}
+
+			if ( ! $is_completed_or_closed && ! $show_open_results ) {
+				continue;
+			}
+
+			// Check if user can view this vote.
+			if ( ! WPVP_Permissions::can_view_vote( $user_id, $vote ) ) {
+				continue;
+			}
+
+			// Check if results exist (not required for open votes with "show results before closing").
+			if ( ! $show_open_results ) {
+				$results = WPVP_Database::get_results( $vote->id );
+				if ( ! $results ) {
+					continue;
+				}
+			}
+
+			// Check if user can view results.
+			if ( ! WPVP_Permissions::can_view_results( $user_id, $vote->id ) ) {
+				continue;
+			}
+
+			$votes_with_results[] = $vote;
+		}
+
+		// Render the list.
 		ob_start();
-		include WPVP_PLUGIN_DIR . 'templates/public/results.php';
+		$votes = $votes_with_results; // Template expects $votes variable.
+		$is_results_context = true; // Flag for template to know this is results list context.
+		include WPVP_PLUGIN_DIR . 'templates/public/vote-list.php';
 		return ob_get_clean();
 	}
 

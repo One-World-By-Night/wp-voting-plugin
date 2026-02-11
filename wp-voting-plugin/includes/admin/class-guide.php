@@ -66,12 +66,13 @@ class WPVP_Guide {
 					'view_results' => 'read',
 				)
 			),
-			'vote_types'    => WPVP_Database::get_vote_types(),
-			'vote_stages'   => WPVP_Database::get_vote_stages(),
-			'visibility'    => WPVP_Database::get_visibility_options(),
-			'wp_roles'      => wp_roles()->get_names(),
-			'notifications' => get_option( 'wpvp_enable_email_notifications', false ),
-			'client_id'     => defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp',
+			'vote_types'     => WPVP_Database::get_vote_types(),
+			'vote_stages'    => WPVP_Database::get_vote_stages(),
+			'visibility'     => WPVP_Database::get_visibility_options(),
+			'wp_roles'       => wp_roles()->get_names(),
+			'role_templates' => WPVP_Database::get_role_templates(),
+			'notifications'  => get_option( 'wpvp_enable_email_notifications', false ),
+			'client_id'      => defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp',
 		);
 	}
 
@@ -180,6 +181,12 @@ class WPVP_Guide {
 
 	private function render_creating_a_vote(): void {
 		$form_url = esc_url( admin_url( 'admin.php?page=wpvp-vote-edit' ) );
+
+		// Calculate default dates for wizard: 7 days from now (opening), 14 days from now (closing), both at midnight.
+		$opening_timestamp = strtotime( '+7 days midnight' );
+		$closing_timestamp = strtotime( '+14 days midnight' );
+		$default_opening   = date( 'Y-m-d\TH:i', $opening_timestamp );
+		$default_closing   = date( 'Y-m-d\TH:i', $closing_timestamp );
 		?>
 		<section class="wpvp-guide-section" id="wpvp-guide-creating">
 			<h2><?php esc_html_e( 'Creating a Vote', 'wp-voting-plugin' ); ?></h2>
@@ -412,11 +419,11 @@ class WPVP_Guide {
 							</p>
 							<p>
 								<label for="wpvp_gb_open"><?php esc_html_e( 'Opens (optional)', 'wp-voting-plugin' ); ?></label><br>
-								<input type="datetime-local" id="wpvp_gb_open" name="opening_date" class="regular-text">
+								<input type="datetime-local" id="wpvp_gb_open" name="opening_date" class="regular-text" value="<?php echo esc_attr( $default_opening ); ?>">
 							</p>
 							<p>
 								<label for="wpvp_gb_close"><?php esc_html_e( 'Closes (optional)', 'wp-voting-plugin' ); ?></label><br>
-								<input type="datetime-local" id="wpvp_gb_close" name="closing_date" class="regular-text">
+								<input type="datetime-local" id="wpvp_gb_close" name="closing_date" class="regular-text" value="<?php echo esc_attr( $default_closing ); ?>">
 							</p>
 						</div>
 
@@ -500,6 +507,20 @@ class WPVP_Guide {
 								</select>
 							</p>
 							<p id="wpvp_gb_roles_section" style="display: none;">
+								<?php if ( ! empty( $this->data['role_templates'] ) ) : ?>
+									<div class="wpvp-template-loader" style="margin-bottom: 8px;">
+										<label><?php esc_html_e( 'Load from template:', 'wp-voting-plugin' ); ?></label>
+										<select class="wpvp-template-select" data-target="allowed_roles" style="min-width: 200px;">
+											<option value=""><?php esc_html_e( '-- Select template --', 'wp-voting-plugin' ); ?></option>
+											<?php foreach ( $this->data['role_templates'] as $tmpl ) : ?>
+												<option value="<?php echo esc_attr( $tmpl->id ); ?>">
+													<?php echo esc_html( $tmpl->template_name ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
+									</div>
+								<?php endif; ?>
 								<label for="wpvp_gb_roles"><?php esc_html_e( 'Who Can View (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" id="wpvp_gb_roles" name="allowed_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
 								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
@@ -517,6 +538,20 @@ class WPVP_Guide {
 								</select>
 							</p>
 							<p id="wpvp_gb_voting_roles_section" style="display: none;">
+								<?php if ( ! empty( $this->data['role_templates'] ) ) : ?>
+									<div class="wpvp-template-loader" style="margin-bottom: 8px;">
+										<label><?php esc_html_e( 'Load from template:', 'wp-voting-plugin' ); ?></label>
+										<select class="wpvp-template-select" data-target="voting_roles" style="min-width: 200px;">
+											<option value=""><?php esc_html_e( '-- Select template --', 'wp-voting-plugin' ); ?></option>
+											<?php foreach ( $this->data['role_templates'] as $tmpl ) : ?>
+												<option value="<?php echo esc_attr( $tmpl->id ); ?>">
+													<?php echo esc_html( $tmpl->template_name ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
+									</div>
+								<?php endif; ?>
 								<label for="wpvp_gb_voting_roles"><?php esc_html_e( 'Who Can Vote (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" id="wpvp_gb_voting_roles" name="voting_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
 								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>

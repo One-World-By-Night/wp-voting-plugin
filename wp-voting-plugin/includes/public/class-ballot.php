@@ -114,10 +114,26 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'Failed to save your vote. Please try again.', 'wp-voting-plugin' ) ) );
 		}
 
+		// Save user's notification preference if provided.
+		if ( isset( $_POST['send_confirmation'] ) ) {
+			update_user_meta( $user_id, 'wpvp_vote_' . $vote_id . '_notify', (bool) $_POST['send_confirmation'] );
+		}
+
+		// Fire action for email notifications and other plugins.
+		do_action( 'wpvp_ballot_submitted', $vote_id, $user_id, $ballot_data );
+
+		// Check if revoting is allowed.
+		$decoded_settings = json_decode( $vote->settings, true );
+		$settings         = $decoded_settings ? $decoded_settings : array();
+		$allow_revote     = ! empty( $settings['allow_revote'] );
+
 		wp_send_json_success(
 			array(
-				'message' => $message,
-				'revoted' => $already_voted,
+				'message'      => $message,
+				'revoted'      => $already_voted,
+				'allow_revote' => $allow_revote,
+				'ballot_data'  => $ballot_data,
+				'vote_type'    => $vote->voting_type,
 			)
 		);
 	}
@@ -294,6 +310,23 @@ class WPVP_Ballot {
 		$has_voted    = $user_id ? WPVP_Database::user_has_voted( $user_id, $vote->id ) : false;
 		$allow_revote = ! empty( $settings['allow_revote'] );
 		$show_form    = $can_vote || ( $has_voted && $allow_revote );
+
+		// Get user's previous ballot if they've voted.
+		$previous_ballot = null;
+		if ( $has_voted ) {
+			global $wpdb;
+			$table = $wpdb->prefix . 'wpvp_ballots';
+			$row   = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT ballot_data FROM {$table} WHERE vote_id = %d AND user_id = %d",
+					$vote->id,
+					$user_id
+				)
+			);
+			if ( $row ) {
+				$previous_ballot = json_decode( $row->ballot_data, true );
+			}
+		}
 
 		include WPVP_PLUGIN_DIR . 'templates/public/ballot-form.php';
 	}

@@ -1,4 +1,4 @@
-> **Current Version**: 2.0.1 (Production Release - February 2026)
+> **Current Version**: 2.4.1 (Production Release - February 2026)
 > **Multisite Support**: ✅ Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
