@@ -1,6 +1,30 @@
 # WP Voting Plugin - Version History
 
-## Version 2.4.1 (Current - February 2026)
+## Version 2.4.2 (Current - February 2026)
+
+**Critical security and performance fix for AccessSchema permission checks.**
+
+### Security Fix
+
+- ✅ **Fixed permission bypass vulnerability**: AccessSchema role checks now use cached roles instead of remote API calls
+- ✅ **Eliminated WP_Error truthy evaluation**: Strict type checking prevents error objects from being treated as valid permissions
+- ✅ **Applies to both visibility and voting eligibility**: All restricted access controls now properly enforce role requirements
+
+### Performance Improvements
+
+- ✅ **Removed remote API calls**: Permission checks now use locally cached role data from user meta
+- ✅ **Faster page loads**: Vote list pages load significantly faster by eliminating network latency
+- ✅ **Reduced server load**: No external requests for every permission check
+
+### Technical Details
+
+The `check_accessschema()` method now retrieves user roles from the `wpvp_accessschema_cached_roles` user meta field instead of making remote API calls. A new helper method `user_has_cached_role()` performs local role matching with support for hierarchical child roles. Wildcard pattern expansion continues to work as expected, checking expanded paths against cached roles.
+
+This fix ensures that users without required AccessSchema roles cannot vote on or view restricted votes, while maintaining full compatibility with wildcard patterns and hierarchical role matching.
+
+---
+
+## Version 2.4.1 (February 2026)
 
 **Bug fix: Admin notification email setting now saves properly.**
 
