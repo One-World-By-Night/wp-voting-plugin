@@ -53,7 +53,16 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 		}
 
 		foreach ( $ballots as $ballot ) {
-			$ranking = $ballot['ballot_data'];
+			$ballot_payload = $ballot['ballot_data'];
+
+			// Extract choice from ballot_data (handles both new and legacy formats).
+			if ( is_array( $ballot_payload ) && isset( $ballot_payload['choice'] ) ) {
+				$ranking = $ballot_payload['choice'];
+			} else {
+				// Legacy format - ballot_data is the choice directly.
+				$ranking = $ballot_payload;
+			}
+
 			if ( is_string( $ranking ) ) {
 				$ranking = array( $ranking );
 			}

@@ -48,6 +48,17 @@ defined( 'ABSPATH' ) || exit;
 		<input type="hidden" name="action" value="wpvp_cast_ballot">
 		<input type="hidden" name="nonce" value="<?php echo esc_attr( wp_create_nonce( 'wpvp_public' ) ); ?>">
 
+		<!-- Role Selection (shown only if multiple eligible roles) -->
+		<div class="wpvp-ballot__role-selection" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-left: 4px solid #0073aa;">
+			<label for="wpvp-voting-role-<?php echo esc_attr( $vote->id ); ?>" class="wpvp-ballot__role-label" style="font-weight: 600; display: block; margin-bottom: 8px;">
+				<?php esc_html_e( 'You have multiple eligible roles. Select which role you are voting as:', 'wp-voting-plugin' ); ?>
+			</label>
+			<select name="voting_role" id="wpvp-voting-role-<?php echo esc_attr( $vote->id ); ?>"
+					class="wpvp-ballot__role-select" required style="width: 100%; padding: 8px; font-size: 14px;">
+				<option value=""><?php esc_html_e( '-- Select a role --', 'wp-voting-plugin' ); ?></option>
+			</select>
+		</div>
+
 		<?php if ( 'singleton' === $vote->voting_type || 'disciplinary' === $vote->voting_type ) : ?>
 			<?php /* --- Radio button form (singleton / disciplinary) --- */ ?>
 			<fieldset class="wpvp-ballot__fieldset">
@@ -181,4 +192,49 @@ defined( 'ABSPATH' ) || exit;
 			<span class="wpvp-ballot__status" aria-live="polite"></span>
 		</div>
 	</form>
+
+	<script>
+	(function() {
+		const voteId = <?php echo absint( $vote->id ); ?>;
+		const form = document.getElementById('wpvp-ballot-form-' + voteId);
+		if (!form) return;
+
+		const roleSelection = form.querySelector('.wpvp-ballot__role-selection');
+		const roleSelect = form.querySelector('.wpvp-ballot__role-select');
+
+		// Fetch eligible roles on page load
+		const formData = new FormData();
+		formData.append('action', 'wpvp_get_eligible_roles');
+		formData.append('vote_id', voteId);
+		formData.append('nonce', '<?php echo esc_js( wp_create_nonce( 'wpvp_public' ) ); ?>');
+
+		fetch(wpvp_public.ajax_url, {
+			method: 'POST',
+			body: formData
+		})
+		.then(response => response.json())
+		.then(data => {
+			if (data.success && data.data.requires_selection) {
+				// User has multiple roles - show selection
+				roleSelection.style.display = 'block';
+
+				// Populate dropdown
+				data.data.eligible_roles.forEach(role => {
+					const option = document.createElement('option');
+					option.value = role;
+					option.textContent = role;
+					roleSelect.appendChild(option);
+				});
+			} else if (data.success && data.data.eligible_roles && data.data.eligible_roles.length === 1) {
+				// Single role - add it as hidden input
+				const hiddenRole = document.createElement('input');
+				hiddenRole.type = 'hidden';
+				hiddenRole.name = 'voting_role';
+				hiddenRole.value = data.data.eligible_roles[0];
+				form.appendChild(hiddenRole);
+			}
+		})
+		.catch(err => console.error('Failed to fetch eligible roles:', err));
+	})();
+	</script>
 </div>

@@ -84,6 +84,8 @@ class WPVP_Results_Display {
 					</ol>
 				</details>
 			<?php endif; ?>
+
+		<?php self::render_voter_list( $vote ); ?>
 		</div>
 		<?php
 	}
@@ -137,6 +139,7 @@ class WPVP_Results_Display {
 	private static function render_singleton( array $final, object $results ): void {
 		$counts      = $final['vote_counts'] ?? array();
 		$percentages = $final['percentages'] ?? array();
+		$is_tie      = ! empty( $final['tie'] );
 
 		if ( empty( $counts ) ) {
 			return;
@@ -159,12 +162,13 @@ class WPVP_Results_Display {
 					<?php
 					// Highlight winner (option with max count).
 					$is_winner = ( $count === $max_count && $max_count > 0 );
+					$badge_label = $is_tie && $is_winner ? __( 'Tied', 'wp-voting-plugin' ) : __( 'Winner', 'wp-voting-plugin' );
 					?>
 					<tr<?php echo $is_winner ? ' class="wpvp-results__row--winner"' : ''; ?>>
 						<td>
 							<?php echo esc_html( $option ); ?>
 							<?php if ( $is_winner ) : ?>
-								<span class="wpvp-results__winner-badge"><?php esc_html_e( 'Winner', 'wp-voting-plugin' ); ?></span>
+								<span class="wpvp-results__winner-badge"><?php echo esc_html( $badge_label ); ?></span>
 							<?php endif; ?>
 						</td>
 						<td><strong><?php echo esc_html( $count ); ?></strong></td>
@@ -358,13 +362,22 @@ class WPVP_Results_Display {
 					</p>
 				</div>
 
-				<?php if ( ! empty( $objectors ) && current_user_can( 'manage_options' ) ) : ?>
-					<h4><?php esc_html_e( 'Objectors', 'wp-voting-plugin' ); ?></h4>
-					<ul class="wpvp-results__objectors">
-						<?php foreach ( $objectors as $name ) : ?>
-							<li><?php echo esc_html( $name ); ?></li>
-						<?php endforeach; ?>
-					</ul>
+				<?php
+				// Check if vote has anonymous voting enabled.
+				if ( ! empty( $objectors ) && current_user_can( 'manage_options' ) ) :
+					$vote_obj         = WPVP_Database::get_vote( $results->vote_id );
+					$decoded_settings = json_decode( $vote_obj->settings ?? '{}', true );
+					$anonymous_voting = ! empty( $decoded_settings['anonymous_voting'] );
+
+					if ( ! $anonymous_voting ) :
+						?>
+						<h4><?php esc_html_e( 'Objectors', 'wp-voting-plugin' ); ?></h4>
+						<ul class="wpvp-results__objectors">
+							<?php foreach ( $objectors as $name ) : ?>
+								<li><?php echo esc_html( $name ); ?></li>
+							<?php endforeach; ?>
+						</ul>
+					<?php endif; ?>
 				<?php endif; ?>
 			<?php endif; ?>
 		</div>
@@ -460,6 +473,102 @@ class WPVP_Results_Display {
 			$value = "\t" . $value;
 		}
 		return $value;
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Voter list for non-anonymous votes.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Render detailed voter list for non-anonymous votes.
+	 * Shows: Display Name, Role, Vote Choice, Vote Date (sorted oldest first).
+	 */
+	private static function render_voter_list( object $vote ): void {
+		// Check if vote is anonymous.
+		$decoded_settings = json_decode( $vote->settings ?? '{}', true );
+		$anonymous_voting = ! empty( $decoded_settings['anonymous_voting'] );
+
+		// Only show voter list if NOT anonymous AND user can manage options.
+		if ( $anonymous_voting || ! current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		// Get all ballots for this vote.
+		global $wpdb;
+		$table   = $wpdb->prefix . 'wpvp_ballots';
+		$ballots = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT user_id, ballot_data, voted_at FROM {$table} WHERE vote_id = %d ORDER BY voted_at ASC",
+				$vote->id
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $ballots ) ) {
+			return;
+		}
+
+		?>
+		<div class="wpvp-results__voters">
+			<h3><?php esc_html_e( 'Voter List', 'wp-voting-plugin' ); ?></h3>
+			<table class="wpvp-voters-table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Voter', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Role', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Date', 'wp-voting-plugin' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( $ballots as $ballot ) : ?>
+						<?php
+						$ballot_data = json_decode( $ballot['ballot_data'], true );
+						if ( ! is_array( $ballot_data ) ) {
+							$ballot_data = array( 'choice' => $ballot_data );
+						}
+
+						// Extract data (new format or legacy).
+						$choice       = $ballot_data['choice'] ?? $ballot_data;
+						$voting_role  = $ballot_data['voting_role'] ?? '';
+						$stored_name  = $ballot_data['display_name'] ?? '';
+						$stored_login = $ballot_data['username'] ?? '';
+
+						// Try to get current user data.
+						$user_id      = (int) $ballot['user_id'];
+						$current_user = $user_id ? get_userdata( $user_id ) : null;
+
+						if ( $current_user ) {
+							$display_name = $current_user->display_name;
+						} else {
+							$display_name = $stored_name ?: ( 'User #' . $user_id );
+						}
+
+						// Format vote choice for display.
+						if ( is_array( $choice ) ) {
+							$choice_display = implode( ' > ', array_map( 'esc_html', $choice ) );
+						} else {
+							$choice_display = esc_html( $choice );
+						}
+
+						// Format date.
+						$vote_date = wp_date(
+							get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
+							strtotime( $ballot['voted_at'] )
+						);
+						?>
+						<tr>
+							<td><?php echo esc_html( $display_name ); ?></td>
+							<td><?php echo esc_html( $voting_role ); ?></td>
+							<td><?php echo $choice_display; // Already escaped above. ?></td>
+							<td><?php echo esc_html( $vote_date ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+		</div>
+		<?php
 	}
 }
 

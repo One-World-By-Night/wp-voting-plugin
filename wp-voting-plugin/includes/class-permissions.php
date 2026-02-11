@@ -174,6 +174,34 @@ class WPVP_Permissions {
 		return WPVP_Database::user_has_voted( $user_id, $vote_id );
 	}
 
+	/**
+	 * Get all eligible roles for a user to vote on this vote.
+	 * Returns array of role paths/names that grant voting access.
+	 *
+	 * @param int    $user_id User ID.
+	 * @param object $vote    Vote object.
+	 * @return array Array of role paths. Empty if no eligible roles.
+	 */
+	public static function get_eligible_voting_roles( int $user_id, object $vote ): array {
+		// Public voting = no roles needed.
+		if ( 'public' === $vote->voting_eligibility ) {
+			return array( 'Public' );
+		}
+
+		// Private = any logged-in user (no specific role).
+		if ( 'private' === $vote->voting_eligibility ) {
+			return array( 'Logged-in User' );
+		}
+
+		// Restricted: check voting_roles.
+		$voting_roles = json_decode( $vote->voting_roles, true );
+		if ( empty( $voting_roles ) ) {
+			return array();
+		}
+
+		return self::get_matching_roles( $user_id, $voting_roles );
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Internal: priority-chain access checks (view vs vote).
@@ -310,12 +338,11 @@ class WPVP_Permissions {
 				continue;
 			}
 
-			// Wildcard pattern — expand against global cached roles.
+			// Wildcard pattern - match directly against user's cached roles.
 			if ( false !== strpos( $role_path, '*' ) ) {
-				$concrete_paths = self::expand_wildcard_pattern( $role_path );
-				// Check if user has any of the expanded paths.
-				foreach ( $concrete_paths as $concrete ) {
-					if ( self::user_has_cached_role( $user_roles, $concrete, true ) ) {
+				$regex = self::wildcard_to_regex( $role_path );
+				foreach ( $user_roles as $user_role ) {
+					if ( preg_match( $regex, $user_role ) ) {
 						return true;
 					}
 				}
@@ -356,6 +383,129 @@ class WPVP_Permissions {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Get all roles from the allowed list that the user has.
+	 * Similar to check_roles() but returns matched roles instead of boolean.
+	 *
+	 * @param int   $user_id User ID.
+	 * @param array $roles   Allowed role paths.
+	 * @return array Matched role paths.
+	 */
+	private static function get_matching_roles( int $user_id, array $roles ): array {
+		if ( empty( $roles ) ) {
+			return array();
+		}
+
+		// Try AccessSchema first.
+		$asc_matches = self::get_accessschema_matches( $user_id, $roles );
+		if ( null !== $asc_matches ) {
+			// AccessSchema is available - return only AccessSchema matches.
+			return $asc_matches;
+		}
+
+		// Fallback: WordPress roles (only if AccessSchema unavailable).
+		return self::get_wp_role_matches( $user_id, $roles );
+	}
+
+	/**
+	 * Get AccessSchema roles that match for this user.
+	 *
+	 * @param int   $user_id    User ID.
+	 * @param array $role_paths Allowed role paths.
+	 * @return array|null Array of matched role paths, or null if AccessSchema unavailable.
+	 */
+	private static function get_accessschema_matches( int $user_id, array $role_paths ): ?array {
+		$mode = get_option( 'wpvp_accessschema_mode', 'none' );
+		if ( 'none' === $mode ) {
+			return null;
+		}
+
+		$user = get_userdata( $user_id );
+		if ( ! $user || empty( $user->user_email ) ) {
+			return null;
+		}
+
+		$client_id  = defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp';
+		$user_roles = get_user_meta( $user_id, "{$client_id}_accessschema_cached_roles", true );
+
+		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
+			return null;
+		}
+
+		$matches = array();
+
+		foreach ( $role_paths as $role_path ) {
+			$role_path = sanitize_text_field( $role_path );
+			if ( empty( $role_path ) ) {
+				continue;
+			}
+
+			// Wildcard pattern - match directly against user's cached roles.
+			if ( false !== strpos( $role_path, '*' ) ) {
+				$regex = self::wildcard_to_regex( $role_path );
+				foreach ( $user_roles as $user_role ) {
+					if ( preg_match( $regex, $user_role ) ) {
+						$matches[] = $user_role;
+					}
+				}
+				continue;
+			}
+
+			// Literal path.
+			if ( self::user_has_cached_role( $user_roles, $role_path, true ) ) {
+				// Find the exact role user has (may be child role).
+				if ( in_array( $role_path, $user_roles, true ) ) {
+					$matches[] = $role_path;
+				} else {
+					// User has child role.
+					$target_prefix = $role_path . '/';
+					foreach ( $user_roles as $user_role ) {
+						if ( 0 === strpos( $user_role, $target_prefix ) ) {
+							$matches[] = $user_role;
+						}
+					}
+				}
+			}
+		}
+
+		return $matches;
+	}
+
+	/**
+	 * Get WordPress roles that match for this user.
+	 *
+	 * @param int   $user_id User ID.
+	 * @param array $roles   Allowed roles/capabilities.
+	 * @return array Matched role names.
+	 */
+	private static function get_wp_role_matches( int $user_id, array $roles ): array {
+		$user = get_userdata( $user_id );
+		if ( ! $user ) {
+			return array();
+		}
+
+		$matches = array();
+
+		foreach ( $roles as $role_or_cap ) {
+			$role_or_cap = sanitize_text_field( $role_or_cap );
+
+			// Skip wildcard patterns.
+			if ( false !== strpos( $role_or_cap, '*' ) ) {
+				continue;
+			}
+
+			// Check as WP role.
+			if ( in_array( $role_or_cap, $user->roles, true ) ) {
+				$matches[] = ucfirst( $role_or_cap );
+			} elseif ( user_can( $user_id, $role_or_cap ) ) {
+				// Check as WP capability.
+				$matches[] = ucfirst( $role_or_cap );
+			}
+		}
+
+		return $matches;
 	}
 
 	/**

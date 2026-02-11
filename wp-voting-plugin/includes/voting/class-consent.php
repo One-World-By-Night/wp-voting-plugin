@@ -37,15 +37,54 @@ class WPVP_Consent implements WPVP_Voting_Algorithm {
 		$invalid   = 0;
 
 		foreach ( $ballots as $ballot ) {
-			$choice = $ballot['ballot_data'];
+			$ballot_payload = $ballot['ballot_data'];
+
+			// Handle new structure: { choice: ..., voting_role: ..., display_name: ..., username: ... }
+			// and legacy structure: direct choice value.
+			if ( is_array( $ballot_payload ) && isset( $ballot_payload['choice'] ) ) {
+				$choice       = $ballot_payload['choice'];
+				$voting_role  = $ballot_payload['voting_role'] ?? null;
+				$stored_name  = $ballot_payload['display_name'] ?? null;
+				$stored_login = $ballot_payload['username'] ?? null;
+			} else {
+				// Legacy ballot format.
+				$choice       = $ballot_payload;
+				$voting_role  = null;
+				$stored_name  = null;
+				$stored_login = null;
+			}
+
 			if ( is_array( $choice ) ) {
 				$choice = $choice[0] ?? null;
 			}
 
 			// Any ballot is treated as an objection regardless of content.
 			if ( ! empty( $choice ) ) {
-				$voter_name  = $ballot['display_name'] ?? $ballot['voter_name'] ?? ( 'User #' . ( $ballot['user_id'] ?? '?' ) );
-				$objectors[] = $voter_name;
+				$user_id = $ballot['user_id'] ?? 0;
+
+				// Try to get current user data if user still exists.
+				$current_user = $user_id ? get_userdata( $user_id ) : null;
+
+				if ( $current_user ) {
+					// User exists - use current data.
+					$display_name = $current_user->display_name;
+					$user_login   = $current_user->user_login;
+				} else {
+					// User doesn't exist - fall back to stored data or database fields.
+					$display_name = $stored_name ?? $ballot['display_name'] ?? $ballot['voter_name'] ?? ( 'User #' . $user_id );
+					$user_login   = $stored_login ?? $ballot['user_login'] ?? '';
+				}
+
+				// Format: "Display Name (username) role-path".
+				if ( $voting_role && $user_login ) {
+					$formatted_name = sprintf( '%s (%s) %s', $display_name, $user_login, $voting_role );
+				} elseif ( $user_login ) {
+					$formatted_name = sprintf( '%s (%s)', $display_name, $user_login );
+				} else {
+					$formatted_name = $display_name;
+				}
+
+				$objectors[] = $formatted_name;
 			} else {
 				++$invalid;
 			}
