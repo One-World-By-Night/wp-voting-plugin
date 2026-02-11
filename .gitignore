@@ -50,3 +50,6 @@ wp-config.php
 # MacOS
 .DS_Store
 .ds_store
+
+# Development utilities
+/dev/
