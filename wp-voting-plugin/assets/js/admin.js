@@ -75,7 +75,7 @@
     /**
      * Handle voting type change.
      */
-    function onTypeChange() {
+    function onTypeChange(isUserAction) {
         var type = $typeSelect.val();
         var typeData = wpvp.vote_types[type] || {};
 
@@ -108,8 +108,8 @@
             $('#wpvp-majority-threshold-section').show();
         }
 
-        // Disciplinary: auto-populate punishment levels.
-        if (type === 'disciplinary') {
+        // Disciplinary: auto-populate punishment levels only when user actively switches to it.
+        if (type === 'disciplinary' && isUserAction) {
             autoPopulateDisciplinary();
         }
 
@@ -171,10 +171,12 @@
     if ($form.length) {
         $('#wpvp-add-option').on('click', addOptionRow);
         $optList.on('click', '.wpvp-remove-option', removeOptionRow);
-        $typeSelect.on('change', onTypeChange);
+        $typeSelect.on('change', function() {
+            onTypeChange(true); // User-initiated change
+        });
 
-        // Trigger initial state.
-        onTypeChange();
+        // Trigger initial state (not a user action).
+        onTypeChange(false);
 
         // Visibility → show/hide roles section.
         $('#visibility').on('change', function () {
