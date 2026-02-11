@@ -372,6 +372,10 @@ class WPVP_Ballot {
 			);
 			if ( $row ) {
 				$previous_ballot = json_decode( $row->ballot_data, true );
+				// Unwrap new ballot format: {choice: ..., voting_role: ...} → just the choice.
+				if ( is_array( $previous_ballot ) && isset( $previous_ballot['choice'] ) ) {
+					$previous_ballot = $previous_ballot['choice'];
+				}
 			}
 		}
 
