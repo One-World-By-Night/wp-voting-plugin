@@ -52,8 +52,9 @@
         }
 
         // Confirm submission.
+        var allowRevote = $ballot.data('allow-revote') === 1;
         var isRevote = $ballot.find('.wpvp-notice--info').length > 0;
-        var confirmMsg = isRevote ? wpvp_public.i18n.confirm_revote : wpvp_public.i18n.confirm_submit;
+        var confirmMsg = (isRevote || allowRevote) ? wpvp_public.i18n.confirm_revote : wpvp_public.i18n.confirm_submit;
         if (!confirm(confirmMsg)) {
             return;
         }
