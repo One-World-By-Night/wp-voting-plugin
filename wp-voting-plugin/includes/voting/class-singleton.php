@@ -30,9 +30,17 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 
 		// Count votes.
 		foreach ( $ballots as $ballot ) {
-			$choice = $ballot['ballot_data'];
+			$ballot_payload = $ballot['ballot_data'];
 
-			// ballot_data may be a string or the first element of an array.
+			// Extract choice from ballot_data (handles both new and legacy formats).
+			if ( is_array( $ballot_payload ) && isset( $ballot_payload['choice'] ) ) {
+				$choice = $ballot_payload['choice'];
+			} else {
+				// Legacy format - ballot_data is the choice directly.
+				$choice = $ballot_payload;
+			}
+
+			// Choice may be a string or the first element of an array.
 			if ( is_array( $choice ) ) {
 				$choice = $choice[0] ?? null;
 			}

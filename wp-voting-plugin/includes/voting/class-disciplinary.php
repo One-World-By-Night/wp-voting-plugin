@@ -64,7 +64,16 @@ class WPVP_Disciplinary implements WPVP_Voting_Algorithm {
 		$invalid    = 0;
 
 		foreach ( $ballots as $ballot ) {
-			$choice = $ballot['ballot_data'];
+			$ballot_payload = $ballot['ballot_data'];
+
+			// Extract choice from ballot_data (handles both new and legacy formats).
+			if ( is_array( $ballot_payload ) && isset( $ballot_payload['choice'] ) ) {
+				$choice = $ballot_payload['choice'];
+			} else {
+				// Legacy format - ballot_data is the choice directly.
+				$choice = $ballot_payload;
+			}
+
 			if ( is_array( $choice ) ) {
 				$choice = $choice[0] ?? null;
 			}

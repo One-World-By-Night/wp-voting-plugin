@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 2.0.0
+Stable tag: 2.5.6
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,49 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 2.5.6 =
+* Improved tie display: options marked as "Tied" instead of "Winner" when there's a tie in singleton votes
+* Added tied_candidates to live results winner_data for proper tie banner display
+* Moved live results to display AFTER ballot form, allowing users to vote before seeing current standings
+
+= 2.5.5 =
+* Fixed live results display: result data now stored as arrays instead of JSON strings in synthetic results object
+* Live results now properly render vote totals and winner information on open votes
+
+= 2.5.4 =
+* Fixed error handling for live results to catch all PHP errors and throwables, not just exceptions
+* Prevents fatal errors from breaking vote pages when calculating live results
+
+= 2.5.3 =
+* Fixed live results calculation for open votes
+* Improved on-the-fly result processing without database saves
+
+= 2.5.2 =
+* Show live/current vote totals on open votes before casting ballot
+* Real-time results visibility for voters to see current standings
+
+= 2.5.1 =
+* Enhanced non-anonymous vote results to show detailed voter list with display name, role, vote choice, and vote date
+* Allow consent agenda votes to have simultaneous open/close times for instant passage
+* Fixed wildcard role matching to work with user's personal cached roles
+* Fixed role selection to only show roles user actually has
+
+= 2.5.0 =
+* Added role-based voting attribution: users with multiple eligible roles must select which role they're voting as
+* Ballot data now stores voting_role, display_name, and username for accountability
+* Consent voting results display voter attribution as "Display Name (username) role-path"
+* Data preserved even if user or role is deleted later
+* Maintains backward compatibility with existing ballots
+
+= 2.4.3 =
+* Fixed anonymous ID handling in disciplinary voting
+* Fixed consent vote result display issues
+* Updated vote count logic for consistency
+
+= 2.4.2 =
+* Fixed critical permission bypass bug in restricted voting
+* Improved role matching with AccessSchema cached roles
 
 = 2.0.0 =
 * Complete rebuild of the voting plugin.

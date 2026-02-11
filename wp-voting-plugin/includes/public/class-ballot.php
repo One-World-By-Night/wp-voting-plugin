@@ -11,6 +11,7 @@ class WPVP_Ballot {
 	public function __construct() {
 		add_action( 'wp_ajax_wpvp_cast_ballot', array( $this, 'ajax_cast_ballot' ) );
 		add_action( 'wp_ajax_nopriv_wpvp_cast_ballot', array( $this, 'ajax_no_auth' ) );
+		add_action( 'wp_ajax_wpvp_get_eligible_roles', array( $this, 'ajax_get_eligible_roles' ) );
 	}
 
 	/**
@@ -75,6 +76,43 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'You do not have permission to vote.', 'wp-voting-plugin' ) ) );
 		}
 
+		// 6.5. Get eligible roles and validate role selection.
+		$eligible_roles = WPVP_Permissions::get_eligible_voting_roles( $user_id, $vote );
+
+		if ( empty( $eligible_roles ) ) {
+			wp_send_json_error( array( 'message' => __( 'You do not have any eligible roles to vote.', 'wp-voting-plugin' ) ) );
+		}
+
+		$selected_role = null;
+
+		// If user has multiple eligible roles, they must select one.
+		if ( count( $eligible_roles ) > 1 ) {
+			$selected_role = isset( $_POST['voting_role'] ) ? sanitize_text_field( wp_unslash( $_POST['voting_role'] ) ) : '';
+
+			if ( empty( $selected_role ) ) {
+				wp_send_json_error(
+					array(
+						'message'                 => __( 'You have multiple eligible roles. Please select which role you are voting as.', 'wp-voting-plugin' ),
+						'requires_role_selection' => true,
+						'eligible_roles'          => $eligible_roles,
+					)
+				);
+			}
+
+			// Validate selected role is in eligible roles.
+			if ( ! in_array( $selected_role, $eligible_roles, true ) ) {
+				wp_send_json_error( array( 'message' => __( 'Invalid role selected.', 'wp-voting-plugin' ) ) );
+			}
+		} else {
+			// Single role - use it automatically.
+			$selected_role = $eligible_roles[0];
+		}
+
+		// Get user data for preservation.
+		$user         = get_userdata( $user_id );
+		$display_name = $user ? $user->display_name : '';
+		$username     = $user ? $user->user_login : '';
+
 		// 7. Parse ballot data from POST.
 		$raw_ballot = isset( $_POST['ballot_data'] ) ? wp_unslash( $_POST['ballot_data'] ) : '';
 		if ( is_string( $raw_ballot ) ) {
@@ -99,14 +137,22 @@ class WPVP_Ballot {
 		// Use the sanitized data from validation.
 		$ballot_data = $validation['sanitized'];
 
+		// 8.5. Restructure ballot data to include role and user info.
+		$ballot_payload = array(
+			'choice'       => $ballot_data,
+			'voting_role'  => $selected_role,
+			'display_name' => $display_name,
+			'username'     => $username,
+		);
+
 		// 9. Save or update.
 		$already_voted = WPVP_Database::user_has_voted( $user_id, $vote_id );
 
 		if ( $already_voted ) {
-			$result  = WPVP_Database::update_ballot( $vote_id, $user_id, $ballot_data );
+			$result  = WPVP_Database::update_ballot( $vote_id, $user_id, $ballot_payload );
 			$message = __( 'Your vote has been updated.', 'wp-voting-plugin' );
 		} else {
-			$result  = WPVP_Database::cast_ballot( $vote_id, $user_id, $ballot_data );
+			$result  = WPVP_Database::cast_ballot( $vote_id, $user_id, $ballot_payload );
 			$message = __( 'Your vote has been recorded.', 'wp-voting-plugin' );
 		}
 
@@ -120,7 +166,7 @@ class WPVP_Ballot {
 		}
 
 		// Fire action for email notifications and other plugins.
-		do_action( 'wpvp_ballot_submitted', $vote_id, $user_id, $ballot_data );
+		do_action( 'wpvp_ballot_submitted', $vote_id, $user_id, $ballot_payload );
 
 		// Check if revoting is allowed.
 		$decoded_settings = json_decode( $vote->settings, true );
@@ -133,6 +179,7 @@ class WPVP_Ballot {
 				'revoted'      => $already_voted,
 				'allow_revote' => $allow_revote,
 				'ballot_data'  => $ballot_data,
+				'voting_role'  => $selected_role,
 				'vote_type'    => $vote->voting_type,
 			)
 		);
@@ -329,6 +376,37 @@ class WPVP_Ballot {
 		}
 
 		include WPVP_PLUGIN_DIR . 'templates/public/ballot-form.php';
+	}
+
+	/**
+	 * AJAX endpoint to fetch eligible roles for role selection UI.
+	 */
+	public function ajax_get_eligible_roles(): void {
+		check_ajax_referer( 'wpvp_public', 'nonce' );
+
+		$user_id = get_current_user_id();
+		if ( ! $user_id ) {
+			wp_send_json_error( array( 'message' => __( 'You must be logged in.', 'wp-voting-plugin' ) ) );
+		}
+
+		$vote_id = isset( $_POST['vote_id'] ) ? absint( $_POST['vote_id'] ) : 0;
+		if ( ! $vote_id ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid vote.', 'wp-voting-plugin' ) ) );
+		}
+
+		$vote = WPVP_Database::get_vote( $vote_id );
+		if ( ! $vote ) {
+			wp_send_json_error( array( 'message' => __( 'Vote not found.', 'wp-voting-plugin' ) ) );
+		}
+
+		$eligible_roles = WPVP_Permissions::get_eligible_voting_roles( $user_id, $vote );
+
+		wp_send_json_success(
+			array(
+				'eligible_roles'     => $eligible_roles,
+				'requires_selection' => count( $eligible_roles ) > 1,
+			)
+		);
 	}
 }
 

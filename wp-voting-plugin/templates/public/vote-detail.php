@@ -87,6 +87,72 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 	?>
 
 	<?php
+	// Show current results for open votes (after ballot form).
+	if ( 'open' === $vote->voting_stage && $user_id ) :
+		$current_results = null;
+
+		try {
+			// Try to get existing results, or calculate on-the-fly.
+			$current_results = WPVP_Database::get_results( $vote_id );
+
+			// If no results exist, calculate live results.
+			if ( ! $current_results ) {
+				$ballots = WPVP_Database::get_ballots( $vote_id );
+				if ( ! empty( $ballots ) ) {
+					$algo = WPVP_Processor::get_algorithm( $vote->voting_type );
+					if ( $algo ) {
+						// Build options list.
+						$raw_options = json_decode( $vote->voting_options, true );
+						$options     = is_array( $raw_options ) ? array_column( $raw_options, 'text' ) : array();
+						$config      = array( 'num_seats' => max( 1, intval( $vote->number_of_winners ) ) );
+
+						// Run algorithm.
+						$calculated = $algo->process( $ballots, $options, $config );
+
+						if ( $calculated && is_array( $calculated ) ) {
+							// Create a temporary results object.
+							// Note: These are arrays, not JSON strings, because get_results()
+							// normally decodes them from the database.
+							$current_results = (object) array(
+								'vote_id'        => $vote_id,
+								'winner_data'    => array(
+									'winner'          => $calculated['winner'] ?? '',
+									'tie'             => $calculated['tie'] ?? false,
+									'tied_candidates' => $calculated['tied_candidates'] ?? array(),
+								),
+								'final_results'  => $calculated,
+								'rounds_data'    => $calculated['rounds'] ?? array(),
+								'statistics'     => $calculated,
+								'total_votes'    => $calculated['total_votes'] ?? 0,
+								'calculated_at'  => gmdate( 'Y-m-d H:i:s' ),
+							);
+						}
+					}
+				}
+			}
+
+			if ( $current_results ) :
+				?>
+				<div class="wpvp-vote-detail__current-results">
+					<h3><?php esc_html_e( 'Current Results', 'wp-voting-plugin' ); ?></h3>
+					<p class="wpvp-notice wpvp-notice--info" style="font-size: 0.9em; margin-bottom: 1em;">
+						<?php esc_html_e( 'These are live results. They will update as more votes are cast.', 'wp-voting-plugin' ); ?>
+					</p>
+					<?php WPVP_Results_Display::render( $vote, $current_results ); ?>
+				</div>
+				<?php
+			endif;
+		} catch ( Throwable $e ) {
+			// Silently fail - just don't show results if there's an error.
+			// Optionally log for admins:
+			if ( current_user_can( 'manage_options' ) ) {
+				echo '<!-- Live results error: ' . esc_html( $e->getMessage() ) . ' -->';
+			}
+		}
+	endif;
+	?>
+
+	<?php
 	// Results section.
 	$can_view_results = $user_id ? WPVP_Permissions::can_view_results( $user_id, $vote_id ) : false;
 	if ( $can_view_results ) :

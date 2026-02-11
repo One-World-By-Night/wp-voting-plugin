@@ -193,8 +193,18 @@ class WPVP_Vote_Editor {
 		}
 
 		if ( ! empty( $data['opening_date'] ) && ! empty( $data['closing_date'] ) ) {
-			if ( strtotime( $data['closing_date'] ) <= strtotime( $data['opening_date'] ) ) {
-				$errors[] = __( 'Closing date must be after opening date.', 'wp-voting-plugin' );
+			$opening_time = strtotime( $data['opening_date'] );
+			$closing_time = strtotime( $data['closing_date'] );
+
+			// For consent votes, allow opening and closing times to be the same (instant pass).
+			if ( 'consent' === $data['voting_type'] ) {
+				if ( $closing_time < $opening_time ) {
+					$errors[] = __( 'Closing date cannot be before opening date.', 'wp-voting-plugin' );
+				}
+			} else {
+				if ( $closing_time <= $opening_time ) {
+					$errors[] = __( 'Closing date must be after opening date.', 'wp-voting-plugin' );
+				}
 			}
 		}
 

@@ -66,6 +66,9 @@
         // Get notification opt-in preference.
         var sendConfirmation = $form.find('input[name="send_confirmation"]').is(':checked') ? '1' : '0';
 
+        // Get selected voting role (if any).
+        var votingRole = $form.find('select[name="voting_role"]').val() || '';
+
         $.ajax({
             url:  wpvp_public.ajax_url,
             type: 'POST',
@@ -74,6 +77,7 @@
                 nonce:             wpvp_public.nonce,
                 vote_id:           voteId,
                 ballot_data:       JSON.stringify(ballotData),
+                voting_role:       votingRole,
                 send_confirmation: sendConfirmation
             },
             dataType: 'json'
