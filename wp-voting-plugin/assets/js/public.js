@@ -66,8 +66,8 @@
         // Get notification opt-in preference.
         var sendConfirmation = $form.find('input[name="send_confirmation"]').is(':checked') ? '1' : '0';
 
-        // Get selected voting role (if any).
-        var votingRole = $form.find('select[name="voting_role"]').val() || '';
+        // Get selected voting role (from dropdown or hidden input).
+        var votingRole = $form.find('select[name="voting_role"]').val() || $form.find('input[name="voting_role"]').val() || '';
 
         $.ajax({
             url:  wpvp_public.ajax_url,

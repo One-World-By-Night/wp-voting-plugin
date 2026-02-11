@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 2.5.6
+Stable tag: 2.5.7
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,11 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 2.5.7 =
+* Fixed ballot submission failing silently on RCV, STV, and Condorcet votes for single-role users
+* Role selection dropdown now only requires input when visible (multiple eligible roles)
+* Fixed voting role not being sent for single-role users during ballot submission
 
 = 2.5.6 =
 * Improved tie display: options marked as "Tied" instead of "Winner" when there's a tie in singleton votes

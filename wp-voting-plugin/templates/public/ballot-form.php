@@ -54,7 +54,7 @@ defined( 'ABSPATH' ) || exit;
 				<?php esc_html_e( 'You have multiple eligible roles. Select which role you are voting as:', 'wp-voting-plugin' ); ?>
 			</label>
 			<select name="voting_role" id="wpvp-voting-role-<?php echo esc_attr( $vote->id ); ?>"
-					class="wpvp-ballot__role-select" required style="width: 100%; padding: 8px; font-size: 14px;">
+					class="wpvp-ballot__role-select" style="width: 100%; padding: 8px; font-size: 14px;">
 				<option value=""><?php esc_html_e( '-- Select a role --', 'wp-voting-plugin' ); ?></option>
 			</select>
 		</div>
@@ -215,8 +215,9 @@ defined( 'ABSPATH' ) || exit;
 		.then(response => response.json())
 		.then(data => {
 			if (data.success && data.data.requires_selection) {
-				// User has multiple roles - show selection
+				// User has multiple roles - show selection and make required
 				roleSelection.style.display = 'block';
+				roleSelect.setAttribute('required', 'required');
 
 				// Populate dropdown
 				data.data.eligible_roles.forEach(role => {
