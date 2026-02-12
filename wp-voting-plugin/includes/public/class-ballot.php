@@ -138,11 +138,14 @@ class WPVP_Ballot {
 		$ballot_data = $validation['sanitized'];
 
 		// 8.5. Restructure ballot data to include role and user info.
+		$voter_comment = isset( $_POST['voter_comment'] ) ? sanitize_textarea_field( wp_unslash( $_POST['voter_comment'] ) ) : '';
+
 		$ballot_payload = array(
-			'choice'       => $ballot_data,
-			'voting_role'  => $selected_role,
-			'display_name' => $display_name,
-			'username'     => $username,
+			'choice'        => $ballot_data,
+			'voting_role'   => $selected_role,
+			'display_name'  => $display_name,
+			'username'      => $username,
+			'voter_comment' => $voter_comment,
 		);
 
 		// 9. Save or update.
@@ -374,7 +377,10 @@ class WPVP_Ballot {
 				$previous_ballot = json_decode( $row->ballot_data, true );
 				// Unwrap new ballot format: {choice: ..., voting_role: ...} → just the choice.
 				if ( is_array( $previous_ballot ) && isset( $previous_ballot['choice'] ) ) {
-					$previous_ballot = $previous_ballot['choice'];
+					$previous_comment = $previous_ballot['voter_comment'] ?? '';
+					$previous_ballot  = $previous_ballot['choice'];
+				} else {
+					$previous_comment = '';
 				}
 			}
 		}

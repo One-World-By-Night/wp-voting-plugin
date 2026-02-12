@@ -69,6 +69,9 @@
         // Get selected voting role (from dropdown or hidden input).
         var votingRole = $form.find('select[name="voting_role"]').val() || $form.find('input[name="voting_role"]').val() || '';
 
+        // Get optional voter comment.
+        var voterComment = $form.find('textarea[name="voter_comment"]').val() || '';
+
         $.ajax({
             url:  wpvp_public.ajax_url,
             type: 'POST',
@@ -78,7 +81,8 @@
                 vote_id:           voteId,
                 ballot_data:       JSON.stringify(ballotData),
                 voting_role:       votingRole,
-                send_confirmation: sendConfirmation
+                send_confirmation: sendConfirmation,
+                voter_comment:     voterComment
             },
             dataType: 'json'
         })

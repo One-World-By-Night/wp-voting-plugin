@@ -86,6 +86,7 @@ class WPVP_Results_Display {
 			<?php endif; ?>
 
 		<?php self::render_voter_list( $vote ); ?>
+		<?php self::render_voter_comments( $vote ); ?>
 		</div>
 		<?php
 	}
@@ -489,8 +490,8 @@ class WPVP_Results_Display {
 		$decoded_settings = json_decode( $vote->settings ?? '{}', true );
 		$anonymous_voting = ! empty( $decoded_settings['anonymous_voting'] );
 
-		// Only show voter list if NOT anonymous AND user can manage options.
-		if ( $anonymous_voting || ! current_user_can( 'manage_options' ) ) {
+		// Only show voter list to admins (they can see it on all votes, including anonymous).
+		if ( ! current_user_can( 'manage_options' ) ) {
 			return;
 		}
 
@@ -510,6 +511,7 @@ class WPVP_Results_Display {
 		}
 
 		?>
+		<?php $allow_comments = ! empty( $decoded_settings['allow_voter_comments'] ); ?>
 		<div class="wpvp-results__voters">
 			<h3><?php esc_html_e( 'Voter List', 'wp-voting-plugin' ); ?></h3>
 			<table class="wpvp-voters-table">
@@ -518,6 +520,9 @@ class WPVP_Results_Display {
 						<th><?php esc_html_e( 'Voter', 'wp-voting-plugin' ); ?></th>
 						<th><?php esc_html_e( 'Role', 'wp-voting-plugin' ); ?></th>
 						<th><?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?></th>
+						<?php if ( $allow_comments ) : ?>
+							<th><?php esc_html_e( 'Comment', 'wp-voting-plugin' ); ?></th>
+						<?php endif; ?>
 						<th><?php esc_html_e( 'Date', 'wp-voting-plugin' ); ?></th>
 					</tr>
 				</thead>
@@ -562,11 +567,91 @@ class WPVP_Results_Display {
 							<td><?php echo esc_html( $display_name ); ?></td>
 							<td><?php echo esc_html( $voting_role ); ?></td>
 							<td><?php echo $choice_display; // Already escaped above. ?></td>
+							<?php if ( $allow_comments ) : ?>
+								<td><?php echo esc_html( $ballot_data['voter_comment'] ?? '' ); ?></td>
+							<?php endif; ?>
 							<td><?php echo esc_html( $vote_date ); ?></td>
 						</tr>
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+		</div>
+		<?php
+	}
+	/*
+	------------------------------------------------------------------
+	 *  Anonymous voter comments.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Render voter comments for results display.
+	 *
+	 * - Anonymous votes: shows unattributed comments to everyone.
+	 * - Non-anonymous votes: shows attributed comments to everyone.
+	 *   (Admins already see comments in the voter list table, so skip for them.)
+	 */
+	private static function render_voter_comments( object $vote ): void {
+		$decoded_settings = json_decode( $vote->settings ?? '{}', true );
+		$allow_comments   = ! empty( $decoded_settings['allow_voter_comments'] );
+		$anonymous_voting = ! empty( $decoded_settings['anonymous_voting'] );
+
+		if ( ! $allow_comments ) {
+			return;
+		}
+
+		// Admins see comments in the voter list table on all votes.
+		if ( current_user_can( 'manage_options' ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table   = $wpdb->prefix . 'wpvp_ballots';
+		$ballots = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ballot_data FROM {$table} WHERE vote_id = %d ORDER BY voted_at ASC",
+				$vote->id
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $ballots ) ) {
+			return;
+		}
+
+		$comments = array();
+		foreach ( $ballots as $ballot ) {
+			$ballot_data = json_decode( $ballot['ballot_data'], true );
+			if ( is_array( $ballot_data ) && ! empty( $ballot_data['voter_comment'] ) ) {
+				$entry = array( 'comment' => $ballot_data['voter_comment'] );
+				if ( ! $anonymous_voting ) {
+					$entry['display_name'] = $ballot_data['display_name'] ?? '';
+					$entry['voting_role']  = $ballot_data['voting_role'] ?? '';
+				}
+				$comments[] = $entry;
+			}
+		}
+
+		if ( empty( $comments ) ) {
+			return;
+		}
+
+		?>
+		<div class="wpvp-results__voter-comments">
+			<h3><?php esc_html_e( 'Voter Comments', 'wp-voting-plugin' ); ?></h3>
+			<ul class="wpvp-voter-comments-list" style="list-style: none; padding: 0;">
+				<?php foreach ( $comments as $entry ) : ?>
+					<li style="padding: 8px 12px; margin-bottom: 8px; background: #f9f9f9; border-left: 3px solid #0073aa; border-radius: 2px;">
+						<?php if ( ! $anonymous_voting && ! empty( $entry['display_name'] ) ) : ?>
+							<strong><?php echo esc_html( $entry['display_name'] ); ?></strong>
+							<?php if ( ! empty( $entry['voting_role'] ) ) : ?>
+								<span style="color: #646970;">(<?php echo esc_html( $entry['voting_role'] ); ?>)</span>
+							<?php endif; ?>
+							<br>
+						<?php endif; ?>
+						<?php echo esc_html( $entry['comment'] ); ?>
+					</li>
+				<?php endforeach; ?>
+			</ul>
 		</div>
 		<?php
 	}
