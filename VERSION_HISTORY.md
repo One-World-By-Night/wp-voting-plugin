@@ -1,6 +1,195 @@
 # WP Voting Plugin - Version History
 
-## Version 2.4.3 (Current - February 2026)
+## Version 2.8.1 (Current - February 2026)
+
+**Guide wizard UX upgrades and disciplinary auto-populate fix.**
+
+### Changes
+
+- ✅ **Guide wizard Select2 fields**: All three role fields (Who Can View, Who Can Vote, Additional Viewers) upgraded from plain text inputs to Select2 multi-selects, matching the vote editor UX
+- ✅ **Template loader fix**: Role template loader now correctly populates wizard Select2 fields
+- ✅ **Disciplinary auto-populate in wizard**: Selecting "Disciplinary" type in the Guide wizard now auto-populates punishment level options (was only working in the vote editor)
+- ✅ **Additional viewers in wizard**: Wizard form submission now sends `additional_viewers` data to the backend
+
+### Technical Details
+
+The Guide wizard previously used `<input type="text">` for role fields while the vote editor used Select2 multi-selects. This caused inconsistent UX and prevented the template loader (which targets Select2 elements) from working in the wizard. All three fields now use the same Select2 classes as the vote editor (`.wpvp-select2-roles`, `.wpvp-select2-voting-roles`, `.wpvp-select2-additional-viewers`), so the existing Select2 initialization and template loader code works on both pages. The PHP AJAX handler was updated to accept arrays from Select2 instead of comma-separated strings.
+
+---
+
+## Version 2.8.0 (February 2026)
+
+**Additional vote history viewers with cross-role slug-binding patterns.**
+
+### New Features
+
+- ✅ **Cross-role ballot visibility**: Per-vote setting allows related roles to see how votes were cast under other roles in the same group
+- ✅ **Slug-binding patterns**: Patterns like `Chronicle/*/HST` let HSTs see ballots cast by CMs from the same chronicle — the `*` wildcard binds to the matching slug from the voter's role
+- ✅ **New vote editor field**: "Additional Vote History Viewers" with Select2 multi-select and role template loader
+- ✅ **Guide wizard section**: Additional Vote History Viewers section added to the wizard
+- ✅ **Unified Guide layout**: Merged Interactive Vote Builder intro and wizard into a single unified block
+
+### Technical Details
+
+**Slug-binding algorithm**: Given ballot `voting_role` = `Chronicle/Kony/CM` and viewer pattern = `Chronicle/*/HST`:
+
+1. Split both into segments: `['Chronicle','Kony','CM']` and `['Chronicle','*','HST']`
+2. For each `*` in the pattern, substitute the same-position segment from the voting_role → `*` at position 1 gets `Kony`
+3. Resolved role = `Chronicle/Kony/HST`
+4. Check if current user holds `Chronicle/Kony/HST` (exact or child match, case-insensitive)
+
+A user with `Chronicle/DDE/HST` would NOT see `Chronicle/Kony/CM`'s ballot because the slug doesn't match.
+
+New `additional_viewers` column (text, JSON array) added to `wp_wpvp_votes` table. New `WPVP_Permissions::matches_additional_viewers()` method handles the slug-binding logic. Database migration via `upgrade_to_280()`.
+
+---
+
+## Version 2.7.0 (February 2026)
+
+**Optional voter comments and role-based vote history.**
+
+### New Features
+
+- ✅ **Voter comments**: Per-vote admin setting allows voters to add an optional comment/rationale with their ballot
+- ✅ **Comment attribution**: Comments displayed with attribution (name + role) on non-anonymous votes, without attribution on anonymous votes
+- ✅ **Role-based vote history**: Logged-in users can see votes cast under their current eligible roles in "Your Role's Vote History" section
+- ✅ **Role succession**: New role holders can see how the role previously voted, supporting organizational continuity
+- ✅ **Personal history**: Users can always view their own vote details regardless of current role eligibility
+- ✅ **Admin voter list**: Admins can view full voter list (including comments) on all votes, including anonymous
+
+### Changes
+
+- ✅ Live results and comments now properly gated by the "Show results while voting is open" setting
+- ✅ Ballot form includes optional comment textarea (max 1000 characters) when enabled
+- ✅ Comment data stored in ballot_data JSON alongside choice and voting_role
+- ✅ Vote detail template filters ballots by role match, user match, or both
+
+---
+
+## Version 2.6.0 (February 2026)
+
+**Full internationalization (i18n) support for TranslatePress and other translation plugins.**
+
+### Changes
+
+- ✅ **JavaScript string localization**: All JS-generated strings now pass through WordPress translation functions via `wp_localize_script`
+- ✅ **Public UI strings localized**: Modal messages, revote button, loading states, error messages, accessibility labels
+- ✅ **Admin UI strings localized**: Option placeholders, disciplinary levels, status messages, confirmation dialogs
+- ✅ **TranslatePress compatibility**: Fixes untranslated buttons, select placeholders, and status text
+
+### Technical Details
+
+Two localized data objects (`wpvp` for admin, `wpvp_public` for frontend) now contain `i18n` sub-objects with all translatable strings. JavaScript code references these instead of hardcoded English strings. This enables TranslatePress and similar tools to detect and translate all user-facing text.
+
+---
+
+## Version 2.5.8 (February 2026)
+
+**Fix revote ranking order not restored on RCV/STV/Condorcet.**
+
+### Bug Fixes
+
+- ✅ **Revote ranking restoration**: Fixed revoting on ranked votes (RCV, STV, Condorcet) not restoring previous ranking order
+- ✅ **Ballot format unwrapping**: Previous ballot data now correctly unwrapped from new ballot format when pre-populating form
+
+---
+
+## Version 2.5.7 (February 2026)
+
+**Fix RCV and multi-winner ballot submission issues.**
+
+### Bug Fixes
+
+- ✅ **Silent submission failure**: Fixed ballot submission failing silently on RCV, STV, and Condorcet votes for single-role users
+- ✅ **Role dropdown visibility**: Role selection dropdown now only requires input when visible (multiple eligible roles)
+- ✅ **Single-role fix**: Fixed voting role not being sent for single-role users during ballot submission
+
+---
+
+## Version 2.5.6 (February 2026)
+
+**Improved tie display and repositioned live results.**
+
+### Changes
+
+- ✅ **Tie display**: Options marked as "Tied" instead of "Winner" when there's a tie in singleton votes
+- ✅ **Tie banner data**: Added `tied_candidates` to live results `winner_data` for proper tie banner display
+- ✅ **Results positioning**: Moved live results to display AFTER ballot form, allowing users to vote before seeing current standings
+
+---
+
+## Version 2.5.5 (February 2026)
+
+**Fix live results rendering.**
+
+### Bug Fixes
+
+- ✅ **Data format fix**: Result data now stored as arrays instead of JSON strings in synthetic results object
+- ✅ **Rendering fix**: Live results now properly render vote totals and winner information on open votes
+
+---
+
+## Version 2.5.4 (February 2026)
+
+**Robust error handling for live results.**
+
+### Bug Fixes
+
+- ✅ **Error handling**: Fixed error handling for live results to catch all PHP errors and Throwables, not just Exceptions
+- ✅ **Stability**: Prevents fatal errors from breaking vote pages when calculating live results
+
+---
+
+## Version 2.5.3 (February 2026)
+
+**Fix live results calculation.**
+
+### Bug Fixes
+
+- ✅ **Calculation fix**: Fixed live results calculation for open votes
+- ✅ **No database writes**: Improved on-the-fly result processing without database saves
+
+---
+
+## Version 2.5.2 (February 2026)
+
+**Live results visibility for open votes.**
+
+### New Features
+
+- ✅ **Live vote totals**: Show current vote totals on open votes before casting ballot
+- ✅ **Real-time standings**: Voters can see current standings while voting is open (controlled by per-vote "Show results while voting is open" setting)
+
+---
+
+## Version 2.5.1 (February 2026)
+
+**Enhanced results display and consent agenda improvements.**
+
+### Changes
+
+- ✅ **Detailed voter list**: Enhanced non-anonymous vote results to show display name, role, vote choice, and vote date
+- ✅ **Instant consent passage**: Allow consent agenda votes to have simultaneous open/close times for instant passage
+- ✅ **Wildcard matching fix**: Fixed wildcard role matching to work with user's personal cached roles
+- ✅ **Role filtering**: Fixed role selection to only show roles user actually has
+
+---
+
+## Version 2.5.0 (February 2026)
+
+**Role-based voting attribution for accountability.**
+
+### New Features
+
+- ✅ **Role selection**: Users with multiple eligible roles must select which role they're voting as
+- ✅ **Ballot attribution**: Ballot data now stores `voting_role`, `display_name`, and `username` for accountability
+- ✅ **Consent display**: Consent voting results display voter attribution as "Display Name (username) role-path"
+- ✅ **Data durability**: Attribution data preserved even if user or role is deleted later
+- ✅ **Backward compatibility**: Maintains compatibility with existing ballots that lack attribution data
+
+---
+
+## Version 2.4.3 (February 2026)
 
 **Bug fixes for vote creation and editing UX issues.**
 
