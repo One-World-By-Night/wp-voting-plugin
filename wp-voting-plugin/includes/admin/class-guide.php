@@ -531,8 +531,8 @@ class WPVP_Guide {
 										<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
 									</div>
 								<?php endif; ?>
-								<label for="wpvp_gb_roles"><?php esc_html_e( 'Who Can View (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
-								<input type="text" id="wpvp_gb_roles" name="allowed_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
+								<label for="wpvp_gb_roles"><?php esc_html_e( 'Who Can View', 'wp-voting-plugin' ); ?></label><br>
+								<select id="wpvp_gb_roles" name="allowed_roles[]" multiple class="wpvp-select2-roles" style="width:100%;"></select>
 								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
 							</p>
 						</div>
@@ -562,8 +562,8 @@ class WPVP_Guide {
 										<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
 									</div>
 								<?php endif; ?>
-								<label for="wpvp_gb_voting_roles"><?php esc_html_e( 'Who Can Vote (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
-								<input type="text" id="wpvp_gb_voting_roles" name="voting_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
+								<label for="wpvp_gb_voting_roles"><?php esc_html_e( 'Who Can Vote', 'wp-voting-plugin' ); ?></label><br>
+								<select id="wpvp_gb_voting_roles" name="voting_roles[]" multiple class="wpvp-select2-voting-roles" style="width:100%;"></select>
 								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
 							</p>
 						</div>
@@ -588,8 +588,8 @@ class WPVP_Guide {
 										<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
 									</div>
 								<?php endif; ?>
-								<label for="wpvp_gb_additional_viewers"><?php esc_html_e( 'Additional Viewers (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
-								<input type="text" id="wpvp_gb_additional_viewers" name="additional_viewers" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/HST, Chronicle/*/Staff', 'wp-voting-plugin' ); ?>">
+								<label for="wpvp_gb_additional_viewers"><?php esc_html_e( 'Additional Viewers', 'wp-voting-plugin' ); ?></label><br>
+								<select id="wpvp_gb_additional_viewers" name="additional_viewers[]" multiple class="wpvp-select2-additional-viewers" style="width:100%;"></select>
 								<span class="description"><?php esc_html_e( 'These roles can view vote history for related roles. * binds to the matching slug.', 'wp-voting-plugin' ); ?></span>
 							</p>
 						</div>
