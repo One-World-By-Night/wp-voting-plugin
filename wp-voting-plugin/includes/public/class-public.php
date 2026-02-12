@@ -70,6 +70,7 @@ class WPVP_Public {
 					'loading'           => __( 'Loading...', 'wp-voting-plugin' ),
 					'content_not_loaded' => __( 'Content could not be loaded.', 'wp-voting-plugin' ),
 					'error_loading'     => __( 'Error loading content. Please try again.', 'wp-voting-plugin' ),
+					'comment_placeholder' => __( 'Add an optional comment or rationale for your vote...', 'wp-voting-plugin' ),
 				),
 			)
 		);

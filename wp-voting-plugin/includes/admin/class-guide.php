@@ -608,6 +608,12 @@ class WPVP_Guide {
 									<?php esc_html_e( 'Anonymous voting (hide voter names)', 'wp-voting-plugin' ); ?>
 								</label>
 							</p>
+							<p>
+								<label>
+									<input type="checkbox" name="settings[allow_voter_comments]" value="1">
+									<?php esc_html_e( 'Allow voters to add an optional comment with their vote', 'wp-voting-plugin' ); ?>
+								</label>
+							</p>
 						</div>
 
 						<div class="wpvp-wizard-step__nav">

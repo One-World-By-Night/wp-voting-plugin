@@ -88,7 +88,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 	<?php
 	// Show current results for open votes (after ballot form).
-	if ( 'open' === $vote->voting_stage && $user_id ) :
+	if ( 'open' === $vote->voting_stage && $user_id && ! empty( $settings['show_results_before_closing'] ) ) :
 		$current_results = null;
 
 		try {
@@ -164,6 +164,116 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php WPVP_Results_Display::render( $vote, $results ); ?>
 			</div>
 			<?php
+		endif;
+	endif;
+	?>
+
+	<?php
+	// Role-based vote history: show ballots matching user's current eligible roles
+	// or cast by the current user themselves (users can always see their own vote).
+	if ( $user_id ) :
+		$eligible_roles = WPVP_Permissions::get_eligible_voting_roles( $user_id, $vote );
+
+		global $wpdb;
+		$ballots_table = $wpdb->prefix . 'wpvp_ballots';
+		$all_ballots   = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT user_id, ballot_data, voted_at FROM {$ballots_table} WHERE vote_id = %d ORDER BY voted_at DESC",
+				$vote_id
+			),
+			ARRAY_A
+		);
+
+		if ( ! empty( $all_ballots ) ) :
+			// Filter ballots: match by voting_role OR by user_id.
+			$matching_ballots = array();
+			$seen_ids         = array();
+
+			foreach ( $all_ballots as $ballot ) {
+				$ballot_data = json_decode( $ballot['ballot_data'], true );
+				if ( ! is_array( $ballot_data ) ) {
+					continue;
+				}
+
+				$ballot_role = $ballot_data['voting_role'] ?? '';
+				$ballot_uid  = (int) $ballot['user_id'];
+				$unique_key  = $ballot_uid . '|' . $ballot_role;
+
+				// Skip duplicates.
+				if ( isset( $seen_ids[ $unique_key ] ) ) {
+					continue;
+				}
+
+				$role_match = ! empty( $eligible_roles ) && in_array( $ballot_role, $eligible_roles, true );
+				$user_match = ( $ballot_uid === $user_id );
+
+				if ( $role_match || $user_match ) {
+					$seen_ids[ $unique_key ] = true;
+					$matching_ballots[]     = array(
+						'ballot_data' => $ballot_data,
+						'voted_at'    => $ballot['voted_at'],
+						'user_id'     => $ballot_uid,
+					);
+				}
+			}
+
+				if ( ! empty( $matching_ballots ) ) :
+					$allow_comments = ! empty( $settings['allow_voter_comments'] );
+					?>
+					<div class="wpvp-vote-detail__role-history" style="margin-top: 2em;">
+						<h3><?php esc_html_e( "Your Role's Vote History", 'wp-voting-plugin' ); ?></h3>
+						<p style="font-size: 0.9em; color: #646970; margin-bottom: 1em;">
+							<?php esc_html_e( 'Showing votes cast under your current eligible roles.', 'wp-voting-plugin' ); ?>
+						</p>
+						<table class="wpvp-voters-table">
+							<thead>
+								<tr>
+									<th><?php esc_html_e( 'Role', 'wp-voting-plugin' ); ?></th>
+									<th><?php esc_html_e( 'Cast By', 'wp-voting-plugin' ); ?></th>
+									<th><?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?></th>
+									<?php if ( $allow_comments ) : ?>
+										<th><?php esc_html_e( 'Comment', 'wp-voting-plugin' ); ?></th>
+									<?php endif; ?>
+									<th><?php esc_html_e( 'Date', 'wp-voting-plugin' ); ?></th>
+								</tr>
+							</thead>
+							<tbody>
+								<?php foreach ( $matching_ballots as $mb ) :
+									$bd     = $mb['ballot_data'];
+									$choice = $bd['choice'] ?? '';
+
+									// Format choice for display.
+									if ( is_array( $choice ) ) {
+										$choice_display = implode( ' &rsaquo; ', array_map( 'esc_html', $choice ) );
+									} else {
+										$choice_display = esc_html( $choice );
+									}
+
+									$cast_by = $bd['display_name'] ?? '';
+									if ( ! empty( $bd['username'] ) ) {
+										$cast_by .= ' (' . $bd['username'] . ')';
+									}
+
+									$vote_date = wp_date(
+										get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
+										strtotime( $mb['voted_at'] )
+									);
+								?>
+								<tr>
+									<td><?php echo esc_html( $bd['voting_role'] ?? '' ); ?></td>
+									<td><?php echo esc_html( $cast_by ); ?></td>
+									<td><?php echo $choice_display; ?></td>
+									<?php if ( $allow_comments ) : ?>
+										<td><?php echo esc_html( $bd['voter_comment'] ?? '' ); ?></td>
+									<?php endif; ?>
+									<td><?php echo esc_html( $vote_date ); ?></td>
+								</tr>
+								<?php endforeach; ?>
+							</tbody>
+						</table>
+					</div>
+					<?php
+				endif;
 		endif;
 	endif;
 	?>

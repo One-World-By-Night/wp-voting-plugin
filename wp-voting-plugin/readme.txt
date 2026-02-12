@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 2.6.0
+Stable tag: 2.7.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,15 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 2.7.0 =
+* Optional voter comments: per-vote admin setting allows voters to add an optional comment/rationale with their ballot
+* Comments displayed with attribution on non-anonymous votes, without attribution on anonymous votes
+* Role-based vote history: logged-in users can see votes cast under their current eligible roles
+* Vote history supports role succession — new role holders can see how the role previously voted
+* Users can always view their own vote details regardless of current role eligibility
+* Live results and comments now properly gated by the "Show results while voting is open" setting
+* Admins can view full voter list (including comments) on all votes, including anonymous
 
 = 2.6.0 =
 * Full internationalization (i18n) support for TranslatePress and other translation plugins

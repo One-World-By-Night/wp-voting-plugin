@@ -124,7 +124,7 @@ class WPVP_Vote_Editor {
 		}
 
 		// Sanitise settings.
-		$allowed_settings = array( 'allow_revote', 'show_results_before_closing', 'anonymous_voting' );
+		$allowed_settings = array( 'allow_revote', 'show_results_before_closing', 'anonymous_voting', 'allow_voter_comments' );
 		$settings         = array();
 		$raw_settings     = isset( $_POST['settings'] ) ? (array) wp_unslash( $_POST['settings'] ) : array();
 		foreach ( $allowed_settings as $key ) {
@@ -536,10 +536,15 @@ class WPVP_Vote_Editor {
 											<?php checked( ! empty( $settings['show_results_before_closing'] ) ); ?>>
 										<?php esc_html_e( 'Show results while voting is open', 'wp-voting-plugin' ); ?>
 									</label>
-									<label style="display:block;">
+									<label style="display:block; margin-bottom:8px;">
 										<input type="checkbox" name="settings[anonymous_voting]" value="1"
 											<?php checked( ! empty( $settings['anonymous_voting'] ) ); ?>>
 										<?php esc_html_e( 'Anonymous voting (hide voter names in results)', 'wp-voting-plugin' ); ?>
+									</label>
+									<label style="display:block;">
+										<input type="checkbox" name="settings[allow_voter_comments]" value="1"
+											<?php checked( ! empty( $settings['allow_voter_comments'] ) ); ?>>
+										<?php esc_html_e( 'Allow voters to add an optional comment with their vote', 'wp-voting-plugin' ); ?>
 									</label>
 								</div>
 							</div>
