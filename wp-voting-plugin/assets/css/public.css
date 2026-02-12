@@ -695,6 +695,56 @@
     padding: 2px 0;
 }
 
+/* Voter entries */
+.wpvp-results__voters,
+.wpvp-results__voter-comments {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid #dcdcde;
+}
+
+.wpvp-voter-entries {
+    margin-top: 12px;
+}
+
+.wpvp-voter-entry {
+    padding: 8px 12px;
+    margin-bottom: 6px;
+    background: #f9f9f9;
+    border-left: 3px solid #2271b1;
+    border-radius: 2px;
+}
+
+.wpvp-voter-entry--comment-only {
+    border-left-color: #646970;
+}
+
+.wpvp-voter-entry__main {
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.wpvp-voter-entry__name {
+    font-weight: 600;
+}
+
+.wpvp-voter-entry__role {
+    color: #50575e;
+}
+
+.wpvp-voter-entry__choice {
+    font-weight: 600;
+}
+
+.wpvp-voter-entry__comment {
+    margin-top: 4px;
+    padding-left: 12px;
+    font-size: 13px;
+    color: #50575e;
+    font-style: italic;
+    line-height: 1.5;
+}
+
 /* Results wrap (shortcode) */
 .wpvp-results-wrap__title {
     display: flex;
