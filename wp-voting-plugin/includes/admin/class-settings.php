@@ -651,20 +651,25 @@ class WPVP_Settings {
 			);
 		}
 
-		// Parse allowed roles from comma-separated string.
+		// Parse allowed roles (Select2 sends array).
 		$allowed_roles = array();
 		if ( ! empty( $_POST['allowed_roles'] ) ) {
-			$roles_raw = sanitize_text_field( wp_unslash( $_POST['allowed_roles'] ) );
-			$roles_arr = array_map( 'trim', explode( ',', $roles_raw ) );
-			$allowed_roles = array_filter( $roles_arr );
+			$raw = (array) wp_unslash( $_POST['allowed_roles'] );
+			$allowed_roles = array_values( array_filter( array_map( 'sanitize_text_field', $raw ) ) );
 		}
 
-		// Parse voting roles from comma-separated string.
+		// Parse voting roles (Select2 sends array).
 		$voting_roles = array();
 		if ( ! empty( $_POST['voting_roles'] ) ) {
-			$roles_raw = sanitize_text_field( wp_unslash( $_POST['voting_roles'] ) );
-			$roles_arr = array_map( 'trim', explode( ',', $roles_raw ) );
-			$voting_roles = array_filter( $roles_arr );
+			$raw = (array) wp_unslash( $_POST['voting_roles'] );
+			$voting_roles = array_values( array_filter( array_map( 'sanitize_text_field', $raw ) ) );
+		}
+
+		// Parse additional viewers (Select2 sends array).
+		$additional_viewers = array();
+		if ( ! empty( $_POST['additional_viewers'] ) ) {
+			$raw = (array) wp_unslash( $_POST['additional_viewers'] );
+			$additional_viewers = array_values( array_filter( array_map( 'sanitize_text_field', $raw ) ) );
 		}
 
 		// Build settings array.
@@ -683,6 +688,7 @@ class WPVP_Settings {
 			'allowed_roles'        => $allowed_roles,
 			'visibility'           => sanitize_key( wp_unslash( $_POST['visibility'] ?? 'private' ) ),
 			'voting_roles'         => $voting_roles,
+			'additional_viewers'   => $additional_viewers,
 			'voting_eligibility'   => sanitize_key( wp_unslash( $_POST['voting_eligibility'] ?? 'private' ) ),
 			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'draft' ) ),
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),

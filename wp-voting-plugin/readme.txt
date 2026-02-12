@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,12 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 2.8.1 =
+* Guide wizard role fields upgraded to Select2 multi-selects (matching vote editor UX)
+* Role template loader now populates wizard Select2 fields correctly
+* Disciplinary auto-populate now works in the Guide wizard when switching voting type
+* Wizard form submission sends additional_viewers to backend
 
 = 2.8.0 =
 * Additional vote history viewers: per-vote setting allows cross-role ballot visibility using slug-binding patterns

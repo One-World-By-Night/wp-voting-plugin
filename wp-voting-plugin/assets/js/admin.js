@@ -288,6 +288,7 @@
             return;
         }
 
+        // Find the Select2 element for this target (vote editor).
         var $select2;
         if (target === 'allowed_roles') {
             $select2 = $('.wpvp-select2-roles');
@@ -590,7 +591,48 @@
             $('#wpvp_gb_options_list').append(row);
         });
 
+        // Auto-populate wizard disciplinary options.
+        function autoPopulateWizardDisciplinary() {
+            var punishments = [
+                { text: wpvp.i18n.permanent_ban, description: wpvp.i18n.permanent_ban_desc },
+                { text: wpvp.i18n.indefinite_ban, description: wpvp.i18n.indefinite_ban_desc },
+                { text: wpvp.i18n.temporary_ban, description: wpvp.i18n.temporary_ban_desc },
+                { text: wpvp.i18n.two_strikes, description: wpvp.i18n.two_strikes_desc },
+                { text: wpvp.i18n.one_strike, description: wpvp.i18n.one_strike_desc },
+                { text: wpvp.i18n.probation, description: wpvp.i18n.probation_desc },
+                { text: wpvp.i18n.censure, description: wpvp.i18n.censure_desc },
+                { text: wpvp.i18n.condemnation, description: wpvp.i18n.condemnation_desc }
+            ];
+
+            var $list = $('#wpvp_gb_options_list');
+            var hasCustom = false;
+            $list.find('input[name$="[text]"]').each(function () {
+                if ($(this).val().trim() !== '') {
+                    hasCustom = true;
+                    return false;
+                }
+            });
+
+            if (hasCustom && !confirm(wpvp.i18n.replace_disciplinary)) {
+                return;
+            }
+
+            $list.empty();
+            $.each(punishments, function (i, p) {
+                var row = $(
+                    '<p class="wpvp-gb-option-row">' +
+                        '<input type="text" name="voting_options[' + i + '][text]" class="regular-text" ' +
+                            'value="' + escAttr(p.text) + '" required> ' +
+                        '<input type="text" name="voting_options[' + i + '][description]" class="regular-text" ' +
+                            'value="' + escAttr(p.description) + '">' +
+                    '</p>'
+                );
+                $list.append(row);
+            });
+        }
+
         // Show/hide options and num-winners based on type.
+        var isFirstWizardTypeChange = true;
         $('#wpvp_gb_type').on('change', function () {
             var type = $(this).val();
 
@@ -609,6 +651,12 @@
             } else {
                 $('#wpvp_gb_num_winners').hide();
             }
+
+            // Auto-populate disciplinary options when user actively switches to it.
+            if (type === 'disciplinary' && !isFirstWizardTypeChange) {
+                autoPopulateWizardDisciplinary();
+            }
+            isFirstWizardTypeChange = false;
 
             // Update closing date when voting type changes
             updateWizardClosingDate();
@@ -655,9 +703,10 @@
                 opening_date: $('#wpvp_gb_open').val(),
                 closing_date: $('#wpvp_gb_close').val(),
                 visibility: $('#wpvp_gb_visibility').val(),
-                allowed_roles: $('#wpvp_gb_roles').val(),
+                allowed_roles: $('#wpvp_gb_roles').val() || [],
                 voting_eligibility: $('#wpvp_gb_voting_eligibility').val(),
-                voting_roles: $('#wpvp_gb_voting_roles').val(),
+                voting_roles: $('#wpvp_gb_voting_roles').val() || [],
+                additional_viewers: $('#wpvp_gb_additional_viewers').val() || [],
                 number_of_winners: $('#wpvp_gb_winners').val(),
                 voting_options: [],
                 settings: {
