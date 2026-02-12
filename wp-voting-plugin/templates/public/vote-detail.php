@@ -169,10 +169,12 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 	?>
 
 	<?php
-	// Role-based vote history: show ballots matching user's current eligible roles
-	// or cast by the current user themselves (users can always see their own vote).
+	// Role-based vote history: show ballots matching user's current eligible roles,
+	// cast by the current user themselves, or visible via additional viewer patterns.
 	if ( $user_id ) :
 		$eligible_roles = WPVP_Permissions::get_eligible_voting_roles( $user_id, $vote );
+		$decoded_additional_viewers = json_decode( $vote->additional_viewers ?? '[]', true );
+		$additional_viewer_patterns = is_array( $decoded_additional_viewers ) ? $decoded_additional_viewers : array();
 
 		global $wpdb;
 		$ballots_table = $wpdb->prefix . 'wpvp_ballots';
@@ -185,7 +187,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 		);
 
 		if ( ! empty( $all_ballots ) ) :
-			// Filter ballots: match by voting_role OR by user_id.
+			// Filter ballots: match by voting_role, user_id, or additional viewer patterns.
 			$matching_ballots = array();
 			$seen_ids         = array();
 
@@ -206,8 +208,10 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 				$role_match = ! empty( $eligible_roles ) && in_array( $ballot_role, $eligible_roles, true );
 				$user_match = ( $ballot_uid === $user_id );
+				$additional_viewer_match = ! empty( $additional_viewer_patterns )
+					&& WPVP_Permissions::matches_additional_viewers( $user_id, $ballot_role, $additional_viewer_patterns );
 
-				if ( $role_match || $user_match ) {
+				if ( $role_match || $user_match || $additional_viewer_match ) {
 					$seen_ids[ $unique_key ] = true;
 					$matching_ballots[]     = array(
 						'ballot_data' => $ballot_data,

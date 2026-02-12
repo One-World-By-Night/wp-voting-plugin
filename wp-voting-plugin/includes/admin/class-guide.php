@@ -33,7 +33,6 @@ class WPVP_Guide {
 				<div class="wpvp-guide-content">
 					<?php
 					$this->render_overview();
-					$this->render_vote_builder_intro();
 					$this->render_creating_a_vote();
 					$this->render_voting_types();
 					$this->render_managing_votes();
@@ -91,7 +90,7 @@ class WPVP_Guide {
 	private function render_toc(): void {
 		$sections = array(
 			'overview'      => __( 'Overview', 'wp-voting-plugin' ),
-			'creating'      => __( 'Creating a Vote', 'wp-voting-plugin' ),
+			'creating'      => __( 'Interactive Vote Builder', 'wp-voting-plugin' ),
 			'types'         => __( 'Voting Types', 'wp-voting-plugin' ),
 			'managing'      => __( 'Managing Votes', 'wp-voting-plugin' ),
 			'processing'    => __( 'Processing Results', 'wp-voting-plugin' ),
@@ -188,17 +187,28 @@ class WPVP_Guide {
 		$default_opening   = date( 'Y-m-d\TH:i', $opening_timestamp );
 		$default_closing   = date( 'Y-m-d\TH:i', $closing_timestamp );
 		?>
-		<section class="wpvp-guide-section" id="wpvp-guide-creating">
-			<h2><?php esc_html_e( 'Creating a Vote', 'wp-voting-plugin' ); ?></h2>
-
-			<div class="wpvp-wizard-header">
+		<section class="wpvp-guide-section wpvp-guide-builder-intro" id="wpvp-guide-creating">
+			<div class="wpvp-guide-callout wpvp-guide-callout--primary">
+				<h2><?php esc_html_e( 'Interactive Vote Builder', 'wp-voting-plugin' ); ?></h2>
 				<p>
+					<?php esc_html_e( 'Want to learn by doing? Fill in the form fields inside each step below as you go through the tutorial, then submit at the end to create a real vote.', 'wp-voting-plugin' ); ?>
+				</p>
+				<p>
+					<?php
+					printf(
+						/* translators: %s: Link to vote editor */
+						esc_html__( 'Prefer to skip the tutorial? %s', 'wp-voting-plugin' ),
+						'<a href="' . esc_url( $form_url ) . '" class="button">' . esc_html__( 'Go to Vote Editor', 'wp-voting-plugin' ) . '</a>'
+					);
+					?>
+				</p>
+				<p style="font-size: 0.9em; color: #646970; margin-top: 8px;">
 					<?php esc_html_e( 'Follow the step-by-step walkthrough below, or jump straight to the form if you already know what you\'re doing.', 'wp-voting-plugin' ); ?>
 				</p>
-				<a href="<?php echo esc_url( $form_url ); ?>" class="button button-primary wpvp-wizard-skip">
-					<?php esc_html_e( 'Skip to Form &rarr;', 'wp-voting-plugin' ); ?>
-				</a>
 			</div>
+
+			<form id="wpvp-guide-builder-form">
+				<?php wp_nonce_field( 'wpvp_guide_create_vote', 'wpvp_guide_nonce' ); ?>
 
 			<div class="wpvp-wizard" id="wpvp-wizard">
 
@@ -555,6 +565,32 @@ class WPVP_Guide {
 								<label for="wpvp_gb_voting_roles"><?php esc_html_e( 'Who Can Vote (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" id="wpvp_gb_voting_roles" name="voting_roles" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/CM, Players/**, administrator', 'wp-voting-plugin' ); ?>">
 								<span class="description"><?php esc_html_e( 'Enter role paths, wildcards, or WP roles', 'wp-voting-plugin' ); ?></span>
+							</p>
+						</div>
+
+						<div class="wpvp-guide-form-section" style="margin-top: 20px;">
+							<h4><?php esc_html_e( 'Additional Vote History Viewers', 'wp-voting-plugin' ); ?></h4>
+							<p class="description" style="margin-bottom: 8px;">
+								<?php esc_html_e( 'Allow related roles to see how votes were cast under other roles in the same group. The * wildcard binds to the matching slug from the voter\'s role.', 'wp-voting-plugin' ); ?>
+							</p>
+							<p>
+								<?php if ( ! empty( $this->data['role_templates'] ) ) : ?>
+									<div class="wpvp-template-loader" style="margin-bottom: 8px;">
+										<label><?php esc_html_e( 'Load from template:', 'wp-voting-plugin' ); ?></label>
+										<select class="wpvp-template-select" data-target="additional_viewers" style="min-width: 200px;">
+											<option value=""><?php esc_html_e( '-- Select template --', 'wp-voting-plugin' ); ?></option>
+											<?php foreach ( $this->data['role_templates'] as $tmpl ) : ?>
+												<option value="<?php echo esc_attr( $tmpl->id ); ?>">
+													<?php echo esc_html( $tmpl->template_name ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
+										<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
+									</div>
+								<?php endif; ?>
+								<label for="wpvp_gb_additional_viewers"><?php esc_html_e( 'Additional Viewers (comma-separated)', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" id="wpvp_gb_additional_viewers" name="additional_viewers" class="large-text" placeholder="<?php esc_attr_e( 'Chronicle/*/HST, Chronicle/*/Staff', 'wp-voting-plugin' ); ?>">
+								<span class="description"><?php esc_html_e( 'These roles can view vote history for related roles. * binds to the matching slug.', 'wp-voting-plugin' ); ?></span>
 							</p>
 						</div>
 
@@ -1448,31 +1484,7 @@ class WPVP_Guide {
 	/**
 	 * Introduction to the interactive vote builder.
 	 */
-	private function render_vote_builder_intro(): void {
-		?>
-		<section class="wpvp-guide-section wpvp-guide-builder-intro" id="wpvp-guide-builder">
-			<div class="wpvp-guide-callout wpvp-guide-callout--primary">
-				<h2><?php esc_html_e( '✨ Interactive Vote Builder', 'wp-voting-plugin' ); ?></h2>
-				<p>
-					<?php esc_html_e( 'Want to learn by doing? Fill in the form fields inside each step below as you go through the tutorial, then submit at the end to create a real vote.', 'wp-voting-plugin' ); ?>
-				</p>
-				<p>
-					<?php
-					printf(
-						/* translators: %s: Link to vote editor */
-						esc_html__( 'Prefer to skip the tutorial? %s', 'wp-voting-plugin' ),
-						'<a href="' . esc_url( admin_url( 'admin.php?page=wpvp-vote-edit' ) ) . '" class="button">' . esc_html__( 'Go to Vote Editor', 'wp-voting-plugin' ) . '</a>'
-					);
-					?>
-				</p>
-			</div>
 
-			<!-- Start form wrapper -->
-			<form id="wpvp-guide-builder-form">
-				<?php wp_nonce_field( 'wpvp_guide_create_vote', 'wpvp_guide_nonce' ); ?>
-		</section>
-		<?php
-	}
 
 	/**
 	 * Add inline styles for the guide builder form.

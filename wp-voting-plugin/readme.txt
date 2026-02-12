@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 2.7.0
+Stable tag: 2.8.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,13 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 2.8.0 =
+* Additional vote history viewers: per-vote setting allows cross-role ballot visibility using slug-binding patterns
+* Patterns like `Chronicle/*/HST` let HSTs see ballots cast by CMs from the same chronicle (slug must match)
+* New "Additional Vote History Viewers" field in vote editor with Select2 multi-select and role template loader
+* Guide wizard updated with Additional Vote History Viewers section
+* Merged Interactive Vote Builder intro and wizard into a single unified block in the Guide page
 
 = 2.7.0 =
 * Optional voter comments: per-vote admin setting allows voters to add an optional comment/rationale with their ballot

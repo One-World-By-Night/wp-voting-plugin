@@ -55,6 +55,11 @@ class WPVP_Activator {
 				WPVP_Database::upgrade_to_231();
 			}
 
+			if ( version_compare( $stored, '2.8.0', '<' ) ) {
+				// Add additional_viewers column for cross-role ballot history visibility.
+				WPVP_Database::upgrade_to_280();
+			}
+
 			update_option( 'wpvp_db_version', WPVP_VERSION );
 		}
 	}

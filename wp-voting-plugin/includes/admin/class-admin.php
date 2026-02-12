@@ -113,6 +113,7 @@ class WPVP_Admin {
 				'i18n'       => array(
 					'confirm_delete'       => __( 'Are you sure you want to delete this vote? This cannot be undone.', 'wp-voting-plugin' ),
 					'select_roles'         => __( 'Select roles...', 'wp-voting-plugin' ),
+					'additional_viewers_placeholder' => __( 'Chronicle/*/HST, Chronicle/*/Staff', 'wp-voting-plugin' ),
 					'select_users'         => __( 'Search users...', 'wp-voting-plugin' ),
 					'option_text'          => __( 'Option text', 'wp-voting-plugin' ),
 					'description_optional' => __( 'Description (optional)', 'wp-voting-plugin' ),

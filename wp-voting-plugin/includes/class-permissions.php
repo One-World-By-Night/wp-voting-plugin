@@ -619,6 +619,105 @@ class WPVP_Permissions {
 		return self::extract_cached_paths( $cached );
 	}
 
+
+	/**
+	 * Check if a user can see a ballot via additional viewer patterns.
+	 *
+	 * The * wildcard in viewer patterns binds to the same-position segment
+	 * from the ballot's voting_role. This ensures slug-level matching:
+	 * e.g., pattern "chronicle/{wildcard}/hst" + ballot role "chronicle/kony/cm"
+	 * resolves to "chronicle/kony/hst" -- user must have that exact role.
+	 *
+	 * @param int    $user_id                    User to check.
+	 * @param string $ballot_voting_role         The voting_role from the ballot.
+	 * @param array  $additional_viewer_patterns Patterns like ['chronicle/{wildcard}/hst'].
+	 * @return bool
+	 */
+	public static function matches_additional_viewers( int $user_id, string $ballot_voting_role, array $additional_viewer_patterns ): bool {
+		if ( empty( $additional_viewer_patterns ) || empty( $ballot_voting_role ) ) {
+			return false;
+		}
+
+		// Get the user's roles (AccessSchema first, then WordPress fallback).
+		$user_roles = self::get_user_all_roles( $user_id );
+		if ( empty( $user_roles ) ) {
+			return false;
+		}
+
+		$ballot_segments = explode( '/', $ballot_voting_role );
+
+		foreach ( $additional_viewer_patterns as $pattern ) {
+			$pattern = trim( $pattern );
+			if ( empty( $pattern ) ) {
+				continue;
+			}
+
+			$pattern_segments  = explode( '/', $pattern );
+			$resolved_segments = array();
+			$valid             = true;
+
+			foreach ( $pattern_segments as $i => $seg ) {
+				$seg = trim( $seg );
+				if ( '*' === $seg ) {
+					// Bind wildcard to same-position segment from ballot's voting_role.
+					if ( ! isset( $ballot_segments[ $i ] ) ) {
+						$valid = false;
+						break;
+					}
+					$resolved_segments[] = $ballot_segments[ $i ];
+				} else {
+					$resolved_segments[] = $seg;
+				}
+			}
+
+			if ( ! $valid ) {
+				continue;
+			}
+
+			$resolved_role = implode( '/', $resolved_segments );
+
+			// Check if user has this resolved role (exact or child match, case-insensitive).
+			if ( self::user_has_cached_role( $user_roles, $resolved_role, true ) ) {
+				return true;
+			}
+
+			// Case-insensitive fallback for exact match (user_has_cached_role is case-sensitive).
+			foreach ( $user_roles as $user_role ) {
+				if ( 0 === strcasecmp( $user_role, $resolved_role ) ) {
+					return true;
+				}
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get all roles for a user (AccessSchema cached roles or WordPress roles).
+	 *
+	 * @param int $user_id User ID.
+	 * @return string[] Array of role path strings.
+	 */
+	private static function get_user_all_roles( int $user_id ): array {
+		// Try AccessSchema cached roles first.
+		$mode = get_option( 'wpvp_accessschema_mode', 'none' );
+		if ( 'none' !== $mode ) {
+			$client_id  = defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp';
+			$user_roles = get_user_meta( $user_id, "{$client_id}_accessschema_cached_roles", true );
+			if ( is_array( $user_roles ) && ! empty( $user_roles ) ) {
+				return self::extract_cached_paths( $user_roles );
+			}
+		}
+
+		// Fallback: WordPress roles.
+		$user = get_userdata( $user_id );
+		if ( $user && ! empty( $user->roles ) ) {
+			return array_values( $user->roles );
+		}
+
+		return array();
+	}
+
 	private static function extract_cached_paths( array $cached ): array {
 		// If the data has a 'roles' key, unwrap it.
 		if ( isset( $cached['roles'] ) && is_array( $cached['roles'] ) ) {
