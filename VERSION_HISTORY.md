@@ -1,6 +1,20 @@
 # WP Voting Plugin - Version History
 
-## Version 2.8.1 (Current - February 2026)
+## Version 2.8.2 (Current - February 2026)
+
+**Resolved entity titles on vote results and admin menu lockdown.**
+
+### Changes
+
+- Voter list on results page now shows ASC-resolved entity titles (e.g. "John Smith, Kings of New York — HST - Yes")
+- Non-anonymous votes: full voter list visible to all users (not just admin)
+- Anonymous votes: only unattributed comments visible to non-admins; admin always sees full details
+- Consolidated voter list and voter comments into a single unified display method
+- New CSS styles for voter entry cards with role labels and indented comments
+
+---
+
+## Version 2.8.1 (February 2026)
 
 **Guide wizard UX upgrades and disciplinary auto-populate fix.**
 
