@@ -139,6 +139,10 @@ class WPVP_Vote_Editor {
 		$raw_voting_roles = isset( $_POST['voting_roles'] ) ? (array) wp_unslash( $_POST['voting_roles'] ) : array();
 		$voting_roles     = array_values( array_filter( array_map( 'sanitize_text_field', $raw_voting_roles ) ) );
 
+		// Sanitise additional viewers.
+		$raw_additional_viewers = isset( $_POST['additional_viewers'] ) ? (array) wp_unslash( $_POST['additional_viewers'] ) : array();
+		$additional_viewers     = array_values( array_filter( array_map( 'sanitize_text_field', $raw_additional_viewers ) ) );
+
 		return array(
 			'proposal_name'        => sanitize_text_field( wp_unslash( $_POST['proposal_name'] ?? '' ) ),
 			'proposal_description' => wp_kses_post( wp_unslash( $_POST['proposal_description'] ?? '' ) ),
@@ -148,6 +152,7 @@ class WPVP_Vote_Editor {
 			'allowed_roles'        => $allowed_roles,
 			'visibility'           => sanitize_key( wp_unslash( $_POST['visibility'] ?? 'private' ) ),
 			'voting_roles'         => $voting_roles,
+			'additional_viewers'   => $additional_viewers,
 			'voting_eligibility'   => sanitize_key( wp_unslash( $_POST['voting_eligibility'] ?? 'private' ) ),
 			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'draft' ) ),
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
@@ -246,11 +251,14 @@ class WPVP_Vote_Editor {
 			$roles            = $decoded_roles ? $decoded_roles : array();
 			$decoded_voting_roles = json_decode( $this->vote->voting_roles, true );
 			$voting_roles     = $decoded_voting_roles ? $decoded_voting_roles : array();
+			$decoded_additional_viewers = json_decode( $this->vote->additional_viewers, true );
+			$additional_viewers = $decoded_additional_viewers ? $decoded_additional_viewers : array();
 		} else {
 			$options      = array();
 			$settings     = array();
 			$roles        = array();
 			$voting_roles = array();
+			$additional_viewers = array();
 		}
 
 		// Check for redirect notice.
@@ -503,6 +511,43 @@ class WPVP_Vote_Editor {
 											<code>Chronicle/*/CM</code> &nbsp; <code>Players/**</code> &nbsp; <code>administrator</code>
 										</p>
 									</div>
+								</div>
+							</div>
+
+							<!-- Additional Vote History Viewers -->
+							<div class="postbox">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Additional Vote History Viewers', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<p class="description" style="margin-bottom: 10px;">
+										<?php esc_html_e( 'Allow related roles to see how votes were cast under other roles in the same group. The * wildcard binds to the same path segment from the voter\'s role.', 'wp-voting-plugin' ); ?>
+									</p>
+									<?php if ( ! empty( $role_templates ) ) : ?>
+										<div class="wpvp-template-loader" style="margin-bottom: 8px;">
+											<label><?php esc_html_e( 'Load from template:', 'wp-voting-plugin' ); ?></label>
+											<select class="wpvp-template-select" data-target="additional_viewers" style="min-width: 200px;">
+												<option value=""><?php esc_html_e( '-- Select template --', 'wp-voting-plugin' ); ?></option>
+												<?php foreach ( $role_templates as $tmpl ) : ?>
+													<option value="<?php echo esc_attr( $tmpl->id ); ?>">
+														<?php echo esc_html( $tmpl->template_name ); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+											<button type="button" class="button wpvp-apply-template"><?php esc_html_e( 'Apply', 'wp-voting-plugin' ); ?></button>
+										</div>
+									<?php endif; ?>
+									<label><?php esc_html_e( 'Additional Viewers (Roles / Groups):', 'wp-voting-plugin' ); ?></label>
+									<select name="additional_viewers[]" multiple class="wpvp-select2-additional-viewers" style="width:100%;">
+										<?php foreach ( $additional_viewers as $role ) : ?>
+											<option value="<?php echo esc_attr( $role ); ?>" selected>
+												<?php echo esc_html( $role ); ?>
+											</option>
+										<?php endforeach; ?>
+									</select>
+									<p class="description">
+										<?php esc_html_e( 'These roles can view vote history for related roles. The * binds to the matching slug from the voter\'s role.', 'wp-voting-plugin' ); ?>
+										<br>
+										<code>Chronicle/*/HST</code> &nbsp; <code>Chronicle/*/Staff</code>
+									</p>
 								</div>
 							</div>
 

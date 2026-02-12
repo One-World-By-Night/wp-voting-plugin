@@ -261,6 +261,14 @@
             allowClear: true,
             width: '100%'
         });
+
+        $('.wpvp-select2-additional-viewers').select2({
+            tags: true,
+            tokenSeparators: [','],
+            placeholder: wpvp.i18n.additional_viewers_placeholder || 'Chronicle/*/HST, Chronicle/*/Staff',
+            allowClear: true,
+            width: '100%'
+        });
     }
 
     if ($.fn.select2) {
@@ -283,6 +291,8 @@
         var $select2;
         if (target === 'allowed_roles') {
             $select2 = $('.wpvp-select2-roles');
+        } else if (target === 'additional_viewers') {
+            $select2 = $('.wpvp-select2-additional-viewers');
         } else {
             $select2 = $('.wpvp-select2-voting-roles');
         }

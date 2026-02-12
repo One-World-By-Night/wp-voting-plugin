@@ -62,6 +62,7 @@ class WPVP_Database {
             allowed_roles text,
             visibility varchar(50) NOT NULL DEFAULT 'private',
             voting_roles text,
+            additional_viewers text,
             voting_eligibility varchar(50) NOT NULL DEFAULT 'private',
             voting_stage varchar(50) NOT NULL DEFAULT 'draft',
             created_by bigint(20) unsigned NOT NULL,
@@ -220,6 +221,21 @@ class WPVP_Database {
 		}
 	}
 
+	/**
+	 * Upgrade to version 2.8.0: Add additional_viewers column.
+	 */
+	public static function upgrade_to_280(): void {
+		global $wpdb;
+
+		$table   = self::votes_table();
+		$columns = $wpdb->get_col( "DESC {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( ! in_array( 'additional_viewers', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN additional_viewers text AFTER voting_roles" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+	}
+
+
 	/*
 	------------------------------------------------------------------
 	 *  Votes — CRUD.
@@ -240,6 +256,7 @@ class WPVP_Database {
 			'allowed_roles'        => wp_json_encode( $data['allowed_roles'] ?? array() ),
 			'visibility'           => sanitize_key( $data['visibility'] ?? 'private' ),
 			'voting_roles'         => wp_json_encode( $data['voting_roles'] ?? array() ),
+			'additional_viewers'   => wp_json_encode( $data['additional_viewers'] ?? array() ),
 			'voting_eligibility'   => sanitize_key( $data['voting_eligibility'] ?? 'private' ),
 			'voting_stage'         => self::sanitize_stage( $data['voting_stage'] ?? 'draft' ),
 			'created_by'           => get_current_user_id(),
@@ -260,6 +277,7 @@ class WPVP_Database {
 			'%s',
 			'%s',
 			'%d',
+			'%s',
 			'%s',
 			'%s',
 			'%s',
@@ -332,6 +350,11 @@ class WPVP_Database {
 		if ( isset( $data['voting_roles'] ) ) {
 			$row['voting_roles'] = wp_json_encode( $data['voting_roles'] );
 			$formats[]           = '%s';
+		}
+
+		if ( isset( $data['additional_viewers'] ) ) {
+			$row['additional_viewers'] = wp_json_encode( $data['additional_viewers'] );
+			$formats[]                = '%s';
 		}
 
 		if ( isset( $data['voting_stage'] ) ) {
