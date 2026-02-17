@@ -190,9 +190,11 @@ class WPVP_Notifications {
 			return;
 		}
 
-		// Use per-vote custom recipients if set, otherwise default behavior.
+		// Use per-vote custom recipients if set, then global default, then computed fallback.
 		if ( ! empty( $vote_settings['notify_open_to'] ) ) {
 			$recipients = $this->parse_email_list( $vote_settings['notify_open_to'] );
+		} elseif ( '' !== get_option( 'wpvp_default_notify_open_to', '' ) ) {
+			$recipients = $this->parse_email_list( get_option( 'wpvp_default_notify_open_to', '' ) );
 		} else {
 			$recipients = $this->get_notification_recipients( $vote );
 			// Also send to admin notification email.
@@ -252,9 +254,11 @@ class WPVP_Notifications {
 			return;
 		}
 
-		// Use per-vote custom recipients if set, otherwise default behavior.
+		// Use per-vote custom recipients if set, then global default, then computed fallback.
 		if ( ! empty( $vote_settings['notify_close_to'] ) ) {
 			$recipients = $this->parse_email_list( $vote_settings['notify_close_to'] );
+		} elseif ( '' !== get_option( 'wpvp_default_notify_close_to', '' ) ) {
+			$recipients = $this->parse_email_list( get_option( 'wpvp_default_notify_close_to', '' ) );
 		} else {
 			// Default: voters who participated + admin.
 			$recipients = $this->get_voters( $vote->id );
@@ -634,9 +638,11 @@ class WPVP_Notifications {
 
 		$vote_settings = $this->get_vote_settings( $vote );
 
-		// Use per-vote custom recipients if set, otherwise default to admin.
+		// Use per-vote custom recipients if set, then global default, then admin.
 		if ( ! empty( $vote_settings['notify_reminder_to'] ) ) {
 			$recipients = $this->parse_email_list( $vote_settings['notify_reminder_to'] );
+		} elseif ( '' !== get_option( 'wpvp_default_notify_reminder_to', '' ) ) {
+			$recipients = $this->parse_email_list( get_option( 'wpvp_default_notify_reminder_to', '' ) );
 		} else {
 			$admin_email = $this->get_admin_notification_email();
 			$recipients  = $admin_email ? array( $admin_email ) : array();

@@ -668,7 +668,7 @@ class WPVP_Guide {
 							<p style="margin-left: 24px;">
 								<label for="wpvp_notify_open_to"><?php esc_html_e( 'Recipients (comma-separated):', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" name="settings[notify_open_to]" id="wpvp_notify_open_to" class="regular-text"
-									placeholder="<?php esc_attr_e( 'Default: eligible voters + admin', 'wp-voting-plugin' ); ?>" style="width: 100%;">
+									placeholder="<?php esc_attr_e( 'Blank = system default (Settings > General)', 'wp-voting-plugin' ); ?>" style="width: 100%;">
 							</p>
 
 							<p>
@@ -680,7 +680,7 @@ class WPVP_Guide {
 							<p style="margin-left: 24px;">
 								<label for="wpvp_notify_reminder_to"><?php esc_html_e( 'Recipients (comma-separated):', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" name="settings[notify_reminder_to]" id="wpvp_notify_reminder_to" class="regular-text"
-									placeholder="<?php esc_attr_e( 'Default: admin notification email', 'wp-voting-plugin' ); ?>" style="width: 100%;">
+									placeholder="<?php esc_attr_e( 'Blank = system default (Settings > General)', 'wp-voting-plugin' ); ?>" style="width: 100%;">
 							</p>
 
 							<p>
@@ -692,7 +692,7 @@ class WPVP_Guide {
 							<p style="margin-left: 24px;">
 								<label for="wpvp_notify_close_to"><?php esc_html_e( 'Recipients (comma-separated):', 'wp-voting-plugin' ); ?></label><br>
 								<input type="text" name="settings[notify_close_to]" id="wpvp_notify_close_to" class="regular-text"
-									placeholder="<?php esc_attr_e( 'Default: voters + admin', 'wp-voting-plugin' ); ?>" style="width: 100%;">
+									placeholder="<?php esc_attr_e( 'Blank = system default (Settings > General)', 'wp-voting-plugin' ); ?>" style="width: 100%;">
 							</p>
 
 							<p>

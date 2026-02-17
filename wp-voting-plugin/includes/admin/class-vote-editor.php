@@ -610,7 +610,7 @@ class WPVP_Vote_Editor {
 									<p style="margin: 0 0 12px 24px;">
 										<input type="text" name="settings[notify_open_to]" class="widefat"
 											value="<?php echo esc_attr( $settings['notify_open_to'] ?? '' ); ?>"
-											placeholder="<?php esc_attr_e( 'Default: eligible voters + admin', 'wp-voting-plugin' ); ?>">
+											placeholder="<?php esc_attr_e( 'Blank = system default (Settings > General)', 'wp-voting-plugin' ); ?>">
 									</p>
 
 									<label style="display:block; margin-bottom:4px;">
@@ -621,7 +621,7 @@ class WPVP_Vote_Editor {
 									<p style="margin: 0 0 12px 24px;">
 										<input type="text" name="settings[notify_reminder_to]" class="widefat"
 											value="<?php echo esc_attr( $settings['notify_reminder_to'] ?? '' ); ?>"
-											placeholder="<?php esc_attr_e( 'Default: admin email', 'wp-voting-plugin' ); ?>">
+											placeholder="<?php esc_attr_e( 'Blank = system default (Settings > General)', 'wp-voting-plugin' ); ?>">
 									</p>
 
 									<label style="display:block; margin-bottom:4px;">
@@ -632,7 +632,7 @@ class WPVP_Vote_Editor {
 									<p style="margin: 0 0 12px 24px;">
 										<input type="text" name="settings[notify_close_to]" class="widefat"
 											value="<?php echo esc_attr( $settings['notify_close_to'] ?? '' ); ?>"
-											placeholder="<?php esc_attr_e( 'Default: voters + admin', 'wp-voting-plugin' ); ?>">
+											placeholder="<?php esc_attr_e( 'Blank = system default (Settings > General)', 'wp-voting-plugin' ); ?>">
 									</p>
 
 									<label style="display:block;">

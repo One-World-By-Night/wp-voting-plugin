@@ -73,6 +73,30 @@ class WPVP_Settings {
 				'default'           => '',
 			)
 		);
+		register_setting(
+			'wpvp_general',
+			'wpvp_default_notify_open_to',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			'wpvp_general',
+			'wpvp_default_notify_reminder_to',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
+		register_setting(
+			'wpvp_general',
+			'wpvp_default_notify_close_to',
+			array(
+				'sanitize_callback' => 'sanitize_text_field',
+				'default'           => '',
+			)
+		);
 
 		// Permissions tab.
 		register_setting(
@@ -158,6 +182,9 @@ class WPVP_Settings {
 			'wpvp_show_results_before_close',
 			'wpvp_enable_email_notifications',
 			'wpvp_admin_notification_email',
+			'wpvp_default_notify_open_to',
+			'wpvp_default_notify_reminder_to',
+			'wpvp_default_notify_close_to',
 		);
 		$allowed_options['wpvp_permissions'] = array(
 			'wpvp_accessschema_mode',
@@ -187,6 +214,9 @@ class WPVP_Settings {
 				update_option( 'wpvp_show_results_before_close', isset( $_POST['wpvp_show_results_before_close'] ) );
 				update_option( 'wpvp_enable_email_notifications', isset( $_POST['wpvp_enable_email_notifications'] ) );
 				update_option( 'wpvp_admin_notification_email', isset( $_POST['wpvp_admin_notification_email'] ) ? sanitize_email( wp_unslash( $_POST['wpvp_admin_notification_email'] ) ) : '' );
+				update_option( 'wpvp_default_notify_open_to', isset( $_POST['wpvp_default_notify_open_to'] ) ? sanitize_text_field( wp_unslash( $_POST['wpvp_default_notify_open_to'] ) ) : '' );
+				update_option( 'wpvp_default_notify_reminder_to', isset( $_POST['wpvp_default_notify_reminder_to'] ) ? sanitize_text_field( wp_unslash( $_POST['wpvp_default_notify_reminder_to'] ) ) : '' );
+				update_option( 'wpvp_default_notify_close_to', isset( $_POST['wpvp_default_notify_close_to'] ) ? sanitize_text_field( wp_unslash( $_POST['wpvp_default_notify_close_to'] ) ) : '' );
 				break;
 
 			case 'permissions':
@@ -337,6 +367,51 @@ class WPVP_Settings {
 							'<code>' . esc_html( get_option( 'admin_email' ) ) . '</code>'
 						);
 						?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="wpvp_default_notify_open_to"><?php esc_html_e( 'Vote Opened Recipients', 'wp-voting-plugin' ); ?></label>
+				</th>
+				<td>
+					<input type="text" id="wpvp_default_notify_open_to"
+							name="wpvp_default_notify_open_to"
+							value="<?php echo esc_attr( get_option( 'wpvp_default_notify_open_to', '' ) ); ?>"
+							class="regular-text"
+							placeholder="<?php esc_attr_e( 'eligible voters + admin', 'wp-voting-plugin' ); ?>">
+					<p class="description">
+						<?php esc_html_e( 'Default recipients when a vote opens. Comma-separated emails. Leave blank to use eligible voters + admin.', 'wp-voting-plugin' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="wpvp_default_notify_reminder_to"><?php esc_html_e( 'Closing Reminder Recipients', 'wp-voting-plugin' ); ?></label>
+				</th>
+				<td>
+					<input type="text" id="wpvp_default_notify_reminder_to"
+							name="wpvp_default_notify_reminder_to"
+							value="<?php echo esc_attr( get_option( 'wpvp_default_notify_reminder_to', '' ) ); ?>"
+							class="regular-text"
+							placeholder="<?php esc_attr_e( 'admin email', 'wp-voting-plugin' ); ?>">
+					<p class="description">
+						<?php esc_html_e( 'Default recipients for the closing-day reminder. Comma-separated emails. Leave blank to use admin email only.', 'wp-voting-plugin' ); ?>
+					</p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row">
+					<label for="wpvp_default_notify_close_to"><?php esc_html_e( 'Vote Closed Recipients', 'wp-voting-plugin' ); ?></label>
+				</th>
+				<td>
+					<input type="text" id="wpvp_default_notify_close_to"
+							name="wpvp_default_notify_close_to"
+							value="<?php echo esc_attr( get_option( 'wpvp_default_notify_close_to', '' ) ); ?>"
+							class="regular-text"
+							placeholder="<?php esc_attr_e( 'voters + admin', 'wp-voting-plugin' ); ?>">
+					<p class="description">
+						<?php esc_html_e( 'Default recipients when a vote closes. Comma-separated emails. Leave blank to use voters who participated + admin.', 'wp-voting-plugin' ); ?>
 					</p>
 				</td>
 			</tr>

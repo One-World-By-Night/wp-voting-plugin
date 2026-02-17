@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.1.0
+Stable tag: 3.1.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,11 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.1.1 =
+* Global default notification recipient settings in WP Voting > Settings > General
+* 3-tier recipient cascade: per-vote override → global default → computed fallback
+* Per-vote recipient placeholders now reference system settings page
 
 = 2.8.1 =
 * Guide wizard role fields upgraded to Select2 multi-selects (matching vote editor UX)

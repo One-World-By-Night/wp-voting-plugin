@@ -1,6 +1,22 @@
 # WP Voting Plugin - Version History
 
-## Version 3.1.0 (Current - February 2026)
+## Version 3.1.1 (Current - February 2026)
+
+**Global default notification recipients in Settings page.**
+
+### New Features
+
+- **Global notification defaults**: Three new fields in WP Voting > Settings > General to configure default recipients for vote opened, closing reminder, and vote closed notifications
+- **3-tier recipient cascade**: Notification recipients now resolve as: per-vote override → global system default → computed fallback (eligible voters/voters/admin)
+- **Updated per-vote placeholders**: Per-vote recipient fields in both the vote editor and Guide wizard now reference "system default (Settings > General)" instead of hardcoded descriptions
+
+### Technical Details
+
+New options: `wpvp_default_notify_open_to`, `wpvp_default_notify_reminder_to`, `wpvp_default_notify_close_to` (comma-separated email strings). When a per-vote notification recipient field is blank, the system checks the global default before falling back to computed behavior (eligible voters + admin for opens, admin only for reminders, voters + admin for closes).
+
+---
+
+## Version 3.1.0 (February 2026)
 
 **Consent agenda overhaul and email formatting improvements.**
 
