@@ -115,6 +115,7 @@ add_filter(
 	3
 );
 
+if ( ! function_exists( 'accessSchema_client_render_grouped_roles' ) ) {
 /**
  * Render roles grouped by top-level category.
  *
@@ -170,6 +171,7 @@ function accessSchema_client_render_grouped_roles( $roles ) {
 
 	return $html;
 }
+} // End function_exists guard.
 
 /**
  * Handle flush and refresh actions scoped per-plugin instance.

@@ -1,6 +1,16 @@
 # WP Voting Plugin - Version History
 
-## Version 3.2.2 (Current - February 2026)
+## Version 3.2.3 (Current - February 2026)
+
+**Fix potential fatal error when multiple plugins embed AccessSchema client.**
+
+### Bug Fixes
+
+- Wrapped `accessSchema_client_render_grouped_roles()` in `function_exists()` guard to prevent redeclaration fatal when multiple plugins load the AccessSchema client admin
+
+---
+
+## Version 3.2.2 (February 2026)
 
 **Updated embedded AccessSchema client to v2.1.1.**
 
