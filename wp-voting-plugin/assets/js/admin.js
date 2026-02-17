@@ -210,11 +210,8 @@
             var openingDate = new Date(openingDateValue);
             var closingDate = new Date(openingDate);
 
-            // For consent agenda, closing date = opening date (closes immediately)
-            // For other types, add 7 days
-            if (votingType !== 'consent') {
-                closingDate.setDate(closingDate.getDate() + 7);
-            }
+            // All vote types default to 7-day review period.
+            closingDate.setDate(closingDate.getDate() + 7);
 
             // Format as YYYY-MM-DDTHH:mm for datetime-local input
             var year = closingDate.getFullYear();
@@ -549,11 +546,8 @@
                 var openingDate = new Date(openingDateValue);
                 var closingDate = new Date(openingDate);
 
-                // For consent agenda, closing date = opening date (closes immediately)
-                // For other types, add 7 days
-                if (votingType !== 'consent') {
-                    closingDate.setDate(closingDate.getDate() + 7);
-                }
+                // All vote types default to 7-day review period.
+                closingDate.setDate(closingDate.getDate() + 7);
 
                 // Format as YYYY-MM-DDTHH:mm for datetime-local input
                 var year = closingDate.getFullYear();

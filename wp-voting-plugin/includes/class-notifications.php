@@ -530,24 +530,60 @@ class WPVP_Notifications {
 	/**
 	 * Format ballot data for email display.
 	 *
-	 * @param mixed  $ballot_data Ballot data.
+	 * @param mixed  $ballot_data Ballot data (may be the full payload with choice/voting_role/etc.).
 	 * @param string $voting_type Voting type.
 	 * @return string
 	 */
 	private function format_ballot_for_email( $ballot_data, string $voting_type ): string {
 		$decoded = is_string( $ballot_data ) ? json_decode( $ballot_data, true ) : $ballot_data;
 
-		// Ranked voting types.
-		if ( in_array( $voting_type, array( 'rcv', 'stv', 'condorcet' ), true ) && is_array( $decoded ) ) {
-			$output = '';
-			foreach ( $decoded as $rank => $choice ) {
-				$output .= '  ' . ( $rank + 1 ) . '. ' . $choice . "\n";
-			}
-			return $output;
+		// Unwrap the enriched ballot payload to extract the actual choice and metadata.
+		$choice        = $decoded;
+		$voting_role   = '';
+		$voter_comment = '';
+
+		if ( is_array( $decoded ) && isset( $decoded['choice'] ) ) {
+			$choice        = $decoded['choice'];
+			$voting_role   = isset( $decoded['voting_role'] ) ? $decoded['voting_role'] : '';
+			$voter_comment = isset( $decoded['voter_comment'] ) ? $decoded['voter_comment'] : '';
 		}
 
-		// Single choice voting types.
-		return '  ' . ( is_string( $decoded ) ? $decoded : wp_json_encode( $decoded ) );
+		$output = '';
+
+		// Format the choice based on voting type.
+		if ( in_array( $voting_type, array( 'rcv', 'stv', 'condorcet' ), true ) && is_array( $choice ) ) {
+			// Ranked voting types.
+			foreach ( $choice as $rank => $option ) {
+				$output .= '  ' . ( $rank + 1 ) . '. ' . $option . "\n";
+			}
+		} elseif ( 'consent' === $voting_type ) {
+			$output .= "  Objection filed\n";
+		} elseif ( is_string( $choice ) ) {
+			$output .= '  ' . $choice . "\n";
+		} elseif ( is_array( $choice ) ) {
+			// Fallback for array choices that aren't ranked.
+			foreach ( $choice as $item ) {
+				$output .= '  - ' . $item . "\n";
+			}
+		}
+
+		// Append voting role if present.
+		if ( ! empty( $voting_role ) ) {
+			$output .= "\n" . sprintf(
+				__( 'Voting as: %s', 'wp-voting-plugin' ),
+				$voting_role
+			) . "\n";
+		}
+
+		// Append comment if present.
+		if ( ! empty( $voter_comment ) ) {
+			$output .= "\n" . sprintf(
+				__( 'Your comment: %s', 'wp-voting-plugin' ),
+				$voter_comment
+			) . "\n";
+		}
+
+		return rtrim( $output );
 	}
 
 	/*

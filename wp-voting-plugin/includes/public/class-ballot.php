@@ -54,13 +54,15 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'This vote is not currently open.', 'wp-voting-plugin' ) ) );
 		}
 
-		// 5. Date window check.
-		$now = current_time( 'mysql' );
-		if ( $vote->opening_date && $now < $vote->opening_date ) {
-			wp_send_json_error( array( 'message' => __( 'This vote has not opened yet.', 'wp-voting-plugin' ) ) );
-		}
-		if ( $vote->closing_date && $now > $vote->closing_date ) {
-			wp_send_json_error( array( 'message' => __( 'This vote has closed.', 'wp-voting-plugin' ) ) );
+		// 5. Date window check (consent votes bypass — objections allowed any time while open).
+		if ( 'consent' !== $vote->voting_type ) {
+			$now = current_time( 'mysql' );
+			if ( $vote->opening_date && $now < $vote->opening_date ) {
+				wp_send_json_error( array( 'message' => __( 'This vote has not opened yet.', 'wp-voting-plugin' ) ) );
+			}
+			if ( $vote->closing_date && $now > $vote->closing_date ) {
+				wp_send_json_error( array( 'message' => __( 'This vote has closed.', 'wp-voting-plugin' ) ) );
+			}
 		}
 
 		// 6. Permission check.
@@ -161,6 +163,48 @@ class WPVP_Ballot {
 
 		if ( ! $result ) {
 			wp_send_json_error( array( 'message' => __( 'Failed to save your vote. Please try again.', 'wp-voting-plugin' ) ) );
+		}
+
+		// Consent agenda conversion: objection filed → convert to FPTP.
+		if ( 'consent' === $vote->voting_type ) {
+			global $wpdb;
+
+			// Delete all ballots — the objection triggered the conversion, fresh start.
+			$wpdb->delete( WPVP_Database::ballots_table(), array( 'vote_id' => $vote_id ), array( '%d' ) );
+
+			// Convert to singleton (FPTP) with Approve/Deny options.
+			$fptp_options = array(
+				array(
+					'text'        => __( 'Approve', 'wp-voting-plugin' ),
+					'description' => '',
+				),
+				array(
+					'text'        => __( 'Deny', 'wp-voting-plugin' ),
+					'description' => '',
+				),
+			);
+
+			// Enable revoting on the new FPTP vote.
+			$decoded_settings                 = json_decode( $vote->settings, true );
+			$converted_settings               = $decoded_settings ? $decoded_settings : array();
+			$converted_settings['allow_revote'] = true;
+
+			WPVP_Database::update_vote(
+				$vote_id,
+				array(
+					'voting_type'    => 'singleton',
+					'voting_options' => $fptp_options,
+					'settings'       => $converted_settings,
+				)
+			);
+
+			wp_send_json_success(
+				array(
+					'message'   => __( 'Objection filed. This proposal has been converted to a standard vote. The page will reload so you can cast your vote.', 'wp-voting-plugin' ),
+					'converted' => true,
+					'new_type'  => 'singleton',
+				)
+			);
 		}
 
 		// Save user's notification preference and custom email addresses.

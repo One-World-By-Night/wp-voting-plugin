@@ -88,6 +88,16 @@
         })
         .done(function (response) {
             if (response.success) {
+                // Consent→FPTP conversion: reload so the user sees the new ballot form.
+                if (response.data.converted) {
+                    $status.text(response.data.message).removeClass('error').addClass('success');
+                    $btn.prop('disabled', true);
+                    setTimeout(function () {
+                        window.location.reload();
+                    }, 2000);
+                    return;
+                }
+
                 var allowRevote = response.data.allow_revote;
                 var statusMsg = response.data.message;
 
