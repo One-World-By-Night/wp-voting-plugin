@@ -1,6 +1,30 @@
 # WP Voting Plugin - Version History
 
-## Version 3.0.0 (Current - February 2026)
+## Version 3.1.0 (Current - February 2026)
+
+**Consent agenda overhaul and email formatting improvements.**
+
+### New Features
+
+- **Consent→FPTP conversion**: When someone files an objection on a consent agenda vote, the vote automatically converts to a singleton (FPTP) vote with Approve/Deny options, all ballots are cleared, and revoting is enabled
+- **Consent 7-day review period**: Consent votes now default to a 7-day closing window instead of instant close, giving members time to review and object
+- **Consent date bypass**: Objections can be filed any time while a consent vote is in the "open" stage, regardless of the opening/closing date window
+- **Consent list view labels**: Vote list shows "Object" (red) and "Objected" (green) buttons for consent agenda items instead of generic Vote/Voted labels
+
+### Bug Fixes
+
+- **Email confirmation formatting**: Voter confirmation emails now display ballot data as clean labeled text (choice, voting role, comment) instead of raw JSON
+- **Double-encoding fix**: Vote data passed through `update_vote()` is no longer double-JSON-encoded when converting consent votes
+
+### Technical Details
+
+Consent conversion is handled in `class-ballot.php` after the objection ballot is saved. The code deletes all ballots, updates `voting_type` to `singleton`, sets `voting_options` to Approve/Deny, and enables `allow_revote` in settings. The JS frontend detects the `converted` flag in the AJAX response and reloads the page after 2 seconds.
+
+The email formatter in `class-notifications.php` now unwraps the enriched ballot payload (`{choice, voting_role, display_name, username, voter_comment}`) and formats each field as a labeled line instead of dumping raw JSON.
+
+---
+
+## Version 3.0.0 (February 2026)
 
 **Smart action buttons, wider modals, per-vote email configuration, and public results visibility.**
 
