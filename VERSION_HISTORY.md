@@ -1,6 +1,21 @@
 # WP Voting Plugin - Version History
 
-## Version 3.1.2 (Current - February 2026)
+## Version 3.2.0 (Current - February 2026)
+
+**Abstain option for consent-converted FPTP votes.**
+
+### New Features
+
+- **Abstain option**: Consent→FPTP conversion now creates Approve/Deny/Abstain options instead of just Approve/Deny
+- **Abstain exclusion in algorithm**: Abstain votes are recorded and displayed but excluded from winner determination, percentage calculations, and rankings. A vote with 2 Approve, 1 Deny, and 10 Abstain correctly declares Approve the winner at 66.67%
+
+### Technical Details
+
+In `class-singleton.php`, Abstain votes are removed from `$vote_counts` before winner/percentage/ranking logic, then re-added for display. The `$total_valid_votes` denominator subtracts both invalid votes and abstentions. An event log entry records the abstention count.
+
+---
+
+## Version 3.1.2 (February 2026)
 
 **Fix admin unable to object on restricted consent votes.**
 

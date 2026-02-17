@@ -172,7 +172,7 @@ class WPVP_Ballot {
 			// Delete all ballots — the objection triggered the conversion, fresh start.
 			$wpdb->delete( WPVP_Database::ballots_table(), array( 'vote_id' => $vote_id ), array( '%d' ) );
 
-			// Convert to singleton (FPTP) with Approve/Deny options.
+			// Convert to singleton (FPTP) with Approve/Deny/Abstain options.
 			$fptp_options = array(
 				array(
 					'text'        => __( 'Approve', 'wp-voting-plugin' ),
@@ -180,6 +180,10 @@ class WPVP_Ballot {
 				),
 				array(
 					'text'        => __( 'Deny', 'wp-voting-plugin' ),
+					'description' => '',
+				),
+				array(
+					'text'        => __( 'Abstain', 'wp-voting-plugin' ),
 					'description' => '',
 				),
 			);
