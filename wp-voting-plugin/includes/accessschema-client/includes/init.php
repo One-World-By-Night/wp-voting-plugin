@@ -25,8 +25,7 @@ if ( $classes ) {
 require_once __DIR__ . '/helper/static-data.php';
 require_once __DIR__ . '/helper/init.php';
 
-// Load admin functionality (menus, settings, enqueue)
-// NOTE: Disabled for WPVP - the voting plugin has its own AccessSchema settings UI.
+// NOTE: Disabled for WPVP — the voting plugin has its own AccessSchema settings UI.
 // require_once __DIR__ . '/admin/init.php';
 
 // Load hooks (REST API, save, validation, webhooks)

@@ -1,6 +1,17 @@
 # WP Voting Plugin - Version History
 
-## Version 3.2.1 (Current - February 2026)
+## Version 3.2.2 (Current - February 2026)
+
+**Updated embedded AccessSchema client to v2.1.1.**
+
+### Updates
+
+- **AccessSchema client v2.1.1**: Local mode support for same-server installations, grouped role display in Users table, smart column visibility (only shown for remote clients), inline CSS styling, improved cache refresh logic
+- Admin init remains disabled (WPVP has its own AccessSchema settings UI)
+
+---
+
+## Version 3.2.1 (February 2026)
 
 **Abstain exclusion extended to all voting algorithms.**
 
