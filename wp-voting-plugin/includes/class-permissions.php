@@ -200,10 +200,21 @@ class WPVP_Permissions {
 		// Restricted: check voting_roles.
 		$voting_roles = json_decode( $vote->voting_roles, true );
 		if ( empty( $voting_roles ) ) {
+			// Admin bypass: admins can always vote even without matching roles.
+			if ( user_can( $user_id, 'manage_options' ) ) {
+				return array( 'Administrator' );
+			}
 			return array();
 		}
 
-		return self::get_matching_roles( $user_id, $voting_roles );
+		$matched = self::get_matching_roles( $user_id, $voting_roles );
+
+		// Admin bypass: if admin has no matching roles, give them a fallback.
+		if ( empty( $matched ) && user_can( $user_id, 'manage_options' ) ) {
+			return array( 'Administrator' );
+		}
+
+		return $matched;
 	}
 
 	/*

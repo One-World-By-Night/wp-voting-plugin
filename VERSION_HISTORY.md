@@ -1,6 +1,16 @@
 # WP Voting Plugin - Version History
 
-## Version 3.1.1 (Current - February 2026)
+## Version 3.1.2 (Current - February 2026)
+
+**Fix admin unable to object on restricted consent votes.**
+
+### Bug Fixes
+
+- **Admin role bypass for eligible voting roles**: Admins who pass `can_cast_vote()` (via the `manage_options` bypass) were blocked by `get_eligible_voting_roles()` returning an empty array when they didn't hold any of the vote's restricted `voting_roles`. Now returns `['Administrator']` as a fallback role for admins, consistent with the existing admin bypass logic.
+
+---
+
+## Version 3.1.1 (February 2026)
 
 **Global default notification recipients in Settings page.**
 
