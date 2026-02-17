@@ -652,6 +652,57 @@ class WPVP_Guide {
 							</p>
 						</div>
 
+						<hr style="margin: 20px 0;">
+						<h4 style="margin-bottom: 8px;"><?php esc_html_e( 'Email Notifications', 'wp-voting-plugin' ); ?></h4>
+						<p class="description" style="margin-bottom: 12px;">
+							<?php esc_html_e( 'Configure which email notifications are sent for this vote. Leave recipient fields blank to use the default from system settings.', 'wp-voting-plugin' ); ?>
+						</p>
+
+						<div class="wpvp-guide-form-section">
+							<p>
+								<label>
+									<input type="checkbox" name="settings[notify_on_open]" value="1">
+									<?php esc_html_e( 'Send notification when vote opens', 'wp-voting-plugin' ); ?>
+								</label>
+							</p>
+							<p style="margin-left: 24px;">
+								<label for="wpvp_notify_open_to"><?php esc_html_e( 'Recipients (comma-separated):', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" name="settings[notify_open_to]" id="wpvp_notify_open_to" class="regular-text"
+									placeholder="<?php esc_attr_e( 'Default: eligible voters + admin', 'wp-voting-plugin' ); ?>" style="width: 100%;">
+							</p>
+
+							<p>
+								<label>
+									<input type="checkbox" name="settings[notify_before_close]" value="1">
+									<?php esc_html_e( 'Send reminder 1 day before close', 'wp-voting-plugin' ); ?>
+								</label>
+							</p>
+							<p style="margin-left: 24px;">
+								<label for="wpvp_notify_reminder_to"><?php esc_html_e( 'Recipients (comma-separated):', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" name="settings[notify_reminder_to]" id="wpvp_notify_reminder_to" class="regular-text"
+									placeholder="<?php esc_attr_e( 'Default: admin notification email', 'wp-voting-plugin' ); ?>" style="width: 100%;">
+							</p>
+
+							<p>
+								<label>
+									<input type="checkbox" name="settings[notify_on_close]" value="1">
+									<?php esc_html_e( 'Send notification when vote closes (with results)', 'wp-voting-plugin' ); ?>
+								</label>
+							</p>
+							<p style="margin-left: 24px;">
+								<label for="wpvp_notify_close_to"><?php esc_html_e( 'Recipients (comma-separated):', 'wp-voting-plugin' ); ?></label><br>
+								<input type="text" name="settings[notify_close_to]" id="wpvp_notify_close_to" class="regular-text"
+									placeholder="<?php esc_attr_e( 'Default: voters + admin', 'wp-voting-plugin' ); ?>" style="width: 100%;">
+							</p>
+
+							<p>
+								<label>
+									<input type="checkbox" name="settings[notify_voter_confirmation]" value="1" checked>
+									<?php esc_html_e( 'Allow voters to opt-in to email confirmation of their vote', 'wp-voting-plugin' ); ?>
+								</label>
+							</p>
+						</div>
+
 						<div class="wpvp-wizard-step__nav">
 							<button type="button" class="button wpvp-wizard-prev"><?php esc_html_e( '&larr; Back', 'wp-voting-plugin' ); ?></button>
 							<button type="button" class="button wpvp-wizard-next"><?php esc_html_e( 'Next: Save &rarr;', 'wp-voting-plugin' ); ?></button>

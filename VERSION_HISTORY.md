@@ -1,6 +1,40 @@
 # WP Voting Plugin - Version History
 
-## Version 2.8.2 (Current - February 2026)
+## Version 3.0.0 (Current - February 2026)
+
+**Smart action buttons, wider modals, per-vote email configuration, and public results visibility.**
+
+### New Features
+
+- **Context-aware list view buttons**: Action column now shows four distinct states — "Vote" (can vote, hasn't yet), "Update" (voted, can change), "Voted" (voted, can't change, green badge), "View" (can't vote)
+- **Wider vote modal**: Lightbox modal widened from 900px to 80% viewport width for better readability
+- **Voter email confirmation with custom recipients**: When opting in to email confirmation, voters now see an editable email field pre-filled with their address, supporting comma-separated additional recipients
+- **Per-vote email notification settings**: Each vote can now configure its own notification behavior:
+  - Notify when vote opens (with custom recipient override)
+  - Remind 1 day before close (with custom recipient override)
+  - Notify when vote closes with results (with custom recipient override)
+  - Enable/disable voter confirmation emails per vote
+  - All fields default to system-level settings when left blank
+- **Public live results for guests**: Non-logged-in users can now see live results on public votes with "show results before closing" enabled
+
+### Bug Fixes
+
+- **PHP 7.4 compatibility**: Removed PHP 8.0+ syntax (`int|false` union type in class-migration.php, `match()` expression in AccessSchema users.php)
+- **AccessSchema null reference crash**: Fixed fatal error in `client-api.php` when AccessSchema API function doesn't exist (e.g., when AccessSchema server plugin isn't installed)
+
+### Technical Details
+
+The list view in `vote-list.php` now queries both `can_cast_vote()` and `user_has_voted()` independently for open votes. This distinguishes "can vote + has voted" (Update) from "can't vote + has voted" (Voted). A new `.wpvp-btn--success` CSS class provides the green styling for the Voted state.
+
+Per-vote email settings are stored in the existing `settings` JSON column alongside other vote settings. New keys: `notify_on_open`, `notify_before_close`, `notify_on_close`, `notify_voter_confirmation` (booleans) and `notify_open_to`, `notify_reminder_to`, `notify_close_to` (comma-separated email strings). The notification system checks these per-vote overrides first, falling back to the global system defaults.
+
+The voter confirmation email system now stores custom email addresses in user meta (`wpvp_vote_{id}_notify_emails`) and sends to all specified addresses.
+
+Public results visibility was fixed in both `can_view_results()` (which now returns true for public-visibility votes) and `vote-detail.php` (which no longer requires `$user_id` for result display).
+
+---
+
+## Version 2.8.2 (February 2026)
 
 **Resolved entity titles on vote results and admin menu lockdown.**
 

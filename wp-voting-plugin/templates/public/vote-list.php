@@ -90,14 +90,27 @@ defined( 'ABSPATH' ) || exit;
 									<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
 										<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
 									</a>
-								<?php elseif ( $current_user_id && WPVP_Permissions::can_cast_vote( $current_user_id, (int) $vote->id ) ) : ?>
-									<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--primary wpvp-btn--small">
-										<?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?>
-									</a>
-								<?php else : ?>
-									<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
-										<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
-									</a>
+								<?php else :
+									$can_vote  = $current_user_id && WPVP_Permissions::can_cast_vote( $current_user_id, (int) $vote->id );
+									$has_voted = $current_user_id && WPVP_Database::user_has_voted( $current_user_id, (int) $vote->id );
+								?>
+									<?php if ( $can_vote && $has_voted ) : ?>
+										<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--primary wpvp-btn--small">
+											<?php esc_html_e( 'Update', 'wp-voting-plugin' ); ?>
+										</a>
+									<?php elseif ( $can_vote ) : ?>
+										<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--primary wpvp-btn--small">
+											<?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?>
+										</a>
+									<?php elseif ( $has_voted ) : ?>
+										<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--success wpvp-btn--small">
+											<?php esc_html_e( 'Voted', 'wp-voting-plugin' ); ?>
+										</a>
+									<?php else : ?>
+										<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
+											<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
+										</a>
+									<?php endif; ?>
 								<?php endif; ?>
 							<?php elseif ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true ) ) : ?>
 								<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">

@@ -162,17 +162,45 @@ defined( 'ABSPATH' ) || exit;
 			</div>
 		<?php endif; ?>
 
-		<?php if ( get_option( 'wpvp_enable_email_notifications', false ) ) : ?>
+		<?php if ( get_option( 'wpvp_enable_email_notifications', false ) && ( ! isset( $settings['notify_voter_confirmation'] ) || ! empty( $settings['notify_voter_confirmation'] ) ) ) : ?>
 			<?php
 			// Check if user has already opted in for this vote.
 			$previously_opted_in = get_user_meta( $user_id, 'wpvp_vote_' . $vote->id . '_notify', true );
+			$current_user_obj    = wp_get_current_user();
+			$default_email       = $current_user_obj->user_email;
+			$saved_emails        = get_user_meta( $user_id, 'wpvp_vote_' . $vote->id . '_notify_emails', true );
+			$email_value         = $saved_emails ? $saved_emails : $default_email;
 			?>
 			<div class="wpvp-ballot__notification-opt-in" style="margin: 16px 0;">
 				<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
-					<input type="checkbox" name="send_confirmation" value="1" <?php checked( $previously_opted_in ); ?> style="margin: 0;">
-					<span><?php esc_html_e( 'Send me email confirmation when I vote', 'wp-voting-plugin' ); ?></span>
+					<input type="checkbox" name="send_confirmation" value="1"
+						id="wpvp-send-confirmation-<?php echo esc_attr( $vote->id ); ?>"
+						<?php checked( $previously_opted_in ); ?> style="margin: 0;">
+					<span><?php esc_html_e( 'Email me a confirmation of my vote', 'wp-voting-plugin' ); ?></span>
 				</label>
+				<div class="wpvp-ballot__email-field" id="wpvp-email-field-<?php echo esc_attr( $vote->id ); ?>"
+					style="margin-top: 8px; padding-left: 28px; <?php echo $previously_opted_in ? '' : 'display: none;'; ?>">
+					<label for="wpvp-confirmation-emails-<?php echo esc_attr( $vote->id ); ?>" style="display: block; margin-bottom: 4px; font-size: 13px; color: #646970;">
+						<?php esc_html_e( 'Send to (comma-separated for multiple):', 'wp-voting-plugin' ); ?>
+					</label>
+					<input type="text" name="confirmation_emails"
+						id="wpvp-confirmation-emails-<?php echo esc_attr( $vote->id ); ?>"
+						value="<?php echo esc_attr( $email_value ); ?>"
+						style="width: 100%; padding: 6px 8px; font-size: 14px;"
+						placeholder="<?php esc_attr_e( 'you@example.com, other@example.com', 'wp-voting-plugin' ); ?>">
+				</div>
 			</div>
+			<script>
+			(function() {
+				var cb = document.getElementById('wpvp-send-confirmation-<?php echo esc_js( $vote->id ); ?>');
+				var field = document.getElementById('wpvp-email-field-<?php echo esc_js( $vote->id ); ?>');
+				if (cb && field) {
+					cb.addEventListener('change', function() {
+						field.style.display = this.checked ? '' : 'none';
+					});
+				}
+			})();
+			</script>
 		<?php endif; ?>
 
 		<?php if ( ! empty( $settings['allow_voter_comments'] ) ) : ?>

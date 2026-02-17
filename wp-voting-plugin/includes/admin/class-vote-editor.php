@@ -124,11 +124,15 @@ class WPVP_Vote_Editor {
 		}
 
 		// Sanitise settings.
-		$allowed_settings = array( 'allow_revote', 'show_results_before_closing', 'anonymous_voting', 'allow_voter_comments' );
-		$settings         = array();
-		$raw_settings     = isset( $_POST['settings'] ) ? (array) wp_unslash( $_POST['settings'] ) : array();
-		foreach ( $allowed_settings as $key ) {
+		$bool_settings   = array( 'allow_revote', 'show_results_before_closing', 'anonymous_voting', 'allow_voter_comments', 'notify_on_open', 'notify_before_close', 'notify_on_close', 'notify_voter_confirmation' );
+		$string_settings = array( 'notify_open_to', 'notify_reminder_to', 'notify_close_to' );
+		$settings        = array();
+		$raw_settings    = isset( $_POST['settings'] ) ? (array) wp_unslash( $_POST['settings'] ) : array();
+		foreach ( $bool_settings as $key ) {
 			$settings[ $key ] = ! empty( $raw_settings[ $key ] );
+		}
+		foreach ( $string_settings as $key ) {
+			$settings[ $key ] = isset( $raw_settings[ $key ] ) ? sanitize_text_field( $raw_settings[ $key ] ) : '';
 		}
 
 		// Sanitise allowed roles.
@@ -590,6 +594,51 @@ class WPVP_Vote_Editor {
 										<input type="checkbox" name="settings[allow_voter_comments]" value="1"
 											<?php checked( ! empty( $settings['allow_voter_comments'] ) ); ?>>
 										<?php esc_html_e( 'Allow voters to add an optional comment with their vote', 'wp-voting-plugin' ); ?>
+									</label>
+								</div>
+							</div>
+
+							<!-- Email Notifications -->
+							<div class="postbox">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Email Notifications', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<label style="display:block; margin-bottom:4px;">
+										<input type="checkbox" name="settings[notify_on_open]" value="1"
+											<?php checked( ! empty( $settings['notify_on_open'] ) ); ?>>
+										<?php esc_html_e( 'Notify when vote opens', 'wp-voting-plugin' ); ?>
+									</label>
+									<p style="margin: 0 0 12px 24px;">
+										<input type="text" name="settings[notify_open_to]" class="widefat"
+											value="<?php echo esc_attr( $settings['notify_open_to'] ?? '' ); ?>"
+											placeholder="<?php esc_attr_e( 'Default: eligible voters + admin', 'wp-voting-plugin' ); ?>">
+									</p>
+
+									<label style="display:block; margin-bottom:4px;">
+										<input type="checkbox" name="settings[notify_before_close]" value="1"
+											<?php checked( ! empty( $settings['notify_before_close'] ) ); ?>>
+										<?php esc_html_e( 'Remind 1 day before close', 'wp-voting-plugin' ); ?>
+									</label>
+									<p style="margin: 0 0 12px 24px;">
+										<input type="text" name="settings[notify_reminder_to]" class="widefat"
+											value="<?php echo esc_attr( $settings['notify_reminder_to'] ?? '' ); ?>"
+											placeholder="<?php esc_attr_e( 'Default: admin email', 'wp-voting-plugin' ); ?>">
+									</p>
+
+									<label style="display:block; margin-bottom:4px;">
+										<input type="checkbox" name="settings[notify_on_close]" value="1"
+											<?php checked( ! empty( $settings['notify_on_close'] ) ); ?>>
+										<?php esc_html_e( 'Notify when vote closes (with results)', 'wp-voting-plugin' ); ?>
+									</label>
+									<p style="margin: 0 0 12px 24px;">
+										<input type="text" name="settings[notify_close_to]" class="widefat"
+											value="<?php echo esc_attr( $settings['notify_close_to'] ?? '' ); ?>"
+											placeholder="<?php esc_attr_e( 'Default: voters + admin', 'wp-voting-plugin' ); ?>">
+									</p>
+
+									<label style="display:block;">
+										<input type="checkbox" name="settings[notify_voter_confirmation]" value="1"
+											<?php checked( $settings['notify_voter_confirmation'] ?? true ); ?>>
+										<?php esc_html_e( 'Allow voter email confirmations', 'wp-voting-plugin' ); ?>
 									</label>
 								</div>
 							</div>

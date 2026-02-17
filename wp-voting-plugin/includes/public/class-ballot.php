@@ -163,9 +163,17 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'Failed to save your vote. Please try again.', 'wp-voting-plugin' ) ) );
 		}
 
-		// Save user's notification preference if provided.
+		// Save user's notification preference and custom email addresses.
 		if ( isset( $_POST['send_confirmation'] ) ) {
-			update_user_meta( $user_id, 'wpvp_vote_' . $vote_id . '_notify', (bool) $_POST['send_confirmation'] );
+			$send_confirmation = (bool) $_POST['send_confirmation'];
+			update_user_meta( $user_id, 'wpvp_vote_' . $vote_id . '_notify', $send_confirmation );
+
+			if ( $send_confirmation && ! empty( $_POST['confirmation_emails'] ) ) {
+				$raw_emails = sanitize_text_field( wp_unslash( $_POST['confirmation_emails'] ) );
+				update_user_meta( $user_id, 'wpvp_vote_' . $vote_id . '_notify_emails', $raw_emails );
+			}
+		} else {
+			update_user_meta( $user_id, 'wpvp_vote_' . $vote_id . '_notify', false );
 		}
 
 		// Fire action for email notifications and other plugins.

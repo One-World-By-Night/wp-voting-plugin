@@ -475,7 +475,10 @@ if ( ! function_exists( 'accessSchema_client_local_post' ) ) {
 		}
 
 		$response = call_user_func( $function_map[ $endpoint ], $request );
-		return ( $response instanceof WP_Error ) ? $response : $response->get_data();
+		if ( null === $response || $response instanceof WP_Error ) {
+			return $response instanceof WP_Error ? $response : new WP_Error( 'local_api_failed', 'Local API function returned null.' );
+		}
+		return $response->get_data();
 	}
 }
 

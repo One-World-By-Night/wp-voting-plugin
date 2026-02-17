@@ -44,6 +44,19 @@
     color: #1d2327;
 }
 
+.wpvp-btn--success {
+    background: #00a32a;
+    color: #fff;
+    border-color: #00a32a;
+}
+
+.wpvp-btn--success:hover,
+.wpvp-btn--success:focus {
+    background: #008a20;
+    border-color: #008a20;
+    color: #fff;
+}
+
 .wpvp-btn:disabled,
 .wpvp-btn[aria-disabled="true"] {
     opacity: 0.6;
@@ -780,7 +793,7 @@
 .wpvp-modal__container {
     position: relative;
     width: 100%;
-    max-width: 900px;
+    max-width: 80%;
     max-height: 80vh;
     background: #fff;
     border-radius: 8px;

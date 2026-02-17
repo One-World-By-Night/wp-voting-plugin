@@ -142,22 +142,67 @@ class WPVP_Notifications {
 			return;
 		}
 
+		$vote_settings = json_decode( $vote->settings, true );
+		$vote_settings = $vote_settings ? $vote_settings : array();
+
 		switch ( $new_stage ) {
 			case 'open':
-				$this->send_vote_opened_notification( $vote );
+				$this->send_vote_opened_notification( $vote, $vote_settings );
 				break;
 			case 'closed':
 			case 'completed':
-				$this->send_vote_closed_notification( $vote );
+				$this->send_vote_closed_notification( $vote, $vote_settings );
 				break;
 		}
 	}
 
 	/**
+	 * Get the per-vote settings for this vote.
+	 *
+	 * @return array Decoded settings array.
+	 */
+	private function get_vote_settings( object $vote ): array {
+		$settings = json_decode( $vote->settings, true );
+		return $settings ? $settings : array();
+	}
+
+	/**
+	 * Parse a comma-separated email string into a list of valid emails.
+	 *
+	 * @param string $email_string Comma-separated emails.
+	 * @return string[] Valid email addresses.
+	 */
+	private function parse_email_list( string $email_string ): array {
+		$emails = array_map( 'trim', explode( ',', $email_string ) );
+		return array_filter( $emails, 'is_email' );
+	}
+
+	/**
 	 * Send "vote is now open" email to eligible voters.
 	 */
-	private function send_vote_opened_notification( object $vote ): void {
-		$recipients = $this->get_notification_recipients( $vote );
+	private function send_vote_opened_notification( object $vote, array $vote_settings ): void {
+		// Check per-vote setting. If setting exists and is explicitly off, skip.
+		if ( isset( $vote_settings['notify_on_open'] ) && ! $vote_settings['notify_on_open'] ) {
+			// Still schedule the closing reminder if enabled.
+			if ( ! empty( $vote_settings['notify_before_close'] ) ) {
+				$this->schedule_closing_reminder( $vote, $vote_settings );
+			}
+			return;
+		}
+
+		// Use per-vote custom recipients if set, otherwise default behavior.
+		if ( ! empty( $vote_settings['notify_open_to'] ) ) {
+			$recipients = $this->parse_email_list( $vote_settings['notify_open_to'] );
+		} else {
+			$recipients = $this->get_notification_recipients( $vote );
+			// Also send to admin notification email.
+			$admin_email = $this->get_admin_notification_email();
+			if ( $admin_email ) {
+				$recipients[] = $admin_email;
+			}
+			$recipients = array_unique( $recipients );
+		}
+
 		if ( empty( $recipients ) ) {
 			return;
 		}
@@ -192,22 +237,33 @@ class WPVP_Notifications {
 
 		$this->send_bulk_email( $recipients, $subject, $message );
 
-		// Also send to admin notification email.
-		$admin_email = $this->get_admin_notification_email();
-		if ( $admin_email ) {
-			wp_mail( $admin_email, $subject, $message );
+		// Schedule closing reminder if enabled.
+		if ( ! isset( $vote_settings['notify_before_close'] ) || ! empty( $vote_settings['notify_before_close'] ) ) {
+			$this->schedule_closing_reminder( $vote, $vote_settings );
 		}
-
-		// Schedule 9am reminder on closing day.
-		$this->schedule_closing_reminder( $vote );
 	}
 
 	/**
 	 * Send "vote has closed" email to voters who participated.
 	 */
-	private function send_vote_closed_notification( object $vote ): void {
-		// Only notify people who actually voted.
-		$recipients = $this->get_voters( $vote->id );
+	private function send_vote_closed_notification( object $vote, array $vote_settings ): void {
+		// Check per-vote setting.
+		if ( isset( $vote_settings['notify_on_close'] ) && ! $vote_settings['notify_on_close'] ) {
+			return;
+		}
+
+		// Use per-vote custom recipients if set, otherwise default behavior.
+		if ( ! empty( $vote_settings['notify_close_to'] ) ) {
+			$recipients = $this->parse_email_list( $vote_settings['notify_close_to'] );
+		} else {
+			// Default: voters who participated + admin.
+			$recipients = $this->get_voters( $vote->id );
+			$admin_email = $this->get_admin_notification_email();
+			if ( $admin_email ) {
+				$recipients[] = $admin_email;
+			}
+			$recipients = array_unique( $recipients );
+		}
 
 		$site_name = get_bloginfo( 'name' );
 		$subject   = sprintf(
@@ -234,15 +290,8 @@ class WPVP_Notifications {
 			$results_url
 		);
 
-		// Send to voters.
 		if ( ! empty( $recipients ) ) {
 			$this->send_bulk_email( $recipients, $subject, $message );
-		}
-
-		// Send to admin notification email with results.
-		$admin_email = $this->get_admin_notification_email();
-		if ( $admin_email ) {
-			wp_mail( $admin_email, $subject, $message );
 		}
 	}
 
@@ -401,6 +450,14 @@ class WPVP_Notifications {
 		$vote = WPVP_Database::get_vote( $vote_id );
 		$user = get_user_by( 'id', $user_id );
 
+		// Check per-vote setting: if voter confirmations are disabled for this vote, skip.
+		if ( $vote ) {
+			$vote_settings = $this->get_vote_settings( $vote );
+			if ( isset( $vote_settings['notify_voter_confirmation'] ) && ! $vote_settings['notify_voter_confirmation'] ) {
+				return;
+			}
+		}
+
 		if ( ! $vote || ! $user ) {
 			return;
 		}
@@ -455,7 +512,19 @@ class WPVP_Notifications {
 			'From: ' . $site_name . ' <' . get_option( 'admin_email' ) . '>',
 		);
 
-		wp_mail( $user->user_email, $subject, $message, $headers );
+		// Get custom email addresses (user may have specified additional recipients).
+		$custom_emails = get_user_meta( $user_id, 'wpvp_vote_' . $vote_id . '_notify_emails', true );
+
+		if ( ! empty( $custom_emails ) ) {
+			$email_list = array_map( 'trim', explode( ',', $custom_emails ) );
+			$email_list = array_filter( $email_list, 'is_email' );
+		} else {
+			$email_list = array( $user->user_email );
+		}
+
+		foreach ( $email_list as $recipient ) {
+			wp_mail( $recipient, $subject, $message, $headers );
+		}
 	}
 
 	/**
@@ -491,8 +560,13 @@ class WPVP_Notifications {
 	 *
 	 * @param object $vote Vote object.
 	 */
-	private function schedule_closing_reminder( object $vote ): void {
+	private function schedule_closing_reminder( object $vote, array $vote_settings = array() ): void {
 		if ( empty( $vote->closing_date ) ) {
+			return;
+		}
+
+		// Check per-vote setting.
+		if ( isset( $vote_settings['notify_before_close'] ) && ! $vote_settings['notify_before_close'] ) {
 			return;
 		}
 
@@ -522,8 +596,17 @@ class WPVP_Notifications {
 			return;
 		}
 
-		$admin_email = $this->get_admin_notification_email();
-		if ( ! $admin_email ) {
+		$vote_settings = $this->get_vote_settings( $vote );
+
+		// Use per-vote custom recipients if set, otherwise default to admin.
+		if ( ! empty( $vote_settings['notify_reminder_to'] ) ) {
+			$recipients = $this->parse_email_list( $vote_settings['notify_reminder_to'] );
+		} else {
+			$admin_email = $this->get_admin_notification_email();
+			$recipients  = $admin_email ? array( $admin_email ) : array();
+		}
+
+		if ( empty( $recipients ) ) {
 			return;
 		}
 
@@ -571,11 +654,7 @@ class WPVP_Notifications {
 			$vote_url
 		);
 
-		$headers = array(
-			'From: ' . $site_name . ' <' . get_option( 'admin_email' ) . '>',
-		);
-
-		wp_mail( $admin_email, $subject, $message, $headers );
+		$this->send_bulk_email( $recipients, $subject, $message );
 	}
 
 	/**

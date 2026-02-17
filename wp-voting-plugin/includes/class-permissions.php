@@ -160,6 +160,10 @@ class WPVP_Permissions {
 			$settings = json_decode( $vote->settings, true );
 			$settings = $settings ? $settings : array();
 			if ( ! empty( $settings['show_results_before_closing'] ) ) {
+				// Public visibility: anyone can see live results.
+				if ( 'public' === $vote->visibility ) {
+					return true;
+				}
 				return self::user_can_vote_on( $user_id, $vote );
 			}
 		}

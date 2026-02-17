@@ -163,12 +163,12 @@ add_action(
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- read-only display of admin notice based on query parameter
 		$message = sanitize_text_field( wp_unslash( $_GET['message'] ) );
-		$notice  = match ( $message ) {
+		$notices = array(
 			'accessschema_cache_flushed'   => 'AccessSchema role cache flushed.',
 			'accessschema_cache_refreshed' => 'AccessSchema role cache refreshed.',
 			'accessschema_cache_failed'    => 'Failed to refresh AccessSchema roles. Check plugin hook or API response.',
-			default                        => ''
-		};
+		);
+		$notice = isset( $notices[ $message ] ) ? $notices[ $message ] : '';
 
 		if ( $notice ) {
 			echo '<div class="notice notice-info is-dismissible"><p>' . esc_html( $notice ) . '</p></div>';

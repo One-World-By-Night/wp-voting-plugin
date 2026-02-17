@@ -88,7 +88,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 	<?php
 	// Show current results for open votes (after ballot form).
-	if ( 'open' === $vote->voting_stage && $user_id && ! empty( $settings['show_results_before_closing'] ) ) :
+	if ( 'open' === $vote->voting_stage && ! empty( $settings['show_results_before_closing'] ) && WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) :
 		$current_results = null;
 
 		try {
@@ -154,7 +154,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 	<?php
 	// Results section.
-	$can_view_results = $user_id ? WPVP_Permissions::can_view_results( $user_id, $vote_id ) : false;
+	$can_view_results = WPVP_Permissions::can_view_results( $user_id, $vote_id );
 	if ( $can_view_results ) :
 		$results = WPVP_Database::get_results( $vote_id );
 		if ( $results ) :

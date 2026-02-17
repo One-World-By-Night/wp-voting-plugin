@@ -673,10 +673,19 @@ class WPVP_Settings {
 		}
 
 		// Build settings array.
+		$raw_settings = isset( $_POST['settings'] ) ? (array) wp_unslash( $_POST['settings'] ) : array();
 		$settings = array(
-			'allow_revote'                 => ! empty( $_POST['settings']['allow_revote'] ),
-			'show_results_before_closing'  => ! empty( $_POST['settings']['show_results_before_closing'] ),
-			'anonymous_voting'             => ! empty( $_POST['settings']['anonymous_voting'] ),
+			'allow_revote'                 => ! empty( $raw_settings['allow_revote'] ),
+			'show_results_before_closing'  => ! empty( $raw_settings['show_results_before_closing'] ),
+			'anonymous_voting'             => ! empty( $raw_settings['anonymous_voting'] ),
+			'allow_voter_comments'         => ! empty( $raw_settings['allow_voter_comments'] ),
+			'notify_on_open'               => ! empty( $raw_settings['notify_on_open'] ),
+			'notify_before_close'          => ! empty( $raw_settings['notify_before_close'] ),
+			'notify_on_close'              => ! empty( $raw_settings['notify_on_close'] ),
+			'notify_voter_confirmation'    => ! empty( $raw_settings['notify_voter_confirmation'] ),
+			'notify_open_to'               => isset( $raw_settings['notify_open_to'] ) ? sanitize_text_field( $raw_settings['notify_open_to'] ) : '',
+			'notify_reminder_to'           => isset( $raw_settings['notify_reminder_to'] ) ? sanitize_text_field( $raw_settings['notify_reminder_to'] ) : '',
+			'notify_close_to'              => isset( $raw_settings['notify_close_to'] ) ? sanitize_text_field( $raw_settings['notify_close_to'] ) : '',
 		);
 
 		$data = array(

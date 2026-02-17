@@ -210,7 +210,7 @@ class WPVP_Migration {
 	 *
 	 * @return int|false New vote ID or false on failure.
 	 */
-	private function migrate_vote( object $old ): int|false {
+	private function migrate_vote( object $old ) {
 		// Map old voting type names to new ones.
 		$type_map = array(
 			'singleton'    => 'singleton',
