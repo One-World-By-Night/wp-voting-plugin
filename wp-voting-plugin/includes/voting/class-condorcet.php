@@ -31,7 +31,12 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 	public function process( array $ballots, array $options, array $config = array() ): array {
 		$total_votes = count( $ballots );
 		$event_log   = array();
-		$n           = count( $options );
+
+		// Exclude Abstain from candidate pool — track separately.
+		$abstain_count = 0;
+		$options       = array_values( array_filter( $options, function ( $o ) { return 'Abstain' !== $o; } ) );
+
+		$n             = count( $options );
 
 		// Edge cases.
 		if ( 0 === $n ) {
@@ -70,6 +75,9 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 				continue;
 			}
 
+			// Check for abstain before filtering to valid candidates.
+			$has_abstain = in_array( 'Abstain', $ranking, true );
+
 			// Filter to valid options, preserve order.
 			$ranked = array_values(
 				array_filter(
@@ -79,6 +87,14 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 					}
 				)
 			);
+
+			// Abstain-only ballot: skip pairwise comparisons entirely.
+			if ( empty( $ranked ) ) {
+				if ( $has_abstain ) {
+					++$abstain_count;
+				}
+				continue;
+			}
 
 			// Unranked candidates are treated as ranked below all ranked ones.
 			$unranked = array_values( array_diff( $options, $ranked ) );
@@ -99,6 +115,12 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 			}
 
 			// Among unranked candidates: no preference either way (tied).
+		}
+
+		// Abstain ballots are tracked but excluded from the election.
+		if ( $abstain_count > 0 ) {
+			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
+			$total_votes -= $abstain_count;
 		}
 
 		// ---- Log pairwise results ----

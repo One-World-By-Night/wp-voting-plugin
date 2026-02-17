@@ -1,6 +1,23 @@
 # WP Voting Plugin - Version History
 
-## Version 3.2.0 (Current - February 2026)
+## Version 3.2.1 (Current - February 2026)
+
+**Abstain exclusion extended to all voting algorithms.**
+
+### Bug Fixes
+
+- **RCV**: Abstain filtered from candidate pool; abstain-only ballots counted and excluded from total votes
+- **STV**: Abstain filtered from candidate pool; Droop quota recalculated after removing abstain ballots
+- **Condorcet**: Abstain filtered from candidate pool; abstain-only ballots skip pairwise matrix entirely
+- **Disciplinary**: Abstain removed from punishment cascade; excluded from threshold calculations, re-added for display
+
+### Technical Details
+
+All algorithms now follow the same pattern established in v3.2.0 for Singleton: Abstain is tracked for display but excluded from winner determination, percentage calculations, and vote thresholds. Ranked algorithms (RCV, STV, Condorcet) detect abstain-only ballots before valid-option filtering and subtract them from total_votes. Single-choice algorithms (Disciplinary) extract Abstain from raw counts post-tally, matching the Singleton approach.
+
+---
+
+## Version 3.2.0 (February 2026)
 
 **Abstain option for consent-converted FPTP votes.**
 

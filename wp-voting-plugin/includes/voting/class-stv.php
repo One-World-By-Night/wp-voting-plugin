@@ -37,12 +37,13 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 		$winners     = array();
 		$eliminated  = array();
 
+		// Exclude Abstain from candidate pool — track separately.
+		$abstain_count = 0;
+		$options       = array_values( array_filter( $options, function ( $o ) { return 'Abstain' !== $o; } ) );
+
 		if ( 0 === $total_votes || empty( $options ) ) {
 			return $this->build_result( $winners, array(), $rounds, $eliminated, 0, $total_votes, $num_seats, $event_log, $options );
 		}
-
-		$quota       = floor( $total_votes / ( $num_seats + 1 ) ) + 1;
-		$event_log[] = sprintf( 'Droop quota: %d (votes=%d, seats=%d).', $quota, $total_votes, $num_seats );
 
 		// Working ballots: each has 'ranking' (array of prefs) and 'weight' (float).
 		$working = array();
@@ -63,6 +64,8 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 			if ( ! is_array( $ranking ) ) {
 				continue;
 			}
+			// Check for abstain before filtering to valid candidates.
+			$has_abstain = in_array( 'Abstain', $ranking, true );
 			$ranking = array_values(
 				array_filter(
 					$ranking,
@@ -76,8 +79,19 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 					'ranking' => $ranking,
 					'weight'  => 1.0,
 				);
+			} elseif ( $has_abstain ) {
+				++$abstain_count;
 			}
 		}
+
+		// Abstain ballots are tracked but excluded from the election.
+		if ( $abstain_count > 0 ) {
+			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
+			$total_votes -= $abstain_count;
+		}
+
+		$quota       = floor( $total_votes / ( $num_seats + 1 ) ) + 1;
+		$event_log[] = sprintf( 'Droop quota: %d (votes=%d, seats=%d).', $quota, $total_votes, $num_seats );
 
 		// Snapshot first-round counts for tiebreaking.
 		$initial_counts = self::count_weighted( $working, $options );

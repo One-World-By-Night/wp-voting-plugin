@@ -38,6 +38,10 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 		$rounds      = array();
 		$eliminated  = array();
 
+		// Exclude Abstain from candidate pool — track separately.
+		$abstain_count = 0;
+		$options       = array_values( array_filter( $options, function ( $o ) { return 'Abstain' !== $o; } ) );
+
 		// Build working ballots: each is an ordered array of preferences.
 		$working = array();
 		foreach ( $ballots as $ballot ) {
@@ -57,6 +61,8 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 			if ( ! is_array( $ranking ) ) {
 				continue;
 			}
+			// Check for abstain before filtering to valid candidates.
+			$has_abstain = in_array( 'Abstain', $ranking, true );
 			// Filter to valid options only and preserve order.
 			$ranking = array_values(
 				array_filter(
@@ -68,7 +74,15 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 			);
 			if ( ! empty( $ranking ) ) {
 				$working[] = $ranking;
+			} elseif ( $has_abstain ) {
+				++$abstain_count;
 			}
+		}
+
+		// Abstain ballots are tracked but excluded from the election.
+		if ( $abstain_count > 0 ) {
+			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
+			$total_votes -= $abstain_count;
 		}
 
 		// Snapshot first-round counts (used for tiebreaking).

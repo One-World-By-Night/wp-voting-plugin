@@ -84,8 +84,20 @@ class WPVP_Disciplinary implements WPVP_Voting_Algorithm {
 			}
 		}
 
-		$total_valid = $total_votes - $invalid;
+		// Abstain votes are tracked but excluded from winner determination.
+		$abstain_count = 0;
+		if ( isset( $raw_counts['Abstain'] ) ) {
+			$abstain_count = $raw_counts['Abstain'];
+			unset( $raw_counts['Abstain'] );
+			$punishments = array_values( array_filter( $punishments, function ( $p ) { return 'Abstain' !== $p; } ) );
+		}
+
+		$total_valid = $total_votes - $invalid - $abstain_count;
 		$event_log[] = sprintf( 'Total valid votes: %d. Invalid: %d.', $total_valid, $invalid );
+
+		if ( $abstain_count > 0 ) {
+			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
+		}
 
 		// Cascade from most severe to least severe.
 		$cascade_rounds = array();
@@ -149,12 +161,17 @@ class WPVP_Disciplinary implements WPVP_Voting_Algorithm {
 			$event_log[] = sprintf( 'Result: %s with %d accumulated votes.', $winner, $winner_votes );
 		}
 
-		// Build vote_counts and percentages from raw counts.
+		// Build vote_counts and percentages from raw counts (Abstain excluded from denominator).
 		$percentages = array();
 		if ( $total_valid > 0 ) {
 			foreach ( $raw_counts as $p => $count ) {
 				$percentages[ $p ] = round( ( $count / $total_valid ) * 100, 2 );
 			}
+		}
+
+		// Re-add Abstain to vote_counts for display (after winner determination).
+		if ( $abstain_count > 0 ) {
+			$raw_counts['Abstain'] = $abstain_count;
 		}
 
 		return array(
