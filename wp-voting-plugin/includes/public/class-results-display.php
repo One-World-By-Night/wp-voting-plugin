@@ -87,6 +87,7 @@ class WPVP_Results_Display {
 
 		<?php self::render_voter_list( $vote ); ?>
 		<?php self::render_voter_comments( $vote ); ?>
+		<?php self::render_participation_tracker( $vote ); ?>
 		</div>
 		<?php
 	}
@@ -632,6 +633,213 @@ class WPVP_Results_Display {
 	 * Kept as no-op so render() call site doesn't change.
 	 */
 	private static function render_voter_comments( object $vote ): void {
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Participation tracker accordion.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Extract a group name from a role path.
+	 *
+	 * "Chronicle/Kony/CM" → "Kony"
+	 * "Coordinator/NE/Head" → "NE"
+	 * "Administrator" → "Administrator"
+	 * "Public" → "Public"
+	 *
+	 * @param string $role_path Full role path string.
+	 * @return string Group name for display.
+	 */
+	private static function extract_role_group( $role_path ) {
+		if ( '' === $role_path ) {
+			return 'Unknown';
+		}
+		$parts = explode( '/', $role_path );
+		if ( count( $parts ) >= 2 ) {
+			return $parts[1];
+		}
+		return $parts[0];
+	}
+
+	/**
+	 * Render participation tracker accordion below results.
+	 *
+	 * Shows Voted / Not Voted columns grouped by role path segment.
+	 * - Non-anonymous restricted votes: both Voted and Not Voted columns.
+	 * - Non-anonymous public/private votes: Voted column only.
+	 * - Anonymous votes: hidden for non-admins; admins see Voted column only.
+	 *
+	 * @param object $vote Vote object.
+	 */
+	private static function render_participation_tracker( $vote ) {
+		$decoded_settings = json_decode( $vote->settings, true );
+		if ( ! is_array( $decoded_settings ) ) {
+			$decoded_settings = array();
+		}
+		$anonymous_voting = ! empty( $decoded_settings['anonymous_voting'] );
+		$is_admin         = current_user_can( 'manage_options' );
+		$is_restricted    = 'restricted' === $vote->voting_eligibility;
+
+		// Anonymous votes: hide for non-admins entirely.
+		if ( $anonymous_voting && ! $is_admin ) {
+			return;
+		}
+
+		// Fetch ballots.
+		global $wpdb;
+		$table   = $wpdb->prefix . 'wpvp_ballots';
+		$ballots = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT user_id, ballot_data FROM {$table} WHERE vote_id = %d",
+				$vote->id
+			),
+			ARRAY_A
+		);
+
+		if ( ! is_array( $ballots ) ) {
+			$ballots = array();
+		}
+
+		// Build voted list grouped by role segment.
+		$voted_users  = array(); // user_id => true (for lookup).
+		$voted_groups = array(); // group_name => array of display_name.
+
+		foreach ( $ballots as $ballot ) {
+			$user_id     = (int) $ballot['user_id'];
+			$ballot_data = json_decode( $ballot['ballot_data'], true );
+			$voting_role = '';
+			if ( is_array( $ballot_data ) && isset( $ballot_data['voting_role'] ) ) {
+				$voting_role = $ballot_data['voting_role'];
+			}
+
+			$voted_users[ $user_id ] = true;
+
+			$user = get_userdata( $user_id );
+			$name = $user ? $user->display_name : ( 'User #' . $user_id );
+
+			$group = self::extract_role_group( $voting_role );
+			if ( ! isset( $voted_groups[ $group ] ) ) {
+				$voted_groups[ $group ] = array();
+			}
+			$voted_groups[ $group ][] = $name;
+		}
+
+		$voted_count = count( $voted_users );
+
+		// Build not-voted list for restricted, non-anonymous votes.
+		$not_voted_groups = array();
+		$not_voted_count  = 0;
+
+		if ( $is_restricted && ! $anonymous_voting ) {
+			$all_users = get_users( array( 'fields' => array( 'ID', 'display_name' ) ) );
+			foreach ( $all_users as $wp_user ) {
+				$uid = (int) $wp_user->ID;
+				if ( isset( $voted_users[ $uid ] ) ) {
+					continue;
+				}
+				$roles = WPVP_Permissions::get_eligible_voting_roles( $uid, $vote );
+				if ( empty( $roles ) ) {
+					continue;
+				}
+				$group = self::extract_role_group( $roles[0] );
+				if ( ! isset( $not_voted_groups[ $group ] ) ) {
+					$not_voted_groups[ $group ] = array();
+				}
+				$not_voted_groups[ $group ][] = $wp_user->display_name;
+				++$not_voted_count;
+			}
+		}
+
+		$total_eligible    = $voted_count + $not_voted_count;
+		$show_not_voted    = $is_restricted && ! $anonymous_voting;
+
+		// Sort groups alphabetically.
+		ksort( $voted_groups );
+		ksort( $not_voted_groups );
+
+		// Sort names within each group.
+		foreach ( $voted_groups as &$names ) {
+			sort( $names );
+		}
+		unset( $names );
+		foreach ( $not_voted_groups as &$names ) {
+			sort( $names );
+		}
+		unset( $names );
+
+		?>
+		<details class="wpvp-participation-tracker">
+			<summary>
+				<?php
+				if ( $show_not_voted ) {
+					printf(
+						esc_html__( 'Participation: %1$d of %2$d voted', 'wp-voting-plugin' ),
+						$voted_count,
+						$total_eligible
+					);
+				} else {
+					printf(
+						esc_html__( 'Participation: %d voted', 'wp-voting-plugin' ),
+						$voted_count
+					);
+				}
+				?>
+			</summary>
+			<div class="wpvp-participation-tracker__columns">
+				<div class="wpvp-participation-tracker__col">
+					<h4>
+						<?php
+						printf(
+							esc_html__( 'Voted (%d)', 'wp-voting-plugin' ),
+							$voted_count
+						);
+						?>
+					</h4>
+					<?php if ( empty( $voted_groups ) ) : ?>
+						<p class="wpvp-participation-tracker__none"><?php esc_html_e( 'No votes cast yet.', 'wp-voting-plugin' ); ?></p>
+					<?php else : ?>
+						<?php foreach ( $voted_groups as $group_name => $names ) : ?>
+							<div class="wpvp-participation-tracker__group">
+								<strong><?php echo esc_html( $group_name ); ?></strong>
+								<ul>
+									<?php foreach ( $names as $name ) : ?>
+										<li><?php echo esc_html( $name ); ?></li>
+									<?php endforeach; ?>
+								</ul>
+							</div>
+						<?php endforeach; ?>
+					<?php endif; ?>
+				</div>
+				<?php if ( $show_not_voted ) : ?>
+					<div class="wpvp-participation-tracker__col">
+						<h4>
+							<?php
+							printf(
+								esc_html__( 'Not Voted (%d)', 'wp-voting-plugin' ),
+								$not_voted_count
+							);
+							?>
+						</h4>
+						<?php if ( empty( $not_voted_groups ) ) : ?>
+							<p class="wpvp-participation-tracker__none"><?php esc_html_e( 'All eligible users have voted.', 'wp-voting-plugin' ); ?></p>
+						<?php else : ?>
+							<?php foreach ( $not_voted_groups as $group_name => $names ) : ?>
+								<div class="wpvp-participation-tracker__group">
+									<strong><?php echo esc_html( $group_name ); ?></strong>
+									<ul>
+										<?php foreach ( $names as $name ) : ?>
+											<li><?php echo esc_html( $name ); ?></li>
+										<?php endforeach; ?>
+									</ul>
+								</div>
+							<?php endforeach; ?>
+						<?php endif; ?>
+					</div>
+				<?php endif; ?>
+			</div>
+		</details>
+		<?php
 	}
 }
 

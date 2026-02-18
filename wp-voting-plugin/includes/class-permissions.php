@@ -337,10 +337,8 @@ class WPVP_Permissions {
 			return null;
 		}
 
-		$client_id = defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp';
-
-		// Get user's cached roles from user meta.
-		$user_roles = get_user_meta( $user_id, "{$client_id}_accessschema_cached_roles", true );
+		// Get user's cached roles from shared AccessSchema cache key.
+		$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
 			// No cached roles — return null to fall back to WordPress capabilities.
 			return null;
@@ -442,8 +440,7 @@ class WPVP_Permissions {
 			return null;
 		}
 
-		$client_id  = defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp';
-		$user_roles = get_user_meta( $user_id, "{$client_id}_accessschema_cached_roles", true );
+		$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 
 		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
 			return null;
@@ -717,8 +714,7 @@ class WPVP_Permissions {
 		// Try AccessSchema cached roles first.
 		$mode = get_option( 'wpvp_accessschema_mode', 'none' );
 		if ( 'none' !== $mode ) {
-			$client_id  = defined( 'ASC_PREFIX' ) ? strtolower( ASC_PREFIX ) : 'wpvp';
-			$user_roles = get_user_meta( $user_id, "{$client_id}_accessschema_cached_roles", true );
+			$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 			if ( is_array( $user_roles ) && ! empty( $user_roles ) ) {
 				return self::extract_cached_paths( $user_roles );
 			}

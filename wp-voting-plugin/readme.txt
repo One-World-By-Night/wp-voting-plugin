@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.2.3
+Stable tag: 3.3.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,13 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.3.0 =
+* Participation tracker accordion on vote results: shows Voted / Not Voted columns grouped by chronicle or coordinator name
+* Restricted non-anonymous votes show both Voted and Not Voted; public/private show Voted only; anonymous votes hide tracker
+* Increased vote comment textarea limit from 1,000 to 5,000 characters
+* Updated embedded AccessSchema client to v2.4.0 (shared role cache across all AccessSchema-enabled plugins)
+* Fixed cross-plugin role cache isolation: all plugins now read/write a single shared cache key so roles refreshed by one plugin are visible to all
 
 = 3.2.3 =
 * Add function_exists guard to AccessSchema client to prevent fatal on multi-plugin installs

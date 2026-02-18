@@ -642,6 +642,79 @@
     padding: 2px 0;
 }
 
+/* Participation tracker accordion */
+.wpvp-participation-tracker {
+    margin-top: 16px;
+    background: #f6f7f7;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.wpvp-participation-tracker summary {
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    color: #50575e;
+}
+
+.wpvp-participation-tracker__columns {
+    display: flex;
+    gap: 24px;
+    margin-top: 12px;
+}
+
+.wpvp-participation-tracker__col {
+    flex: 1;
+    min-width: 0;
+}
+
+.wpvp-participation-tracker__col h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: #1d2327;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #dcdcde;
+}
+
+.wpvp-participation-tracker__group {
+    margin-bottom: 8px;
+}
+
+.wpvp-participation-tracker__group strong {
+    display: block;
+    font-size: 13px;
+    color: #2271b1;
+    margin-bottom: 2px;
+}
+
+.wpvp-participation-tracker__group ul {
+    margin: 0 0 0 16px;
+    padding: 0;
+    list-style: none;
+}
+
+.wpvp-participation-tracker__group li {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #3c434a;
+}
+
+.wpvp-participation-tracker__none {
+    font-size: 13px;
+    color: #646970;
+    font-style: italic;
+    margin: 4px 0 0;
+}
+
+@media screen and (max-width: 600px) {
+    .wpvp-participation-tracker__columns {
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
 /* Consent ballot */
 .wpvp-ballot__fieldset--consent .wpvp-ballot__instructions {
     background: #fff8e5;

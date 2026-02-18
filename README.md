@@ -1,7 +1,14 @@
-> **Current Version**: 2.4.1 (Production Release - February 2026)
-> **Multisite Support**: ✅ Enabled with per-site data isolation
+> **Current Version**: 3.3.0 (Production Release - February 2026)
+> **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
+>
+> ### Recent Changes (3.3.0)
+> - AccessSchema Client updated to v2.4.0 with shared cache architecture
+> - Fixed duplicate role display in Users table when multiple client plugins are active
+> - Updated permission checks and role matching for lowercase path conventions
+> - Ballot form and results display improvements
+> - Public CSS refinements
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

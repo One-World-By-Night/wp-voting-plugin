@@ -208,7 +208,7 @@ defined( 'ABSPATH' ) || exit;
 				<label for="wpvp-voter-comment" style="display: block; margin-bottom: 4px; font-weight: 600;">
 					<?php esc_html_e( 'Comment (optional)', 'wp-voting-plugin' ); ?>
 				</label>
-				<textarea id="wpvp-voter-comment" name="voter_comment" maxlength="1000" rows="3"
+				<textarea id="wpvp-voter-comment" name="voter_comment" maxlength="5000" rows="5"
 					style="width: 100%; resize: vertical;"
 					placeholder="<?php esc_attr_e( 'Add an optional comment or rationale for your vote...', 'wp-voting-plugin' ); ?>"
 				><?php echo isset( $previous_comment ) ? esc_textarea( $previous_comment ) : ''; ?></textarea>

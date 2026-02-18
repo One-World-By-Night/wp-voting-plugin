@@ -2,7 +2,7 @@
 
 /** File: includes/init.php
  * Text Domain: accessschema-client
- * version 1.2.0
+ * version 2.0.4
  *
  * @author greghacke
  * Function:  Porvide a single entry point to load all plugin components in standard and class-based structure
@@ -25,8 +25,10 @@ if ( $classes ) {
 require_once __DIR__ . '/helper/static-data.php';
 require_once __DIR__ . '/helper/init.php';
 
-// NOTE: Disabled for WPVP — the voting plugin has its own AccessSchema settings UI.
+// Admin functionality disabled for WPVP — the voting plugin manages its own
+// AccessSchema settings page. Users column is loaded separately below.
 // require_once __DIR__ . '/admin/init.php';
+require_once __DIR__ . '/admin/users.php';
 
 // Load hooks (REST API, save, validation, webhooks)
 require_once __DIR__ . '/hooks/init.php';
