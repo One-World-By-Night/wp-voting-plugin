@@ -1,12 +1,12 @@
-> **Current Version**: 3.4.0 (Production Release - February 2026)
+> **Current Version**: 3.5.0 (Production Release - February 2026)
 > **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 >
-> ### Recent Changes (3.4.0)
-> - Non-blind votes now visible to non-logged-in visitors (results transparency)
-> - Live results accessible to guests when "Show results while voting is open" is enabled
-> - Blind votes retain existing visibility rules
+> ### Recent Changes (3.5.0)
+> - Voter list shows resolved chronicle/coordinator titles with detail page links
+> - Redundant role suffix removed from voter list display
+> - Role label falls back to display name only when no ASC path is available
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

@@ -483,27 +483,56 @@ class WPVP_Results_Display {
 	 * ----------------------------------------------------------------*/
 
 	/**
-	 * Resolve an ASC voting role to a display label.
+	 * Resolve an ASC voting role to a linked display label.
 	 *
 	 * Uses owc_resolve_asc_path() from the OWBN Client plugin when available.
+	 * Returns an HTML link to the detail page when possible.
 	 * Falls back to the raw role path otherwise.
 	 *
 	 * @param string $voting_role ASC path like "chronicle/kony/cm".
-	 * @return string Resolved label like "New York City, NY - USA, Kings of New York — CM".
+	 * @return string HTML string, possibly containing a link.
 	 */
 	private static function resolve_role_label( string $voting_role ): string {
 		if ( '' === $voting_role ) {
 			return '';
 		}
 
+		// Parse the path to get type, slug, and role.
+		$parts = explode( '/', trim( $voting_role, '/' ) );
+		$type  = isset( $parts[0] ) ? strtolower( $parts[0] ) : '';
+		$slug  = isset( $parts[1] ) ? $parts[1] : '';
+
+		// Resolve the title (without suffix).
+		$title = null;
 		if ( function_exists( 'owc_resolve_asc_path' ) ) {
-			$resolved = owc_resolve_asc_path( $voting_role, 'title', true );
-			if ( $resolved ) {
-				return $resolved;
+			$title = owc_resolve_asc_path( $voting_role, 'title', false );
+		}
+
+		$label = $title ? $title : $voting_role;
+
+		// Build a detail page link if owbn-client page settings are available.
+		if ( $slug && function_exists( 'owc_option_name' ) ) {
+			$page_option = '';
+			if ( 'coordinator' === $type ) {
+				$page_option = 'coordinators_detail_page';
+			} elseif ( 'chronicle' === $type ) {
+				$page_option = 'chronicles_detail_page';
+			}
+
+			if ( $page_option ) {
+				$page_id = get_option( owc_option_name( $page_option ), 0 );
+				if ( $page_id ) {
+					$base_url = get_permalink( $page_id );
+					if ( $base_url ) {
+						$url   = add_query_arg( 'slug', rawurlencode( $slug ), $base_url );
+						$label = '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+						return $label;
+					}
+				}
 			}
 		}
 
-		return $voting_role;
+		return esc_html( $label );
 	}
 
 	/**
@@ -612,11 +641,12 @@ class WPVP_Results_Display {
 				<?php foreach ( $entries as $entry ) : ?>
 					<div class="wpvp-voter-entry">
 						<div class="wpvp-voter-entry__main">
-							<span class="wpvp-voter-entry__name"><?php echo esc_html( $entry['display_name'] ); ?></span><?php
-							if ( $entry['role_label'] ) :
-								?>, <span class="wpvp-voter-entry__role"><?php echo esc_html( $entry['role_label'] ); ?></span><?php
-							endif;
-							?> - <span class="wpvp-voter-entry__choice"><?php echo esc_html( $entry['choice_display'] ); ?></span>
+							<?php if ( $entry['role_label'] ) : ?>
+								<span class="wpvp-voter-entry__role"><?php echo wp_kses( $entry['role_label'], array( 'a' => array( 'href' => true ) ) ); ?></span>
+							<?php else : ?>
+								<span class="wpvp-voter-entry__name"><?php echo esc_html( $entry['display_name'] ); ?></span>
+							<?php endif; ?>
+							- <span class="wpvp-voter-entry__choice"><?php echo esc_html( $entry['choice_display'] ); ?></span>
 						</div>
 						<?php if ( $allow_comments && ! empty( $entry['comment'] ) ) : ?>
 							<div class="wpvp-voter-entry__comment"><?php echo esc_html( $entry['comment'] ); ?></div>

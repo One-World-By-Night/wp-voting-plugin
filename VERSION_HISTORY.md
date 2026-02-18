@@ -1,6 +1,25 @@
 # WP Voting Plugin - Version History
 
-## Version 3.4.0 (Current - February 2026)
+## Version 3.5.0 (Current - February 2026)
+
+**Voter list role labels: resolved titles with detail page links.**
+
+### Features
+
+- **Resolved role labels**: Voter list now displays the resolved chronicle or coordinator title (e.g., "Sabbat Coordinator") instead of the raw AccessSchema path or user display name
+- **Detail page links**: Role labels link directly to the chronicle-detail or coordinator-detail page using owbn-client page settings and the entity slug
+- **Suffix removed**: Redundant role suffix dropped (no more "Sabbat Coordinator — COORDINATOR" or "Something Wicked — CM")
+- **Graceful fallback**: When no ASC path is available or owbn-client is not active, falls back to the user's display name
+
+### Technical Details
+
+- `WPVP_Results_Display::resolve_role_label()` rewritten to call `owc_resolve_asc_path()` with `$with_suffix = false`, then build a link using `owc_option_name('coordinators_detail_page')` / `owc_option_name('chronicles_detail_page')`
+- Voter list rendering switched from `esc_html()` to `wp_kses()` to allow anchor tags in role labels
+- Voter entry now shows role label OR display name (not both) — role label takes priority
+
+---
+
+## Version 3.4.0 (February 2026)
 
 **Non-blind votes visible to non-logged-in visitors.**
 
