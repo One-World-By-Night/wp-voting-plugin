@@ -1,6 +1,26 @@
 # WP Voting Plugin - Version History
 
-## Version 3.2.3 (Current - February 2026)
+## Version 3.4.0 (Current - February 2026)
+
+**Non-blind votes visible to non-logged-in visitors.**
+
+### Features
+
+- **Guest visibility for non-blind votes**: Votes with "Show results while voting is open" enabled are now visible in the vote list to all visitors, including non-logged-in guests
+- **Guest access to live results**: Live results on non-blind open votes are viewable by guests — no login required to see current standings
+- Blind votes and completed votes retain their existing visibility rules (public/private/restricted)
+
+### Technical Details
+
+Two additions to `WPVP_Permissions`:
+- `can_view_vote()`: Returns `true` for all visitors when the vote is open and has `show_results_before_closing` enabled, regardless of the vote's visibility setting
+- `can_view_results()`: Returns `true` for all visitors under the same conditions, bypassing the login requirement
+
+Non-logged-in users still see the "You must be logged in to vote" prompt and cannot cast ballots.
+
+---
+
+## Version 3.2.3 (February 2026)
 
 **Fix potential fatal error when multiple plugins embed AccessSchema client.**
 

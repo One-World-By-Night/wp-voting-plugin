@@ -1,14 +1,12 @@
-> **Current Version**: 3.3.0 (Production Release - February 2026)
+> **Current Version**: 3.4.0 (Production Release - February 2026)
 > **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 >
-> ### Recent Changes (3.3.0)
-> - AccessSchema Client updated to v2.4.0 with shared cache architecture
-> - Fixed duplicate role display in Users table when multiple client plugins are active
-> - Updated permission checks and role matching for lowercase path conventions
-> - Ballot form and results display improvements
-> - Public CSS refinements
+> ### Recent Changes (3.4.0)
+> - Non-blind votes now visible to non-logged-in visitors (results transparency)
+> - Live results accessible to guests when "Show results while voting is open" is enabled
+> - Blind votes retain existing visibility rules
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

@@ -135,6 +135,15 @@ class WPVP_Permissions {
 			return true;
 		}
 
+		// Non-blind open votes: results visible to everyone (including guests).
+		if ( 'open' === $vote->voting_stage ) {
+			$settings_data = json_decode( $vote->settings, true );
+			$settings_data = $settings_data ? $settings_data : array();
+			if ( ! empty( $settings_data['show_results_before_closing'] ) ) {
+				return true;
+			}
+		}
+
 		// From here on, user must be logged in.
 		if ( ! $user_id ) {
 			return false;
@@ -242,6 +251,15 @@ class WPVP_Permissions {
 		// Public votes are visible to everyone.
 		if ( 'public' === $vote->visibility ) {
 			return true;
+		}
+
+		// Non-blind open votes are visible to everyone (results transparency).
+		if ( 'open' === $vote->voting_stage ) {
+			$decoded_settings = json_decode( $vote->settings, true );
+			$decoded_settings = $decoded_settings ? $decoded_settings : array();
+			if ( ! empty( $decoded_settings['show_results_before_closing'] ) ) {
+				return true;
+			}
 		}
 
 		// Private = any logged-in user can view.
