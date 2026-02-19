@@ -2,14 +2,16 @@
 /**
  * Unified permission system.
  *
- * Priority chain:
- *   1. If AccessSchema is configured (mode != 'none') and reachable → use it.
- *   2. Otherwise → fall back to WordPress capabilities.
+ * Permission authority:
+ *   - If AccessSchema is configured (mode != 'none'), it is the sole authority
+ *     for voter-facing actions. No cached roles = no permissions. No fallback.
+ *   - If AccessSchema is NOT configured (mode == 'none'), WordPress capabilities
+ *     are the authority.
  *
  * Admin actions (create / manage votes) always require WP `manage_options`
  * because they are WordPress admin-panel operations.
  *
- * Voter-facing actions (cast vote, view results) go through the priority chain
+ * Voter-facing actions (cast vote, view results) go through the authority check
  * so that AccessSchema role paths can control per-vote eligibility.
  */
 
@@ -240,7 +242,7 @@ class WPVP_Permissions {
 	 *  1. Public visibility → everyone can view.
 	 *  2. Private visibility → any logged-in user can view.
 	 *  3. Restricted visibility → check allowed_roles via AccessSchema
-	 *     (if configured) then fall back to WordPress capabilities.
+	 *     (if configured) or WordPress capabilities (if not).
 	 */
 	public static function can_view_vote( int $user_id, object $vote ): bool {
 		// Admins can always view.
@@ -285,7 +287,7 @@ class WPVP_Permissions {
 	 *  1. Public voting → anyone can vote (even non-logged-in if allowed).
 	 *  2. Private voting → any logged-in user can vote.
 	 *  3. Restricted voting → check voting_roles via AccessSchema
-	 *     (if configured) then fall back to WordPress capabilities.
+	 *     (if configured) or WordPress capabilities (if not).
 	 */
 	private static function user_can_vote_on( int $user_id, object $vote ): bool {
 		// Public voting is open to everyone.
@@ -310,7 +312,8 @@ class WPVP_Permissions {
 	/**
 	 * Check if user has any of the specified roles.
 	 *
-	 * Tries AccessSchema first (if configured), then falls back to WP roles.
+	 * If AccessSchema is configured, it is the sole authority (no WP fallback).
+	 * If AccessSchema is NOT configured, checks WordPress roles/capabilities.
 	 *
 	 * @param int   $user_id User ID.
 	 * @param array $roles   Role paths, slugs, or capabilities.
@@ -327,7 +330,7 @@ class WPVP_Permissions {
 			return $asc_result; // AccessSchema gave a definitive answer.
 		}
 
-		// Fallback: WordPress role/capability check.
+		// AccessSchema not configured — WordPress roles are the authority.
 		return self::check_wp_roles( $user_id, $roles );
 	}
 
@@ -353,20 +356,17 @@ class WPVP_Permissions {
 		$user = get_userdata( $user_id );
 		if ( ! $user || empty( $user->user_email ) ) {
 			error_log( sprintf(
-				'WPVP: AccessSchema mode=%s but user %d not found or has no email, falling back to WordPress capabilities.',
+				'WPVP: AccessSchema mode=%s, user %d not found or has no email — denied.',
 				$mode, $user_id
 			) );
-			return null;
+			return false;
 		}
 
 		// Get user's cached roles from shared AccessSchema cache key.
+		// No cached roles = no permissions. ASC is the sole authority.
 		$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
-			error_log( sprintf(
-				'WPVP: AccessSchema mode=%s but user %d has no cached roles, falling back to WordPress capabilities.',
-				$mode, $user_id
-			) );
-			return null;
+			return false;
 		}
 
 		// Check each allowed role path — user needs to match at least one.
@@ -443,7 +443,7 @@ class WPVP_Permissions {
 			return $asc_matches;
 		}
 
-		// Fallback: WordPress roles (only if AccessSchema unavailable).
+		// AccessSchema not configured — WordPress roles are the authority.
 		return self::get_wp_role_matches( $user_id, $roles );
 	}
 
@@ -463,20 +463,16 @@ class WPVP_Permissions {
 		$user = get_userdata( $user_id );
 		if ( ! $user || empty( $user->user_email ) ) {
 			error_log( sprintf(
-				'WPVP: AccessSchema mode=%s but user %d not found or has no email in role matching, falling back to WordPress capabilities.',
+				'WPVP: AccessSchema mode=%s, user %d not found or has no email in role matching — denied.',
 				$mode, $user_id
 			) );
-			return null;
+			return array();
 		}
 
+		// No cached roles = no permissions. ASC is the sole authority.
 		$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
-
 		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
-			error_log( sprintf(
-				'WPVP: AccessSchema mode=%s but user %d has no cached roles in role matching, falling back to WordPress capabilities.',
-				$mode, $user_id
-			) );
-			return null;
+			return array();
 		}
 
 		$matches = array();
@@ -744,16 +740,18 @@ class WPVP_Permissions {
 	 * @return string[] Array of role path strings.
 	 */
 	private static function get_user_all_roles( int $user_id ): array {
-		// Try AccessSchema cached roles first.
 		$mode = get_option( 'wpvp_accessschema_mode', 'none' );
+
 		if ( 'none' !== $mode ) {
+			// ASC is the sole authority. No cached roles = no roles.
 			$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 			if ( is_array( $user_roles ) && ! empty( $user_roles ) ) {
 				return self::extract_cached_paths( $user_roles );
 			}
+			return array();
 		}
 
-		// Fallback: WordPress roles.
+		// ASC not configured — WordPress roles are the authority.
 		$user = get_userdata( $user_id );
 		if ( $user && ! empty( $user->roles ) ) {
 			return array_values( $user->roles );
