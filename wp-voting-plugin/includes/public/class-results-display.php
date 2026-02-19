@@ -220,10 +220,11 @@ class WPVP_Results_Display {
 							$round_counts = $round['counts'];
 							arsort( $round_counts );
 							foreach ( $round_counts as $candidate => $count ) :
+								$formatted_count = ( abs( $count - round( $count ) ) < 0.001 ) ? number_format( $count, 0 ) : number_format( $count, 2 );
 								?>
 								<tr>
 									<td><?php echo esc_html( $candidate ); ?></td>
-									<td><?php echo esc_html( $count ); ?></td>
+									<td><?php echo esc_html( $formatted_count ); ?></td>
 								</tr>
 							<?php endforeach; ?>
 						</tbody>

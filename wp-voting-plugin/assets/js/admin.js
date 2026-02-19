@@ -686,6 +686,11 @@
             $spinner.addClass('is-active');
             $message.hide().removeClass('success error');
 
+            // Sync TinyMCE content back to textarea before reading.
+            if (typeof tinyMCE !== 'undefined') {
+                tinyMCE.triggerSave();
+            }
+
             // Collect form data.
             var formData = {
                 action: 'wpvp_guide_create_vote',
@@ -703,10 +708,24 @@
                 additional_viewers: $('#wpvp_gb_additional_viewers').val() || [],
                 number_of_winners: $('#wpvp_gb_winners').val(),
                 voting_options: [],
+                // Step 2: Proposal metadata.
+                classification: $('#wpvp_gb_classification').val(),
+                proposed_by: $('#wpvp_gb_proposed_by').val(),
+                seconded_by: $('#wpvp_gb_seconded_by').val(),
+                objection_by: $('#wpvp_gb_objection_by').val(),
+                // Step 7: Settings.
                 settings: {
                     allow_revote: $('input[name="settings[allow_revote]"]').is(':checked') ? '1' : '',
                     show_results_before_closing: $('input[name="settings[show_results_before_closing]"]').is(':checked') ? '1' : '',
-                    anonymous_voting: $('input[name="settings[anonymous_voting]"]').is(':checked') ? '1' : ''
+                    anonymous_voting: $('input[name="settings[anonymous_voting]"]').is(':checked') ? '1' : '',
+                    allow_voter_comments: $('input[name="settings[allow_voter_comments]"]').is(':checked') ? '1' : '',
+                    notify_on_open: $('input[name="settings[notify_on_open]"]').is(':checked') ? '1' : '',
+                    notify_before_close: $('input[name="settings[notify_before_close]"]').is(':checked') ? '1' : '',
+                    notify_on_close: $('input[name="settings[notify_on_close]"]').is(':checked') ? '1' : '',
+                    notify_voter_confirmation: $('input[name="settings[notify_voter_confirmation]"]').is(':checked') ? '1' : '',
+                    notify_open_to: $('input[name="settings[notify_open_to]"]').val() || '',
+                    notify_reminder_to: $('input[name="settings[notify_reminder_to]"]').val() || '',
+                    notify_close_to: $('input[name="settings[notify_close_to]"]').val() || ''
                 }
             };
 

@@ -70,7 +70,13 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 	<?php
 	// Ballot form section.
-	if ( 'open' === $vote->voting_stage ) :
+	// Determine if voting is currently available (stage is open AND opening_date has passed).
+	$is_voting_open = ( 'open' === $vote->voting_stage );
+	if ( $is_voting_open && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) {
+		$is_voting_open = false;
+	}
+
+	if ( $is_voting_open ) :
 		if ( ! $user_id ) :
 			?>
 			<div class="wpvp-notice wpvp-notice--info">
@@ -83,12 +89,25 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 		else :
 			WPVP_Ballot::render_form( $vote, $user_id );
 		endif;
+	elseif ( in_array( $vote->voting_stage, array( 'draft', 'open' ), true ) && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) :
+		?>
+		<div class="wpvp-notice wpvp-notice--info">
+			<p>
+				<?php
+				printf(
+					esc_html__( 'Voting opens on %s', 'wp-voting-plugin' ),
+					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->opening_date ) ) )
+				);
+				?>
+			</p>
+		</div>
+		<?php
 	endif;
 	?>
 
 	<?php
 	// Show current results for open votes (after ballot form).
-	if ( 'open' === $vote->voting_stage && ! empty( $settings['show_results_before_closing'] ) && WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) :
+	if ( $is_voting_open && ! empty( $settings['show_results_before_closing'] ) && WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) :
 		$current_results = null;
 
 		try {

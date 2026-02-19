@@ -142,6 +142,13 @@ class WPVP_Notifications {
 			return;
 		}
 
+		// Safety net: suppress "vote opened" notification if opening_date hasn't arrived yet.
+		if ( 'open' === $new_stage && ! empty( $vote->opening_date ) ) {
+			if ( $vote->opening_date > current_time( 'mysql' ) ) {
+				return;
+			}
+		}
+
 		$vote_settings = json_decode( $vote->settings, true );
 		$vote_settings = $vote_settings ? $vote_settings : array();
 
