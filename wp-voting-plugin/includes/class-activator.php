@@ -46,7 +46,7 @@ class WPVP_Activator {
 			}
 
 			if ( version_compare( $stored, '2.3.0', '<' ) ) {
-				// Create new open-votes and closed-votes pages (skips existing).
+				// Create default pages (skips existing).
 				self::create_default_pages();
 			}
 
@@ -108,13 +108,8 @@ class WPVP_Activator {
 				'shortcode' => '[wpvp_votes]',
 				'parent'    => 0,
 			),
-			'open-votes'       => array(
-				'title'     => __( 'Open Votes', 'wp-voting-plugin' ),
-				'shortcode' => '[wpvp_votes status="open" limit="50"]',
-				'parent'    => 0,
-			),
-			'closed-votes'     => array(
-				'title'     => __( 'Closed Votes', 'wp-voting-plugin' ),
+			'vote-history'     => array(
+				'title'     => __( 'Vote Results', 'wp-voting-plugin' ),
 				'shortcode' => '[wpvp_votes status="closed,completed,archived" limit="50"]',
 				'parent'    => 0,
 			),
