@@ -636,6 +636,17 @@
     margin-bottom: 16px;
 }
 
+.wpvp-results__seats--tie {
+    color: #996800;
+    font-weight: 500;
+    margin-top: -10px;
+}
+
+.wpvp-results__tie-note {
+    color: #996800;
+    font-style: italic;
+}
+
 /* Event log */
 .wpvp-results__log {
     margin-top: 16px;

@@ -31,7 +31,12 @@ class WPVP_Results_Display {
 		?>
 		<div class="wpvp-results" data-type="<?php echo esc_attr( $type ); ?>">
 
-			<?php self::render_winner_banner( $winner, $type ); ?>
+			<?php
+		// Sequential RCV renders its own banner (handles partial fills + ties).
+		if ( 'sequential_rcv' !== $type ) {
+			self::render_winner_banner( $winner, $type );
+		}
+		?>
 
 			<?php
 			switch ( $type ) {
@@ -260,7 +265,8 @@ class WPVP_Results_Display {
 	}
 
 	private static function render_sequential_rcv( array $final, array $winner, array $stats, object $results ): void {
-		$seats = isset( $stats['seats'] ) ? (array) $stats['seats'] : array();
+		$seats     = isset( $stats['seats'] ) ? (array) $stats['seats'] : array();
+		$num_seats = isset( $stats['num_seats'] ) ? intval( $stats['num_seats'] ) : 0;
 
 		if ( empty( $seats ) ) {
 			// Fallback: no per-seat data — show basic singleton results.
@@ -268,15 +274,59 @@ class WPVP_Results_Display {
 			return;
 		}
 
-		// Show elected candidates summary.
-		if ( ! empty( $winner['winners'] ) ) {
-			echo '<p class="wpvp-results__seats">';
-			printf(
-				esc_html__( 'Elected (%1$d seats): %2$s', 'wp-voting-plugin' ),
-				count( $winner['winners'] ),
-				esc_html( implode( ', ', $winner['winners'] ) )
-			);
-			echo '</p>';
+		// Sequential RCV banner: "Winners: A, B, (Tie: C, D)" or "Elected (N seats): A, B, C".
+		$elected       = ! empty( $winner['winners'] ) ? (array) $winner['winners'] : array();
+		$elected_count = count( $elected );
+		$has_tie       = ! empty( $winner['tie'] ) || ! empty( $final['tie'] );
+		$tied_cands    = ! empty( $winner['tied_candidates'] )
+			? (array) $winner['tied_candidates']
+			: ( ! empty( $final['tied_candidates'] ) ? (array) $final['tied_candidates'] : array() );
+
+		// Also scan seat data for ties (covers pre-fix results where top-level tie wasn't set).
+		if ( ! $has_tie && ! empty( $seats ) ) {
+			foreach ( $seats as $s ) {
+				if ( empty( $s['winner'] ) && ! empty( $s['tied_candidates'] ) ) {
+					$has_tie    = true;
+					$tied_cands = (array) $s['tied_candidates'];
+					break;
+				}
+			}
+		}
+
+		if ( $elected_count > 0 || ( $has_tie && ! empty( $tied_cands ) ) ) {
+			// Build the banner text: "Winners: A, B, (Tie: C, D)".
+			$banner_parts = array();
+			if ( $elected_count > 0 ) {
+				$banner_parts[] = esc_html( implode( ', ', $elected ) );
+			}
+			if ( $has_tie && ! empty( $tied_cands ) ) {
+				$banner_parts[] = '<span class="wpvp-results__tie-note">(Tie: ' . esc_html( implode( ', ', $tied_cands ) ) . ')</span>';
+			}
+			?>
+			<div class="wpvp-results__banner wpvp-results__banner--winner">
+				<strong><?php echo $elected_count > 1 || $has_tie ? esc_html__( 'Winners:', 'wp-voting-plugin' ) : esc_html__( 'Winner:', 'wp-voting-plugin' ); ?></strong>
+				<span><?php echo implode( ', ', $banner_parts ); ?></span>
+			</div>
+			<?php
+
+			// Seats summary line.
+			if ( $num_seats > 0 && $elected_count < $num_seats && $has_tie ) {
+				echo '<p class="wpvp-results__seats">';
+				printf(
+					esc_html__( 'Elected %1$d of %2$d seats', 'wp-voting-plugin' ),
+					$elected_count,
+					$num_seats
+				);
+				echo '</p>';
+			} elseif ( $elected_count > 0 && ( ! $num_seats || $elected_count >= $num_seats ) ) {
+				echo '<p class="wpvp-results__seats">';
+				printf(
+					esc_html__( 'Elected (%1$d seats): %2$s', 'wp-voting-plugin' ),
+					$elected_count,
+					esc_html( implode( ', ', $elected ) )
+				);
+				echo '</p>';
+			}
 		}
 
 		$previous_winners = array();

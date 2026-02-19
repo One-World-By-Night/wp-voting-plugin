@@ -189,6 +189,17 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 			}
 		}
 
+		// Check for unfilled seats (tie on final seat).
+		$has_tie         = false;
+		$tied_candidates = array();
+		if ( count( $winners ) < $num_seats && ! empty( $seats ) ) {
+			$last_seat = end( $seats );
+			if ( ! empty( $last_seat['tied_candidates'] ) ) {
+				$has_tie         = true;
+				$tied_candidates = $last_seat['tied_candidates'];
+			}
+		}
+
 		return array(
 			'winner'                => $first_winner,
 			'winners'               => $winners,
@@ -198,8 +209,8 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 			'rounds'                => array(), // Rounds are inside seats[].
 			'seats'                 => $seats,
 			'num_seats'             => $num_seats,
-			'tie'                   => false,
-			'tied_candidates'       => array(),
+			'tie'                   => $has_tie,
+			'tied_candidates'       => $tied_candidates,
 			'eliminated_candidates' => array(),
 			'total_votes'           => $total_votes,
 			'total_valid_votes'     => $total_valid,

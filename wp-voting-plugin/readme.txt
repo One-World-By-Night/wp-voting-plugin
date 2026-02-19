@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.8.0
+Stable tag: 3.8.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,11 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.8.1 =
+* Fix: Sequential RCV results banner now shows all winners and tied candidates (e.g., "Winners: A, B, (Tie: C, D)") instead of only the first winner
+* Fix: Shows "Elected X of Y seats" when seats are unfilled due to ties
+* Fix: Algorithm now surfaces tie information at top level for proper display
 
 = 3.8.0 =
 * New: Sequential RCV (multi-seat instant runoff) voting algorithm — fills multiple seats by running independent IRO elections in sequence, matching OWBN's historical election process
