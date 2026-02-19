@@ -42,7 +42,7 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 
 		// Exclude Abstain from candidate pool — track separately.
 		$abstain_count = 0;
-		$options       = array_values( array_filter( $options, function ( $o ) { return 'Abstain' !== $o; } ) );
+		$options       = array_values( array_filter( $options, function ( $o ) { return WPVP_ABSTAIN_LABEL !== $o; } ) );
 
 		// Build working ballots: each is an ordered array of preferences.
 		$working = array();
@@ -63,7 +63,7 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 				continue;
 			}
 
-			$has_abstain = in_array( 'Abstain', $ranking, true );
+			$has_abstain = in_array( WPVP_ABSTAIN_LABEL, $ranking, true );
 
 			// Filter to valid options only.
 			$ranking = array_values(

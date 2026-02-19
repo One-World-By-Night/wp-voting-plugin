@@ -86,10 +86,10 @@ class WPVP_Disciplinary implements WPVP_Voting_Algorithm {
 
 		// Abstain votes are tracked but excluded from winner determination.
 		$abstain_count = 0;
-		if ( isset( $raw_counts['Abstain'] ) ) {
-			$abstain_count = $raw_counts['Abstain'];
-			unset( $raw_counts['Abstain'] );
-			$punishments = array_values( array_filter( $punishments, function ( $p ) { return 'Abstain' !== $p; } ) );
+		if ( isset( $raw_counts[ WPVP_ABSTAIN_LABEL ] ) ) {
+			$abstain_count = $raw_counts[ WPVP_ABSTAIN_LABEL ];
+			unset( $raw_counts[ WPVP_ABSTAIN_LABEL ] );
+			$punishments = array_values( array_filter( $punishments, function ( $p ) { return WPVP_ABSTAIN_LABEL !== $p; } ) );
 		}
 
 		$total_valid = $total_votes - $invalid - $abstain_count;
@@ -171,7 +171,7 @@ class WPVP_Disciplinary implements WPVP_Voting_Algorithm {
 
 		// Re-add Abstain to vote_counts for display (after winner determination).
 		if ( $abstain_count > 0 ) {
-			$raw_counts['Abstain'] = $abstain_count;
+			$raw_counts[ WPVP_ABSTAIN_LABEL ] = $abstain_count;
 		}
 
 		return array(

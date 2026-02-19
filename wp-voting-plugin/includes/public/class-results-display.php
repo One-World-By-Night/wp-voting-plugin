@@ -1056,7 +1056,7 @@ class WPVP_Results_Display {
 		$not_voted_count  = 0;
 
 		if ( $is_restricted && ! $anonymous_voting ) {
-			$all_users = get_users( array( 'fields' => array( 'ID', 'display_name' ) ) );
+			$all_users = get_users( array( 'fields' => array( 'ID', 'display_name' ), 'number' => 1000 ) );
 
 			// Prime meta + user object cache for all users (two queries instead of M*2).
 			$all_user_ids = array_map( function( $u ) { return (int) $u->ID; }, $all_users );

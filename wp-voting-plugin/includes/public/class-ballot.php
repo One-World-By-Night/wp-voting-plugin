@@ -117,19 +117,20 @@ class WPVP_Ballot {
 
 		// 7. Parse ballot data from POST.
 		$raw_ballot = isset( $_POST['ballot_data'] ) ? wp_unslash( $_POST['ballot_data'] ) : '';
-		if ( is_string( $raw_ballot ) ) {
-			$ballot_data = json_decode( $raw_ballot, true );
-			if ( null === $ballot_data ) {
-				$ballot_data = sanitize_text_field( $raw_ballot );
-			}
-		} else {
-			$ballot_data = $raw_ballot;
+		if ( ! is_string( $raw_ballot ) || '' === $raw_ballot ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid ballot data.', 'wp-voting-plugin' ) ) );
+		}
+		$ballot_data = json_decode( $raw_ballot, true );
+		if ( null === $ballot_data ) {
+			wp_send_json_error( array( 'message' => __( 'Invalid ballot format.', 'wp-voting-plugin' ) ) );
 		}
 
 		// 8. Validate ballot data against voting type.
 		$decoded_options = json_decode( $vote->voting_options, true );
-		$valid_options   = $decoded_options ? $decoded_options : array();
-		$option_texts    = array_column( $valid_options, 'text' );
+		if ( ! is_array( $decoded_options ) || empty( $decoded_options ) ) {
+			wp_send_json_error( array( 'message' => __( 'This vote has no valid options configured. Please contact an administrator.', 'wp-voting-plugin' ) ) );
+		}
+		$option_texts = array_column( $decoded_options, 'text' );
 
 		$validation = $this->validate_ballot( $vote->voting_type, $ballot_data, $option_texts );
 		if ( ! $validation['valid'] ) {
@@ -167,22 +168,9 @@ class WPVP_Ballot {
 
 		// Consent agenda conversion: objection filed → convert to FPTP.
 		if ( 'consent' === $vote->voting_type ) {
-			// Idempotency: check DB in case vote was already converted.
-			$current_vote = WPVP_Database::get_vote( $vote_id );
-			if ( $current_vote && 'consent' !== $current_vote->voting_type ) {
-				wp_send_json_success( array(
-					'message'   => __( 'This proposal has already been converted to a vote. The page will reload.', 'wp-voting-plugin' ),
-					'converted' => true,
-					'new_type'  => $current_vote->voting_type,
-				) );
-			}
-
 			global $wpdb;
 
-			// Delete all ballots — the objection triggered the conversion, fresh start.
-			$wpdb->delete( WPVP_Database::ballots_table(), array( 'vote_id' => $vote_id ), array( '%d' ) );
-
-			// Convert to singleton (FPTP) with Approve/Deny/Abstain options.
+			// Build converted settings with objector info.
 			$fptp_options = array(
 				array(
 					'text'        => __( 'Approve', 'wp-voting-plugin' ),
@@ -193,31 +181,52 @@ class WPVP_Ballot {
 					'description' => '',
 				),
 				array(
-					'text'        => __( 'Abstain', 'wp-voting-plugin' ),
+					'text'        => WPVP_ABSTAIN_LABEL,
 					'description' => '',
 				),
 			);
 
-			// Record the objector and enable revoting on the new FPTP vote.
 			$decoded_settings   = json_decode( $vote->settings, true );
 			$converted_settings = $decoded_settings ? $decoded_settings : array();
 			$converted_settings['consent_objection'] = array(
 				'user_id'      => $user_id,
-				'display_name' => $user->display_name,
-				'username'     => $user->user_login,
+				'display_name' => $user ? $user->display_name : '',
+				'username'     => $user ? $user->user_login : '',
 				'voting_role'  => $selected_role,
 				'objected_at'  => current_time( 'mysql' ),
 			);
 			$converted_settings['allow_revote'] = true;
 
-			WPVP_Database::update_vote(
-				$vote_id,
+			// Atomic conversion: UPDATE only if voting_type is still 'consent'.
+			// This prevents a race where two simultaneous objections both convert.
+			$votes_table = WPVP_Database::votes_table();
+			$rows_updated = $wpdb->update(
+				$votes_table,
 				array(
 					'voting_type'    => 'singleton',
-					'voting_options' => $fptp_options,
-					'settings'       => $converted_settings,
-				)
+					'voting_options' => wp_json_encode( $fptp_options ),
+					'settings'       => wp_json_encode( $converted_settings ),
+				),
+				array(
+					'id'          => $vote_id,
+					'voting_type' => 'consent',
+				),
+				array( '%s', '%s', '%s' ),
+				array( '%d', '%s' )
 			);
+
+			if ( 0 === $rows_updated || false === $rows_updated ) {
+				// Another request already converted this vote.
+				$current_vote = WPVP_Database::get_vote( $vote_id );
+				wp_send_json_success( array(
+					'message'   => __( 'This proposal has already been converted to a vote. The page will reload.', 'wp-voting-plugin' ),
+					'converted' => true,
+					'new_type'  => $current_vote ? $current_vote->voting_type : 'singleton',
+				) );
+			}
+
+			// Conversion succeeded — delete existing ballots for a fresh start.
+			$wpdb->delete( WPVP_Database::ballots_table(), array( 'vote_id' => $vote_id ), array( '%d' ) );
 
 			wp_send_json_success(
 				array(

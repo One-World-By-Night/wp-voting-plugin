@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.9.0
+Stable tag: 3.9.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,15 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.9.1 =
+* Fix: Invalid ballot JSON now returns an error instead of silently falling back to a string value
+* Fix: Null-safe access to user object when recording consent objector identity
+* Fix: Consent-to-FPTP conversion now uses atomic SQL update to prevent race conditions from concurrent requests
+* Fix: Ballots rejected with a clear message when voting options are missing or corrupted
+* Fix: Participation tracker limits get_users() to 1000 results to prevent unbounded queries
+* Fix: RCV algorithm handles empty ballot edge case with full result structure instead of division-by-zero
+* Improvement: Centralized hardcoded Abstain string into WPVP_ABSTAIN_LABEL constant across all 7 algorithm files
 
 = 3.9.0 =
 * Performance: Participation tracker now primes WordPress object cache before user loops, reducing N+1 queries to 5 total queries regardless of user count

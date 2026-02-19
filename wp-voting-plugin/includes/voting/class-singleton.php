@@ -58,9 +58,9 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 		}
 
 		// Abstain votes are tracked but excluded from winner determination and percentages.
-		if ( isset( $vote_counts['Abstain'] ) ) {
-			$abstain_count = $vote_counts['Abstain'];
-			unset( $vote_counts['Abstain'] );
+		if ( isset( $vote_counts[ WPVP_ABSTAIN_LABEL ] ) ) {
+			$abstain_count = $vote_counts[ WPVP_ABSTAIN_LABEL ];
+			unset( $vote_counts[ WPVP_ABSTAIN_LABEL ] );
 		}
 
 		$total_votes       = count( $ballots );
@@ -96,12 +96,12 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 
 		// Re-add Abstain to vote_counts for display (after winner determination).
 		if ( $abstain_count > 0 ) {
-			$vote_counts['Abstain'] = $abstain_count;
+			$vote_counts[ WPVP_ABSTAIN_LABEL ] = $abstain_count;
 		}
 
 		// Rankings (competition / "1224" style) — excludes Abstain.
 		$ranking_counts = $vote_counts;
-		unset( $ranking_counts['Abstain'] );
+		unset( $ranking_counts[ WPVP_ABSTAIN_LABEL ] );
 		$rankings = self::build_rankings( $ranking_counts );
 
 		return array(

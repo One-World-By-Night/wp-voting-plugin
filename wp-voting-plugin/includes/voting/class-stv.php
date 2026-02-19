@@ -39,7 +39,7 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 
 		// Exclude Abstain from candidate pool — track separately.
 		$abstain_count = 0;
-		$options       = array_values( array_filter( $options, function ( $o ) { return 'Abstain' !== $o; } ) );
+		$options       = array_values( array_filter( $options, function ( $o ) { return WPVP_ABSTAIN_LABEL !== $o; } ) );
 
 		if ( 0 === $total_votes || empty( $options ) ) {
 			return $this->build_result( $winners, array(), $rounds, $eliminated, 0, $total_votes, $num_seats, $event_log, $options );
@@ -65,7 +65,7 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 				continue;
 			}
 			// Check for abstain before filtering to valid candidates.
-			$has_abstain = in_array( 'Abstain', $ranking, true );
+			$has_abstain = in_array( WPVP_ABSTAIN_LABEL, $ranking, true );
 			$ranking = array_values(
 				array_filter(
 					$ranking,

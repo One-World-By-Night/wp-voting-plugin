@@ -46,7 +46,7 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 
 		// Exclude Abstain from candidate pool — track separately.
 		$abstain_count = 0;
-		$options       = array_values( array_filter( $options, function ( $o ) { return 'Abstain' !== $o; } ) );
+		$options       = array_values( array_filter( $options, function ( $o ) { return WPVP_ABSTAIN_LABEL !== $o; } ) );
 
 		// Build working ballots: each is an ordered array of preferences.
 		$working = array();
@@ -68,7 +68,7 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 				continue;
 			}
 			// Check for abstain before filtering to valid candidates.
-			$has_abstain = in_array( 'Abstain', $ranking, true );
+			$has_abstain = in_array( WPVP_ABSTAIN_LABEL, $ranking, true );
 			// Filter to valid options only and preserve order.
 			$ranking = array_values(
 				array_filter(
@@ -89,6 +89,34 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 		if ( $abstain_count > 0 ) {
 			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
 			$total_votes -= $abstain_count;
+		}
+
+		// Early exit if no valid ballots remain.
+		if ( empty( $working ) ) {
+			$event_log[] = 'No valid ballots received.';
+			$empty_counts = array();
+			foreach ( $options as $opt ) {
+				$empty_counts[ $opt ] = 0;
+			}
+			return array(
+				'winner'                => null,
+				'winners'               => array(),
+				'vote_counts'           => $empty_counts,
+				'percentages'           => $empty_counts,
+				'rankings'              => array(),
+				'rounds'                => array(),
+				'tie'                   => false,
+				'tied_candidates'       => array(),
+				'eliminated_candidates' => $eliminated,
+				'total_votes'           => $total_votes,
+				'total_valid_votes'     => 0,
+				'event_log'             => $event_log,
+				'validation'            => array(
+					'is_valid' => true,
+					'errors'   => array(),
+					'warnings' => array( 'No valid ballots received.' ),
+				),
+			);
 		}
 
 		// Snapshot first-round counts (used for tiebreaking).
