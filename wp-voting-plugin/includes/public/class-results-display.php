@@ -1056,9 +1056,39 @@ class WPVP_Results_Display {
 		$not_voted_count  = 0;
 
 		if ( $is_restricted && ! $anonymous_voting ) {
-			$all_users = get_users( array( 'fields' => array( 'ID', 'display_name' ), 'number' => 1000 ) );
+			// Query only users who could plausibly be eligible, not every user on the site.
+			$asc_mode = get_option( 'wpvp_accessschema_mode', 'none' );
 
-			// Prime meta + user object cache for all users (two queries instead of M*2).
+			if ( 'none' !== $asc_mode ) {
+				// AccessSchema active: only users with cached roles can match.
+				$all_users = get_users( array(
+					'fields'       => array( 'ID', 'display_name' ),
+					'meta_key'     => 'accessschema_cached_roles',
+					'meta_compare' => 'EXISTS',
+				) );
+			} else {
+				// WP role fallback: query users with the vote's specified roles + admins.
+				$voting_roles = json_decode( $vote->voting_roles, true );
+				$role_slugs   = array();
+				if ( is_array( $voting_roles ) ) {
+					foreach ( $voting_roles as $r ) {
+						$r = sanitize_text_field( $r );
+						// Only use values that look like WP role slugs (no slashes/wildcards).
+						if ( '' !== $r && false === strpos( $r, '/' ) && false === strpos( $r, '*' ) ) {
+							$role_slugs[] = $r;
+						}
+					}
+				}
+				if ( ! in_array( 'administrator', $role_slugs, true ) ) {
+					$role_slugs[] = 'administrator';
+				}
+				$all_users = get_users( array(
+					'fields'   => array( 'ID', 'display_name' ),
+					'role__in' => $role_slugs,
+				) );
+			}
+
+			// Prime meta + user object cache for all candidate users (two queries instead of M*2).
 			$all_user_ids = array_map( function( $u ) { return (int) $u->ID; }, $all_users );
 			update_meta_cache( 'user', $all_user_ids );
 			$uncached_ids = array_diff( $all_user_ids, $voted_user_ids );
