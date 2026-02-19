@@ -887,6 +887,77 @@ class WPVP_Results_Display {
 	}
 
 	/**
+	 * Query users whose AccessSchema cached roles match the vote's role patterns.
+	 *
+	 * Deny-then-approve: the vote defines which ASC groups may vote or view.
+	 * This converts those patterns (e.g. Chronicle/{star}/CM) into SQL LIKE clauses
+	 * that search the serialized accessschema_cached_roles user meta, returning
+	 * only the users who plausibly match — not every user with any ASC role.
+	 *
+	 * @param object $vote Vote row object with voting_roles JSON.
+	 * @return array Array of user objects with ID and display_name properties.
+	 */
+	private static function query_users_by_role_patterns( $vote ) {
+		global $wpdb;
+
+		// Only voting_roles — these are the ASC groups allowed to cast a ballot.
+		// allowed_roles controls who can VIEW the vote, which is a separate concern.
+		$role_patterns = array();
+		$decoded       = isset( $vote->voting_roles ) ? json_decode( $vote->voting_roles, true ) : null;
+		if ( is_array( $decoded ) ) {
+			foreach ( $decoded as $r ) {
+				$r = trim( $r );
+				if ( '' !== $r ) {
+					$role_patterns[] = $r;
+				}
+			}
+		}
+
+		$role_patterns = array_unique( $role_patterns );
+		if ( empty( $role_patterns ) ) {
+			return array();
+		}
+
+		// Convert each role pattern to a SQL LIKE clause that matches serialized meta.
+		// Cached roles are stored by update_user_meta() as a serialized PHP array, e.g.:
+		//   a:2:{i:0;s:17:"chronicle/kony/cm";i:1;s:21:"coordinator/ne/head";}
+		// We match inside the serialized quote delimiters to reduce false positives.
+		$like_clauses = array();
+		foreach ( $role_patterns as $pattern ) {
+			// Split on wildcards (* and **) to escape literal segments independently.
+			$segments = preg_split( '/(\*\*|\*)/', $pattern, -1, PREG_SPLIT_DELIM_CAPTURE );
+			$like     = '';
+			foreach ( $segments as $seg ) {
+				if ( '**' === $seg || '*' === $seg ) {
+					$like .= '%';
+				} else {
+					$like .= $wpdb->esc_like( $seg );
+				}
+			}
+			// Wrap in serialized-string quote delimiters: ..."role/path"...
+			$like           = '%' . $wpdb->esc_like( '"' ) . $like . $wpdb->esc_like( '"' ) . '%';
+			$like_clauses[] = $wpdb->prepare( 'um.meta_value LIKE %s', $like );
+		}
+
+		if ( empty( $like_clauses ) ) {
+			return array();
+		}
+
+		$where = implode( ' OR ', $like_clauses );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- LIKE clauses built via prepare() above.
+		$results = $wpdb->get_results(
+			"SELECT DISTINCT u.ID, u.display_name
+			 FROM {$wpdb->users} u
+			 INNER JOIN {$wpdb->usermeta} um ON u.ID = um.user_id
+			 WHERE um.meta_key = 'accessschema_cached_roles'
+			   AND ( {$where} )"
+		);
+
+		return is_array( $results ) ? $results : array();
+	}
+
+	/**
 	 * Build a group key from a voting role path and resolve its display header.
 	 *
 	 * Parses the role path into type/slug, resolves the entity title via
@@ -1056,16 +1127,13 @@ class WPVP_Results_Display {
 		$not_voted_count  = 0;
 
 		if ( $is_restricted && ! $anonymous_voting ) {
-			// Query only users who could plausibly be eligible, not every user on the site.
+			// Deny-then-approve: the vote defines which roles (ASC groups) may participate.
+			// Find only users who hold one of those roles — not every user on the site.
 			$asc_mode = get_option( 'wpvp_accessschema_mode', 'none' );
 
 			if ( 'none' !== $asc_mode ) {
-				// AccessSchema active: only users with cached roles can match.
-				$all_users = get_users( array(
-					'fields'       => array( 'ID', 'display_name' ),
-					'meta_key'     => 'accessschema_cached_roles',
-					'meta_compare' => 'EXISTS',
-				) );
+				// AccessSchema active: match the vote's role patterns against cached roles.
+				$all_users = self::query_users_by_role_patterns( $vote );
 			} else {
 				// WP role fallback: query users with the vote's specified roles + admins.
 				$voting_roles = json_decode( $vote->voting_roles, true );
