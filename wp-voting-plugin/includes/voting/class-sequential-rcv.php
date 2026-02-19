@@ -134,15 +134,61 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 			$seat_winner = $iro_result['winner'];
 
 			if ( null === $seat_winner ) {
-				// Tie — record and stop.
-				$event_log[] = sprintf( 'Seat %d: Ended in a tie. Cannot fill remaining seats.', $seat );
-				$seats[] = array(
-					'seat_number'      => $seat,
-					'winner'           => null,
-					'rounds'           => isset( $iro_result['rounds'] ) ? $iro_result['rounds'] : array(),
-					'eliminated'       => isset( $iro_result['eliminated_candidates'] ) ? $iro_result['eliminated_candidates'] : array(),
-					'tied_candidates'  => isset( $iro_result['tied_candidates'] ) ? $iro_result['tied_candidates'] : array(),
-				);
+				$tie_cands     = isset( $iro_result['tied_candidates'] ) ? $iro_result['tied_candidates'] : array();
+				$remaining     = $num_seats - $seat + 1; // Seats left including current.
+				$tie_count     = count( $tie_cands );
+
+				// Merge the per-seat event log first.
+				if ( ! empty( $iro_result['event_log'] ) ) {
+					foreach ( $iro_result['event_log'] as $entry ) {
+						$event_log[] = '  ' . $entry;
+					}
+				}
+
+				if ( $tie_count > 0 && $tie_count <= $remaining ) {
+					// Tied candidates fit in remaining seats — seat them all and continue.
+					$event_log[] = sprintf(
+						'Seat %d: Tie between %s. All %d tied candidates seated (fits within %d remaining seats).',
+						$seat, implode( ', ', $tie_cands ), $tie_count, $remaining
+					);
+
+					// Record each tied candidate as a co-winner in their own seat entry.
+					foreach ( $tie_cands as $ti => $tc ) {
+						$seat_num   = $seat + $ti;
+						$winners[]  = $tc;
+						$seats[]    = array(
+							'seat_number'     => $seat_num,
+							'winner'          => $tc,
+							'rounds'          => ( 0 === $ti ) ? ( isset( $iro_result['rounds'] ) ? $iro_result['rounds'] : array() ) : array(),
+							'eliminated'      => ( 0 === $ti ) ? ( isset( $iro_result['eliminated_candidates'] ) ? $iro_result['eliminated_candidates'] : array() ) : array(),
+							'tied_candidates' => $tie_cands,
+							'co_winners'      => $tie_cands,
+						);
+					}
+
+					// Advance seat counter past the tied seats and strip all tied candidates.
+					$seat += ( $tie_count - 1 ); // Loop will increment by 1 more.
+					foreach ( $tie_cands as $tc ) {
+						$working_options = array_values( array_diff( $working_options, array( $tc ) ) );
+						$working         = self::strip_candidate( $working, $tc );
+					}
+				} else {
+					// True unresolvable tie — more tied candidates than remaining seats.
+					$event_log[] = sprintf( 'Seat %d: Tie between %s (%d tied > %d remaining seats). Cannot fill.', $seat, implode( ', ', $tie_cands ), $tie_count, $remaining );
+					$seats[] = array(
+						'seat_number'      => $seat,
+						'winner'           => null,
+						'rounds'           => isset( $iro_result['rounds'] ) ? $iro_result['rounds'] : array(),
+						'eliminated'       => isset( $iro_result['eliminated_candidates'] ) ? $iro_result['eliminated_candidates'] : array(),
+						'tied_candidates'  => $tie_cands,
+					);
+					break;
+				}
+			} else {
+
+				$winners[]   = $seat_winner;
+				$last_counts = isset( $iro_result['vote_counts'] ) ? $iro_result['vote_counts'] : array();
+				$event_log[] = sprintf( 'Seat %d: %s elected.', $seat, $seat_winner );
 
 				// Merge the per-seat event log.
 				if ( ! empty( $iro_result['event_log'] ) ) {
@@ -150,30 +196,18 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 						$event_log[] = '  ' . $entry;
 					}
 				}
-				break;
+
+				$seats[] = array(
+					'seat_number' => $seat,
+					'winner'      => $seat_winner,
+					'rounds'      => isset( $iro_result['rounds'] ) ? $iro_result['rounds'] : array(),
+					'eliminated'  => isset( $iro_result['eliminated_candidates'] ) ? $iro_result['eliminated_candidates'] : array(),
+				);
+
+				// Remove the winner from all ballots and options.
+				$working_options = array_values( array_diff( $working_options, array( $seat_winner ) ) );
+				$working         = self::strip_candidate( $working, $seat_winner );
 			}
-
-			$winners[]   = $seat_winner;
-			$last_counts = isset( $iro_result['vote_counts'] ) ? $iro_result['vote_counts'] : array();
-			$event_log[] = sprintf( 'Seat %d: %s elected.', $seat, $seat_winner );
-
-			// Merge the per-seat event log.
-			if ( ! empty( $iro_result['event_log'] ) ) {
-				foreach ( $iro_result['event_log'] as $entry ) {
-					$event_log[] = '  ' . $entry;
-				}
-			}
-
-			$seats[] = array(
-				'seat_number' => $seat,
-				'winner'      => $seat_winner,
-				'rounds'      => isset( $iro_result['rounds'] ) ? $iro_result['rounds'] : array(),
-				'eliminated'  => isset( $iro_result['eliminated_candidates'] ) ? $iro_result['eliminated_candidates'] : array(),
-			);
-
-			// Remove the winner from all ballots and options.
-			$working_options = array_values( array_diff( $working_options, array( $seat_winner ) ) );
-			$working         = self::strip_candidate( $working, $seat_winner );
 		}
 
 		// Build final result.
