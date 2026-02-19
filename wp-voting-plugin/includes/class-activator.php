@@ -60,6 +60,11 @@ class WPVP_Activator {
 				WPVP_Database::upgrade_to_280();
 			}
 
+			if ( version_compare( $stored, '3.6.0', '<' ) ) {
+				// Add entity_type and entity_slug indexed columns to ballots for vote history lookup.
+				WPVP_Database::upgrade_to_360();
+			}
+
 			update_option( 'wpvp_db_version', WPVP_VERSION );
 		}
 	}

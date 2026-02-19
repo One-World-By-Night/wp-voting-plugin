@@ -1,6 +1,27 @@
 # WP Voting Plugin - Version History
 
-## Version 3.5.0 (Current - February 2026)
+## Version 3.6.0 (Current - February 2026)
+
+**Indexed entity columns on ballots table for vote history lookup.**
+
+### Database Changes
+
+- **New columns**: `entity_type` (varchar 50) and `entity_slug` (varchar 255) added to `wp_wpvp_ballots` table
+- **Composite index**: `idx_entity (entity_type, entity_slug)` for efficient lookups by chronicle or coordinator slug
+- **Automatic backfill**: Existing ballots have entity data extracted from `ballot_data` JSON on upgrade
+- **Forward population**: `cast_ballot()` and `update_ballot()` now populate entity columns on every write
+
+### Technical Details
+
+The `voting_role` field in `ballot_data` JSON (e.g., `chronicle/kony/cm` or `coordinator/sabbat/head`) is parsed via `parse_entity_from_role()` to extract the entity type and slug. This eliminates the need for `LIKE` queries on unindexed JSON text when building vote history views per chronicle or coordinator.
+
+New public method `WPVP_Database::parse_entity_from_role($voting_role)` returns `array('type' => 'chronicle'|'coordinator'|null, 'slug' => string|null)`.
+
+Migration runs automatically via `upgrade_to_360()` on first admin page load after update. Existing ballot data is untouched — only the new columns are populated.
+
+---
+
+## Version 3.5.0 (February 2026)
 
 **Voter list role labels: resolved titles with detail page links.**
 

@@ -90,11 +90,14 @@ class WPVP_Database {
             voted_at datetime NOT NULL,
             ip_address varchar(45) DEFAULT NULL,
             user_agent varchar(255) DEFAULT NULL,
+            entity_type varchar(50) DEFAULT NULL,
+            entity_slug varchar(255) DEFAULT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY unique_vote (vote_id,user_id),
             KEY vote_id (vote_id),
             KEY user_id (user_id),
-            KEY voted_at (voted_at)
+            KEY voted_at (voted_at),
+            KEY idx_entity (entity_type,entity_slug)
         ) {$charset};";
 
 		$sql_results = 'CREATE TABLE ' . self::results_table() . " (
@@ -235,6 +238,100 @@ class WPVP_Database {
 		}
 	}
 
+
+	/**
+	 * Upgrade to version 3.6.0: Add entity_type and entity_slug columns to ballots.
+	 *
+	 * These indexed columns allow efficient lookup of ballots by chronicle or
+	 * coordinator slug without scanning the ballot_data JSON.
+	 */
+	public static function upgrade_to_360(): void {
+		global $wpdb;
+
+		$table   = self::ballots_table();
+		$columns = $wpdb->get_col( "DESC {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( ! in_array( 'entity_type', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN entity_type varchar(50) DEFAULT NULL AFTER user_agent" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( ! in_array( 'entity_slug', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN entity_slug varchar(255) DEFAULT NULL AFTER entity_type" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// Add composite index if it does not already exist.
+		$indexes = $wpdb->get_results( "SHOW INDEX FROM {$table} WHERE Key_name = 'idx_entity'" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( empty( $indexes ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD INDEX idx_entity (entity_type, entity_slug)" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		// Backfill existing ballots that lack entity data.
+		self::backfill_entity_columns();
+	}
+
+	/**
+	 * Backfill entity_type and entity_slug from ballot_data JSON for existing rows.
+	 */
+	private static function backfill_entity_columns(): void {
+		global $wpdb;
+
+		$table = self::ballots_table();
+		$rows  = $wpdb->get_results(
+			"SELECT id, ballot_data FROM {$table} WHERE entity_type IS NULL AND entity_slug IS NULL" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+
+		if ( ! $rows ) {
+			return;
+		}
+
+		foreach ( $rows as $row ) {
+			$data = json_decode( $row->ballot_data, true );
+			if ( ! is_array( $data ) || empty( $data['voting_role'] ) ) {
+				continue;
+			}
+
+			$entity = self::parse_entity_from_role( $data['voting_role'] );
+			if ( $entity['type'] && $entity['slug'] ) {
+				$wpdb->update(
+					$table,
+					array(
+						'entity_type' => $entity['type'],
+						'entity_slug' => $entity['slug'],
+					),
+					array( 'id' => $row->id ),
+					array( '%s', '%s' ),
+					array( '%d' )
+				);
+			}
+		}
+	}
+
+	/**
+	 * Parse entity type and slug from an AccessSchema voting_role path.
+	 *
+	 * Handles patterns like "chronicle/kony/cm" or "coordinator/northeast/head".
+	 * Returns array with 'type' and 'slug' keys (both null if no match).
+	 *
+	 * @param string $voting_role The AccessSchema role path.
+	 * @return array{type: string|null, slug: string|null}
+	 */
+	public static function parse_entity_from_role( $voting_role ) {
+		$result = array(
+			'type' => null,
+			'slug' => null,
+		);
+
+		if ( empty( $voting_role ) || ! is_string( $voting_role ) ) {
+			return $result;
+		}
+
+		if ( preg_match( '#^(chronicle|coordinator)/([^/]+)#i', $voting_role, $m ) ) {
+			$result['type'] = strtolower( $m[1] );
+			$result['slug'] = strtolower( $m[2] );
+		}
+
+		return $result;
+	}
 
 	/*
 	------------------------------------------------------------------
@@ -730,7 +827,10 @@ class WPVP_Database {
 	public static function cast_ballot( int $vote_id, int $user_id, $ballot_data ) {
 		global $wpdb;
 
-		$user = get_userdata( $user_id );
+		$user   = get_userdata( $user_id );
+		$entity = self::parse_entity_from_role(
+			is_array( $ballot_data ) && isset( $ballot_data['voting_role'] ) ? $ballot_data['voting_role'] : ''
+		);
 
 		$row = array(
 			'vote_id'     => $vote_id,
@@ -740,9 +840,11 @@ class WPVP_Database {
 			'voted_at'    => current_time( 'mysql' ),
 			'ip_address'  => self::get_client_ip(),
 			'user_agent'  => self::get_user_agent(),
+			'entity_type' => $entity['type'],
+			'entity_slug' => $entity['slug'],
 		);
 
-		$formats = array( '%d', '%d', '%s', '%s', '%s', '%s', '%s' );
+		$formats = array( '%d', '%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s' );
 
 		$result = $wpdb->insert( self::ballots_table(), $row, $formats );
 		return $result ? $wpdb->insert_id : false;
@@ -754,6 +856,10 @@ class WPVP_Database {
 	public static function update_ballot( int $vote_id, int $user_id, $ballot_data ): bool {
 		global $wpdb;
 
+		$entity = self::parse_entity_from_role(
+			is_array( $ballot_data ) && isset( $ballot_data['voting_role'] ) ? $ballot_data['voting_role'] : ''
+		);
+
 		$result = $wpdb->update(
 			self::ballots_table(),
 			array(
@@ -761,12 +867,14 @@ class WPVP_Database {
 				'voted_at'    => current_time( 'mysql' ),
 				'ip_address'  => self::get_client_ip(),
 				'user_agent'  => self::get_user_agent(),
+				'entity_type' => $entity['type'],
+				'entity_slug' => $entity['slug'],
 			),
 			array(
 				'vote_id' => $vote_id,
 				'user_id' => $user_id,
 			),
-			array( '%s', '%s', '%s', '%s' ),
+			array( '%s', '%s', '%s', '%s', '%s', '%s' ),
 			array( '%d', '%d' )
 		);
 

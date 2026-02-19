@@ -1,12 +1,12 @@
-> **Current Version**: 3.5.0 (Production Release - February 2026)
+> **Current Version**: 3.6.0 (Production Release - February 2026)
 > **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 >
-> ### Recent Changes (3.5.0)
-> - Voter list shows resolved chronicle/coordinator titles with detail page links
-> - Redundant role suffix removed from voter list display
-> - Role label falls back to display name only when no ASC path is available
+> ### Recent Changes (3.6.0)
+> - Indexed `entity_type` and `entity_slug` columns on ballots table for efficient vote history lookup by chronicle or coordinator
+> - Automatic backfill of existing ballots from ballot_data JSON on upgrade
+> - `cast_ballot()` and `update_ballot()` now populate entity columns on every write
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>
