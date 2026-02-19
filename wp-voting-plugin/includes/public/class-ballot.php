@@ -167,6 +167,16 @@ class WPVP_Ballot {
 
 		// Consent agenda conversion: objection filed → convert to FPTP.
 		if ( 'consent' === $vote->voting_type ) {
+			// Idempotency: check DB in case vote was already converted.
+			$current_vote = WPVP_Database::get_vote( $vote_id );
+			if ( $current_vote && 'consent' !== $current_vote->voting_type ) {
+				wp_send_json_success( array(
+					'message'   => __( 'This proposal has already been converted to a vote. The page will reload.', 'wp-voting-plugin' ),
+					'converted' => true,
+					'new_type'  => $current_vote->voting_type,
+				) );
+			}
+
 			global $wpdb;
 
 			// Delete all ballots — the objection triggered the conversion, fresh start.
@@ -188,9 +198,16 @@ class WPVP_Ballot {
 				),
 			);
 
-			// Enable revoting on the new FPTP vote.
-			$decoded_settings                 = json_decode( $vote->settings, true );
-			$converted_settings               = $decoded_settings ? $decoded_settings : array();
+			// Record the objector and enable revoting on the new FPTP vote.
+			$decoded_settings   = json_decode( $vote->settings, true );
+			$converted_settings = $decoded_settings ? $decoded_settings : array();
+			$converted_settings['consent_objection'] = array(
+				'user_id'      => $user_id,
+				'display_name' => $user->display_name,
+				'username'     => $user->user_login,
+				'voting_role'  => $selected_role,
+				'objected_at'  => current_time( 'mysql' ),
+			);
 			$converted_settings['allow_revote'] = true;
 
 			WPVP_Database::update_vote(

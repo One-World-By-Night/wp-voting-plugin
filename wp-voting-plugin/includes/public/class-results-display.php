@@ -1014,6 +1014,14 @@ class WPVP_Results_Display {
 			$ballots = array();
 		}
 
+		// Prime user object cache for voted users (one query instead of N).
+		$voted_user_ids = array_unique( array_map( function( $b ) {
+			return (int) $b['user_id'];
+		}, $ballots ) );
+		if ( ! empty( $voted_user_ids ) ) {
+			cache_users( $voted_user_ids );
+		}
+
 		// Shared header map: group_key => HTML string (resolved title with link).
 		$group_headers = array();
 
@@ -1049,6 +1057,15 @@ class WPVP_Results_Display {
 
 		if ( $is_restricted && ! $anonymous_voting ) {
 			$all_users = get_users( array( 'fields' => array( 'ID', 'display_name' ) ) );
+
+			// Prime meta + user object cache for all users (two queries instead of M*2).
+			$all_user_ids = array_map( function( $u ) { return (int) $u->ID; }, $all_users );
+			update_meta_cache( 'user', $all_user_ids );
+			$uncached_ids = array_diff( $all_user_ids, $voted_user_ids );
+			if ( ! empty( $uncached_ids ) ) {
+				cache_users( $uncached_ids );
+			}
+
 			foreach ( $all_users as $wp_user ) {
 				$uid = (int) $wp_user->ID;
 				if ( isset( $voted_users[ $uid ] ) ) {

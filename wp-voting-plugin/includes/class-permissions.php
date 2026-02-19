@@ -352,13 +352,20 @@ class WPVP_Permissions {
 
 		$user = get_userdata( $user_id );
 		if ( ! $user || empty( $user->user_email ) ) {
+			error_log( sprintf(
+				'WPVP: AccessSchema mode=%s but user %d not found or has no email, falling back to WordPress capabilities.',
+				$mode, $user_id
+			) );
 			return null;
 		}
 
 		// Get user's cached roles from shared AccessSchema cache key.
 		$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
-			// No cached roles — return null to fall back to WordPress capabilities.
+			error_log( sprintf(
+				'WPVP: AccessSchema mode=%s but user %d has no cached roles, falling back to WordPress capabilities.',
+				$mode, $user_id
+			) );
 			return null;
 		}
 
@@ -455,12 +462,20 @@ class WPVP_Permissions {
 
 		$user = get_userdata( $user_id );
 		if ( ! $user || empty( $user->user_email ) ) {
+			error_log( sprintf(
+				'WPVP: AccessSchema mode=%s but user %d not found or has no email in role matching, falling back to WordPress capabilities.',
+				$mode, $user_id
+			) );
 			return null;
 		}
 
 		$user_roles = get_user_meta( $user_id, 'accessschema_cached_roles', true );
 
 		if ( ! is_array( $user_roles ) || empty( $user_roles ) ) {
+			error_log( sprintf(
+				'WPVP: AccessSchema mode=%s but user %d has no cached roles in role matching, falling back to WordPress capabilities.',
+				$mode, $user_id
+			) );
 			return null;
 		}
 
