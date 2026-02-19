@@ -55,10 +55,9 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'open',
 				'options' => array(
-					'all'       => __( 'All', 'wp-voting-plugin' ),
-					'open'      => __( 'Open', 'wp-voting-plugin' ),
-					'closed'    => __( 'Closed', 'wp-voting-plugin' ),
-					'completed' => __( 'Completed', 'wp-voting-plugin' ),
+					'open'                       => __( 'Open Votes', 'wp-voting-plugin' ),
+					'closed,completed,archived'  => __( 'Vote Results (closed / completed / archived)', 'wp-voting-plugin' ),
+					'all'                        => __( 'All Votes', 'wp-voting-plugin' ),
 				),
 			)
 		);
@@ -91,6 +90,11 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 
 /**
  * Elementor widget: Single Vote ([wpvp_vote])
+ *
+ * When Vote ID is left at 0 (the default), the widget reads the vote ID
+ * from the URL parameter ?wpvp_vote=X — this is the standard "dynamic"
+ * mode used on the Cast Vote page. Set a specific ID to embed a
+ * particular vote on any page.
  */
 class WPVP_Elementor_Vote_Widget extends \Elementor\Widget_Base {
 
@@ -129,7 +133,7 @@ class WPVP_Elementor_Vote_Widget extends \Elementor\Widget_Base {
 				'label'       => __( 'Vote ID', 'wp-voting-plugin' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'default'     => 0,
-				'description' => __( 'Enter the ID of the vote to display.', 'wp-voting-plugin' ),
+				'description' => __( 'Enter a specific vote ID, or leave at 0 to read from the URL parameter (?wpvp_vote=X).', 'wp-voting-plugin' ),
 			)
 		);
 
@@ -140,19 +144,32 @@ class WPVP_Elementor_Vote_Widget extends \Elementor\Widget_Base {
 		$settings = $this->get_settings_for_display();
 		$id       = intval( $settings['vote_id'] );
 
-		if ( ! $id ) {
-			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
-				echo '<p class="wpvp-error">' . esc_html__( 'Please enter a Vote ID in the widget settings.', 'wp-voting-plugin' ) . '</p>';
-			}
+		if ( $id > 0 ) {
+			echo do_shortcode( sprintf( '[wpvp_vote id="%d"]', $id ) );
 			return;
 		}
 
-		echo do_shortcode( sprintf( '[wpvp_vote id="%d"]', $id ) );
+		// Dynamic mode: let the shortcode read from the URL parameter.
+		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+			echo '<div class="wpvp-elementor-placeholder" style="padding:20px;background:#f0f0f0;border:1px dashed #ccc;text-align:center;">';
+			echo '<p><strong>' . esc_html__( 'WP Voting — Vote Detail', 'wp-voting-plugin' ) . '</strong></p>';
+			echo '<p>' . esc_html__( 'Dynamic mode: vote ID will be read from the URL parameter (?wpvp_vote=X) on the front-end.', 'wp-voting-plugin' ) . '</p>';
+			echo '</div>';
+			return;
+		}
+
+		echo do_shortcode( '[wpvp_vote]' );
 	}
 }
 
 /**
  * Elementor widget: Vote Results ([wpvp_results])
+ *
+ * When Vote ID is left at 0 (the default), the widget reads the vote ID
+ * from the URL parameter ?wpvp_vote=X — this is the standard "dynamic"
+ * mode used on the Vote Results page. When no URL parameter is present
+ * either, it renders a list of votes with available results. Set a
+ * specific ID to embed a particular vote's results on any page.
  */
 class WPVP_Elementor_Results_Widget extends \Elementor\Widget_Base {
 
@@ -191,7 +208,7 @@ class WPVP_Elementor_Results_Widget extends \Elementor\Widget_Base {
 				'label'       => __( 'Vote ID', 'wp-voting-plugin' ),
 				'type'        => \Elementor\Controls_Manager::NUMBER,
 				'default'     => 0,
-				'description' => __( 'Enter the ID of the vote whose results you want to display.', 'wp-voting-plugin' ),
+				'description' => __( 'Enter a specific vote ID, or leave at 0 to read from the URL parameter (?wpvp_vote=X). When no ID is available, a list of votes with results is shown.', 'wp-voting-plugin' ),
 			)
 		);
 
@@ -202,13 +219,20 @@ class WPVP_Elementor_Results_Widget extends \Elementor\Widget_Base {
 		$settings = $this->get_settings_for_display();
 		$id       = intval( $settings['vote_id'] );
 
-		if ( ! $id ) {
-			if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
-				echo '<p class="wpvp-error">' . esc_html__( 'Please enter a Vote ID in the widget settings.', 'wp-voting-plugin' ) . '</p>';
-			}
+		if ( $id > 0 ) {
+			echo do_shortcode( sprintf( '[wpvp_results id="%d"]', $id ) );
 			return;
 		}
 
-		echo do_shortcode( sprintf( '[wpvp_results id="%d"]', $id ) );
+		// Dynamic mode: let the shortcode read from the URL parameter.
+		if ( \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+			echo '<div class="wpvp-elementor-placeholder" style="padding:20px;background:#f0f0f0;border:1px dashed #ccc;text-align:center;">';
+			echo '<p><strong>' . esc_html__( 'WP Voting — Results', 'wp-voting-plugin' ) . '</strong></p>';
+			echo '<p>' . esc_html__( 'Dynamic mode: vote ID will be read from the URL parameter (?wpvp_vote=X) on the front-end. If no ID is present, a results list is shown.', 'wp-voting-plugin' ) . '</p>';
+			echo '</div>';
+			return;
+		}
+
+		echo do_shortcode( '[wpvp_results]' );
 	}
 }
