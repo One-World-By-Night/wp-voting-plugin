@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.8.6
+Stable tag: 3.8.7
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,9 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.8.7 =
+* Fix: Vote description now preserves line breaks and paragraph formatting on the public vote page (applies wpautop)
 
 = 3.8.6 =
 * Fix: Admins can now set a vote to "Open" with a future opening date — vote publishes immediately and front-end shows "Opens on {date}" until the date arrives
