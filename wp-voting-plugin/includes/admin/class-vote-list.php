@@ -127,15 +127,26 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 			esc_html__( 'Edit', 'wp-voting-plugin' )
 		);
 
+		// Public "View" link — always available, opens in new tab.
+		$page_ids     = get_option( 'wpvp_page_ids', array() );
+		$detail_page  = ! empty( $page_ids['cast-vote'] ) ? $page_ids['cast-vote'] : 0;
+		if ( $detail_page ) {
+			$view_url = add_query_arg( 'wpvp_vote', intval( $item->id ), get_permalink( $detail_page ) );
+			$actions['view'] = sprintf(
+				'<a href="%s" target="_blank">%s</a>',
+				esc_url( $view_url ),
+				esc_html__( 'View', 'wp-voting-plugin' )
+			);
+		}
+
 		// Show Results link for completed/archived votes.
 		if ( in_array( $item->voting_stage, array( 'closed', 'completed', 'archived' ), true ) ) {
-			$page_ids    = get_option( 'wpvp_page_ids', array() );
 			$results_url = ! empty( $page_ids['vote-results'] )
 				? add_query_arg( 'wpvp_vote', intval( $item->id ), get_permalink( $page_ids['vote-results'] ) )
 				: '';
 			if ( $results_url ) {
 				$actions['results'] = sprintf(
-					'<a href="%s">%s</a>',
+					'<a href="%s" target="_blank">%s</a>',
 					esc_url( $results_url ),
 					esc_html__( 'Results', 'wp-voting-plugin' )
 				);
