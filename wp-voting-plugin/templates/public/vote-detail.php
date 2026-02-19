@@ -195,6 +195,10 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 		$decoded_additional_viewers = json_decode( $vote->additional_viewers ?? '[]', true );
 		$additional_viewer_patterns = is_array( $decoded_additional_viewers ) ? $decoded_additional_viewers : array();
 
+		// For public/private eligibility, roles are generic ("Public", "Logged-in User")
+		// and match all ballots — restrict to own ballots only to prevent privacy leak.
+		$is_generic_eligibility = in_array( $vote->voting_eligibility, array( 'public', 'private' ), true );
+
 		global $wpdb;
 		$ballots_table = $wpdb->prefix . 'wpvp_ballots';
 		$all_ballots   = $wpdb->get_results(
@@ -225,8 +229,15 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 					continue;
 				}
 
-				$role_match = ! empty( $eligible_roles ) && in_array( $ballot_role, $eligible_roles, true );
 				$user_match = ( $ballot_uid === $user_id );
+
+				// Role matching only applies for restricted eligibility (real roles).
+				// For public/private, generic roles match everything — only show own ballots.
+				$role_match = false;
+				if ( ! $is_generic_eligibility ) {
+					$role_match = ! empty( $eligible_roles ) && in_array( $ballot_role, $eligible_roles, true );
+				}
+
 				$additional_viewer_match = ! empty( $additional_viewer_patterns )
 					&& WPVP_Permissions::matches_additional_viewers( $user_id, $ballot_role, $additional_viewer_patterns );
 
@@ -242,6 +253,8 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 				if ( ! empty( $matching_ballots ) ) :
 					$allow_comments = ! empty( $settings['allow_voter_comments'] );
+					$is_anonymous   = ! empty( $settings['anonymous_voting'] );
+					$is_blind_open  = ( 'open' === $vote->voting_stage && empty( $settings['show_results_before_closing'] ) );
 					?>
 					<div class="wpvp-vote-detail__role-history" style="margin-top: 2em;">
 						<h3><?php esc_html_e( "Your Role's Vote History", 'wp-voting-plugin' ); ?></h3>
@@ -252,9 +265,11 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 							<thead>
 								<tr>
 									<th><?php esc_html_e( 'Role', 'wp-voting-plugin' ); ?></th>
-									<th><?php esc_html_e( 'Cast By', 'wp-voting-plugin' ); ?></th>
+									<?php if ( ! $is_anonymous ) : ?>
+										<th><?php esc_html_e( 'Cast By', 'wp-voting-plugin' ); ?></th>
+									<?php endif; ?>
 									<th><?php esc_html_e( 'Vote', 'wp-voting-plugin' ); ?></th>
-									<?php if ( $allow_comments ) : ?>
+									<?php if ( $allow_comments && ! $is_blind_open ) : ?>
 										<th><?php esc_html_e( 'Comment', 'wp-voting-plugin' ); ?></th>
 									<?php endif; ?>
 									<th><?php esc_html_e( 'Date', 'wp-voting-plugin' ); ?></th>
@@ -263,18 +278,32 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 							<tbody>
 								<?php foreach ( $matching_ballots as $mb ) :
 									$bd     = $mb['ballot_data'];
-									$choice = $bd['choice'] ?? '';
+									$is_own = ( (int) $mb['user_id'] === $user_id );
 
-									// Format choice for display.
-									if ( is_array( $choice ) ) {
-										$choice_display = implode( ' &rsaquo; ', array_map( 'esc_html', $choice ) );
+									// Privacy: mask other users' choices while vote is open + blind.
+									if ( ! $is_own && $is_blind_open ) {
+										$choice_display = esc_html__( 'Voted', 'wp-voting-plugin' );
 									} else {
-										$choice_display = esc_html( $choice );
+										$choice = $bd['choice'] ?? '';
+										if ( is_array( $choice ) ) {
+											$choice_display = implode( ' &rsaquo; ', array_map( 'esc_html', $choice ) );
+										} else {
+											$choice_display = esc_html( $choice );
+										}
 									}
 
-									$cast_by = $bd['display_name'] ?? '';
-									if ( ! empty( $bd['username'] ) ) {
-										$cast_by .= ' (' . $bd['username'] . ')';
+									// Privacy: mask identity for anonymous votes (other users only).
+									if ( ! $is_anonymous ) {
+										$cast_by = $bd['display_name'] ?? '';
+										if ( ! empty( $bd['username'] ) ) {
+											$cast_by .= ' (' . $bd['username'] . ')';
+										}
+									}
+
+									// Privacy: mask comments for other users while vote is blind-open.
+									$comment_display = '';
+									if ( $allow_comments && ! $is_blind_open ) {
+										$comment_display = $bd['voter_comment'] ?? '';
 									}
 
 									$vote_date = wp_date(
@@ -284,10 +313,12 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 								?>
 								<tr>
 									<td><?php echo esc_html( $bd['voting_role'] ?? '' ); ?></td>
-									<td><?php echo esc_html( $cast_by ); ?></td>
+									<?php if ( ! $is_anonymous ) : ?>
+										<td><?php echo esc_html( $cast_by ); ?></td>
+									<?php endif; ?>
 									<td><?php echo $choice_display; ?></td>
-									<?php if ( $allow_comments ) : ?>
-										<td><?php echo esc_html( $bd['voter_comment'] ?? '' ); ?></td>
+									<?php if ( $allow_comments && ! $is_blind_open ) : ?>
+										<td><?php echo esc_html( $comment_display ); ?></td>
 									<?php endif; ?>
 									<td><?php echo esc_html( $vote_date ); ?></td>
 								</tr>

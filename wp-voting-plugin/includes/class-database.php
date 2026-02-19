@@ -1012,11 +1012,18 @@ class WPVP_Database {
 			),
 			wp_json_encode( $results['rounds'] ?? array() ),
 			wp_json_encode(
-				array(
-					'vote_distribution' => $results['vote_counts'] ?? array(),
-					'percentages'       => $results['percentages'] ?? array(),
-					'eliminated_order'  => $results['eliminated_candidates'] ?? array(),
-					'event_log'         => $results['event_log'] ?? array(),
+				array_filter(
+					array(
+						'vote_distribution' => $results['vote_counts'] ?? array(),
+						'percentages'       => $results['percentages'] ?? array(),
+						'eliminated_order'  => $results['eliminated_candidates'] ?? array(),
+						'event_log'         => $results['event_log'] ?? array(),
+						'seats'             => $results['seats'] ?? array(),
+						'num_seats'         => $results['num_seats'] ?? 0,
+					),
+					function ( $v ) {
+						return ! empty( $v );
+					}
 				)
 			),
 			current_time( 'mysql' ),
@@ -1114,6 +1121,10 @@ class WPVP_Database {
 			'stv'          => array(
 				'label'       => __( 'Single Transferable Vote', 'wp-voting-plugin' ),
 				'description' => __( 'Multi-winner ranked voting using the Droop quota. Surplus votes transfer by weight.', 'wp-voting-plugin' ),
+			),
+			'sequential_rcv' => array(
+				'label'       => __( 'Sequential Ranked Choice (Multi-Seat)', 'wp-voting-plugin' ),
+				'description' => __( 'Multi-winner ranked voting. Runs independent IRO elections for each seat. After each winner, they are removed and a fresh election runs at full ballot weight.', 'wp-voting-plugin' ),
 			),
 			'condorcet'    => array(
 				'label'       => __( 'Condorcet Method', 'wp-voting-plugin' ),

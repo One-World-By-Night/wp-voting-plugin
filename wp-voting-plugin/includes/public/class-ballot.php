@@ -260,6 +260,7 @@ class WPVP_Ballot {
 				return $this->validate_singleton( $data, $options );
 			case 'rcv':
 			case 'stv':
+			case 'sequential_rcv':
 				return $this->validate_ranked( $data, $options );
 			case 'condorcet':
 				return $this->validate_ranked( $data, $options );

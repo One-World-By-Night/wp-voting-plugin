@@ -98,13 +98,14 @@ defined( 'ABSPATH' ) || exit;
 				<input type="hidden" name="ballot_choice" value="Object">
 			</fieldset>
 
-		<?php elseif ( in_array( $vote->voting_type, array( 'rcv', 'stv', 'condorcet' ), true ) ) : ?>
-			<?php /* --- Ranked / sortable form (RCV, STV, Condorcet) --- */ ?>
+		<?php elseif ( in_array( $vote->voting_type, array( 'rcv', 'stv', 'sequential_rcv', 'condorcet' ), true ) ) : ?>
+			<?php /* --- Ranked / sortable form (RCV, STV, Sequential RCV, Condorcet) --- */ ?>
 			<?php
 			$ranked_instructions = array(
-				'rcv'       => __( 'Drag to rank options from most preferred (top) to least preferred (bottom). You may leave options unranked.', 'wp-voting-plugin' ),
-				'stv'       => __( 'Drag to rank candidates in order of preference. You may leave candidates unranked.', 'wp-voting-plugin' ),
-				'condorcet' => __( 'Drag to rank options from most preferred (top) to least preferred (bottom). Unranked options are treated as less preferred than all ranked options.', 'wp-voting-plugin' ),
+				'rcv'             => __( 'Drag to rank options from most preferred (top) to least preferred (bottom). You may leave options unranked.', 'wp-voting-plugin' ),
+				'stv'             => __( 'Drag to rank candidates in order of preference. You may leave candidates unranked.', 'wp-voting-plugin' ),
+				'sequential_rcv'  => __( 'Drag to rank candidates in order of preference. Each seat is filled by an independent ranked-choice election.', 'wp-voting-plugin' ),
+				'condorcet'       => __( 'Drag to rank options from most preferred (top) to least preferred (bottom). Unranked options are treated as less preferred than all ranked options.', 'wp-voting-plugin' ),
 			);
 			?>
 			<div class="wpvp-ballot__ranked">

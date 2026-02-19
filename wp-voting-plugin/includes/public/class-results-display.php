@@ -44,6 +44,9 @@ class WPVP_Results_Display {
 				case 'stv':
 					self::render_stv( $final, $rounds, $winner, $results );
 					break;
+				case 'sequential_rcv':
+					self::render_sequential_rcv( $final, $winner, $stats, $results );
+					break;
 				case 'condorcet':
 					self::render_condorcet( $final, $stats, $results );
 					break;
@@ -254,6 +257,117 @@ class WPVP_Results_Display {
 		} else {
 			self::render_singleton( $final, $results );
 		}
+	}
+
+	private static function render_sequential_rcv( array $final, array $winner, array $stats, object $results ): void {
+		$seats = isset( $stats['seats'] ) ? (array) $stats['seats'] : array();
+
+		if ( empty( $seats ) ) {
+			// Fallback: no per-seat data — show basic singleton results.
+			self::render_singleton( $final, $results );
+			return;
+		}
+
+		// Show elected candidates summary.
+		if ( ! empty( $winner['winners'] ) ) {
+			echo '<p class="wpvp-results__seats">';
+			printf(
+				esc_html__( 'Elected (%1$d seats): %2$s', 'wp-voting-plugin' ),
+				count( $winner['winners'] ),
+				esc_html( implode( ', ', $winner['winners'] ) )
+			);
+			echo '</p>';
+		}
+
+		$previous_winners = array();
+
+		foreach ( $seats as $seat ) :
+			$seat_number = isset( $seat['seat_number'] ) ? intval( $seat['seat_number'] ) : 0;
+			$seat_winner = isset( $seat['winner'] ) ? $seat['winner'] : null;
+			$seat_rounds = isset( $seat['rounds'] ) ? (array) $seat['rounds'] : array();
+			$seat_tied   = isset( $seat['tied_candidates'] ) ? (array) $seat['tied_candidates'] : array();
+			?>
+			<div class="wpvp-seat-section">
+				<h4 class="wpvp-seat-section__header">
+					<?php
+					if ( $seat_winner ) {
+						printf(
+							esc_html__( 'Seat %1$d: %2$s', 'wp-voting-plugin' ),
+							$seat_number,
+							esc_html( $seat_winner )
+						);
+					} elseif ( ! empty( $seat_tied ) ) {
+						printf(
+							esc_html__( 'Seat %1$d: Tie (%2$s)', 'wp-voting-plugin' ),
+							$seat_number,
+							esc_html( implode( ', ', $seat_tied ) )
+						);
+					} else {
+						printf( esc_html__( 'Seat %d: No winner', 'wp-voting-plugin' ), $seat_number );
+					}
+					?>
+				</h4>
+
+				<?php if ( ! empty( $previous_winners ) ) : ?>
+					<p class="wpvp-seat-section__note">
+						<?php
+						printf(
+							esc_html__( 'Removed from ballots: %s', 'wp-voting-plugin' ),
+							esc_html( implode( ', ', $previous_winners ) )
+						);
+						?>
+					</p>
+				<?php endif; ?>
+
+				<?php if ( ! empty( $seat_rounds ) ) : ?>
+					<?php foreach ( $seat_rounds as $i => $round ) : ?>
+						<div class="wpvp-round">
+							<h5>
+								<?php printf( esc_html__( 'Round %d', 'wp-voting-plugin' ), intval( $i ) + 1 ); ?>
+								<?php if ( ! empty( $round['eliminated'] ) ) : ?>
+									<span class="wpvp-round__eliminated">
+										<?php
+										$elim = $round['eliminated'];
+										if ( is_array( $elim ) ) {
+											$elim = implode( ', ', $elim );
+										}
+										printf( esc_html__( '(Eliminated: %s)', 'wp-voting-plugin' ), esc_html( $elim ) );
+										?>
+									</span>
+								<?php endif; ?>
+							</h5>
+							<?php if ( ! empty( $round['counts'] ) ) : ?>
+								<table class="wpvp-results__table wpvp-results__table--compact">
+									<thead>
+										<tr>
+											<th><?php esc_html_e( 'Candidate', 'wp-voting-plugin' ); ?></th>
+											<th><?php esc_html_e( 'Votes', 'wp-voting-plugin' ); ?></th>
+										</tr>
+									</thead>
+									<tbody>
+										<?php
+										$round_counts = $round['counts'];
+										arsort( $round_counts );
+										foreach ( $round_counts as $candidate => $count ) :
+											$formatted = ( abs( $count - round( $count ) ) < 0.001 ) ? number_format( $count, 0 ) : number_format( $count, 2 );
+											?>
+											<tr>
+												<td><?php echo esc_html( $candidate ); ?></td>
+												<td><?php echo esc_html( $formatted ); ?></td>
+											</tr>
+										<?php endforeach; ?>
+									</tbody>
+								</table>
+							<?php endif; ?>
+						</div>
+					<?php endforeach; ?>
+				<?php endif; ?>
+			</div>
+			<?php
+			if ( $seat_winner ) {
+				$previous_winners[] = $seat_winner;
+			}
+		endforeach;
 	}
 
 	private static function render_condorcet( array $final, array $stats, object $results ): void {

@@ -411,7 +411,7 @@ class WPVP_Vote_Editor {
 										<?php esc_html_e( '+ Add Option', 'wp-voting-plugin' ); ?>
 									</button>
 
-									<div id="wpvp-num-winners" style="margin-top:12px; <?php echo ( $is_edit && 'stv' !== $this->vote->voting_type ) ? 'display:none;' : ''; ?>">
+									<div id="wpvp-num-winners" style="margin-top:12px; <?php echo ( $is_edit && ! in_array( $this->vote->voting_type, array( 'stv', 'sequential_rcv' ), true ) ) ? 'display:none;' : ''; ?>">
 										<label for="number_of_winners"><?php esc_html_e( 'Number of Winners', 'wp-voting-plugin' ); ?></label>
 										<input type="number" name="number_of_winners" id="number_of_winners" min="1" value="<?php echo esc_attr( $is_edit ? $this->vote->number_of_winners : 1 ); ?>">
 									</div>

@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.7.0
+Stable tag: 3.8.0
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,14 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.8.0 =
+* New: Sequential RCV (multi-seat instant runoff) voting algorithm — fills multiple seats by running independent IRO elections in sequence, matching OWBN's historical election process
+* New: Batch tie elimination for Sequential RCV — all tied-for-last candidates eliminated simultaneously per round
+* New: Per-seat results display with round-by-round tables and "removed from ballots" annotations
+* Fix: Vote history privacy leak — users with public/private eligibility votes no longer see other users' ballots in "Your Role's Vote History"
+* Fix: Blind-open votes now mask other users' choices as "Voted" and hide comments in role history
+* Fix: Anonymous votes hide "Cast By" column entirely in role history
 
 = 3.7.0 =
 * Fix: Prevent premature vote-open notifications — setting a vote to "Open" with a future opening date now saves as Draft; the hourly cron auto-opens it and sends notifications at the correct time

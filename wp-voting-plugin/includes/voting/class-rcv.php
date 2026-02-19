@@ -11,6 +11,11 @@
  * Tiebreaker for last place: candidate with fewer first-round votes is
  * eliminated first. If still tied, the candidate appearing first alphabetically
  * is eliminated (deterministic, documented).
+ *
+ * Config options:
+ *   batch_eliminate_ties (bool) — When true, eliminate ALL candidates tied for
+ *     last place simultaneously instead of using the tiebreaker. Used by
+ *     Sequential RCV to match OWBN's historical multi-seat IRO practice.
  */
 
 defined( 'ABSPATH' ) || exit;
@@ -33,10 +38,11 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 	}
 
 	public function process( array $ballots, array $options, array $config = array() ): array {
-		$total_votes = count( $ballots );
-		$event_log   = array();
-		$rounds      = array();
-		$eliminated  = array();
+		$total_votes       = count( $ballots );
+		$event_log         = array();
+		$rounds            = array();
+		$eliminated        = array();
+		$batch_eliminate   = ! empty( $config['batch_eliminate_ties'] );
 
 		// Exclude Abstain from candidate pool — track separately.
 		$abstain_count = 0;
@@ -141,30 +147,37 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 				return $this->build_result( null, $counts, $rounds, $eliminated, $total_votes, $event_log, $options, $active_candidates );
 			}
 
-			// Eliminate ONE candidate with the fewest votes.
+			// Determine candidate(s) to eliminate.
 			$min_votes  = min( $counts );
 			$last_place = array_keys( $counts, $min_votes, true );
 
-			if ( count( $last_place ) > 1 ) {
-				// Tiebreaker: eliminate the one with fewer first-round votes.
-				usort(
-					$last_place,
-					function ( $a, $b ) use ( $initial_counts ) {
-						$diff = ( $initial_counts[ $a ] ?? 0 ) - ( $initial_counts[ $b ] ?? 0 );
-						return 0 !== $diff ? $diff : strcmp( $a, $b ); // alphabetical final tiebreaker
-					}
-				);
+			if ( $batch_eliminate && count( $last_place ) > 1 ) {
+				// Batch mode: eliminate ALL candidates tied for last place.
+				$to_eliminate_list = $last_place;
+			} else {
+				// Standard mode: eliminate ONE using tiebreaker.
+				if ( count( $last_place ) > 1 ) {
+					usort(
+						$last_place,
+						function ( $a, $b ) use ( $initial_counts ) {
+							$diff = ( $initial_counts[ $a ] ?? 0 ) - ( $initial_counts[ $b ] ?? 0 );
+							return 0 !== $diff ? $diff : strcmp( $a, $b ); // alphabetical final tiebreaker
+						}
+					);
+				}
+				$to_eliminate_list = array( $last_place[0] );
 			}
-			$to_eliminate = $last_place[0];
 
-			$event_log[]       = sprintf( 'Round %d: Eliminated %s (%d votes).', $round_number, $to_eliminate, $min_votes );
-			$eliminated[]      = $to_eliminate;
-			$active_candidates = array_values( array_diff( $active_candidates, array( $to_eliminate ) ) );
+			foreach ( $to_eliminate_list as $to_eliminate ) {
+				$event_log[] = sprintf( 'Round %d: Eliminated %s (%d votes).', $round_number, $to_eliminate, $min_votes );
+				$eliminated[] = $to_eliminate;
+			}
+			$active_candidates = array_values( array_diff( $active_candidates, $to_eliminate_list ) );
 
-			// Transfer ballots: remove the eliminated candidate from every ballot.
+			// Transfer ballots: remove eliminated candidate(s) from every ballot.
 			$transfers = array();
 			foreach ( $working as &$ballot ) {
-				if ( isset( $ballot[0] ) && $ballot[0] === $to_eliminate ) {
+				if ( isset( $ballot[0] ) && in_array( $ballot[0], $to_eliminate_list, true ) ) {
 					// This ballot's first choice was eliminated — it transfers.
 					array_shift( $ballot );
 					// Skip any other eliminated candidates.
@@ -177,7 +190,7 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 			}
 			unset( $ballot );
 
-			$round_data['eliminated'] = array( $to_eliminate );
+			$round_data['eliminated'] = $to_eliminate_list;
 			$round_data['transfers']  = $transfers;
 			$rounds[]                 = $round_data;
 		}

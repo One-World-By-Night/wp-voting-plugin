@@ -65,6 +65,9 @@ class WPVP_Validator {
 			case 'stv':
 				$v = self::validate_stv( $results, $options, $v );
 				break;
+			case 'sequential_rcv':
+				$v = self::validate_sequential_rcv( $results, $options, $v );
+				break;
 			case 'condorcet':
 				$v = self::validate_condorcet( $results, $options, $v );
 				break;
@@ -173,6 +176,44 @@ class WPVP_Validator {
 		$quota = $r['quota'] ?? 0;
 		if ( $quota <= 0 && ( $r['total_votes'] ?? 0 ) > 0 ) {
 			$v['warnings'][] = 'Quota is zero or negative with non-zero votes.';
+		}
+
+		return $v;
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Sequential RCV.
+	 * ----------------------------------------------------------------*/
+
+	private static function validate_sequential_rcv( array $r, array $opts, array $v ): array {
+		$winners   = $r['winners'] ?? array();
+		$num_seats = $r['num_seats'] ?? 1;
+
+		if ( count( $winners ) > $num_seats ) {
+			$v['errors'][] = sprintf(
+				'More winners (%d) than seats (%d).',
+				count( $winners ),
+				$num_seats
+			);
+		}
+
+		// Each winner should be a valid option.
+		foreach ( $winners as $w ) {
+			if ( ! in_array( $w, $opts, true ) ) {
+				$v['errors'][] = "Winner '{$w}' is not a valid option.";
+			}
+		}
+
+		// No duplicate winners.
+		if ( count( $winners ) !== count( array_unique( $winners ) ) ) {
+			$v['errors'][] = 'Duplicate winners detected.';
+		}
+
+		// Seats data should be present.
+		$seats = $r['seats'] ?? array();
+		if ( empty( $seats ) && ! empty( $winners ) ) {
+			$v['warnings'][] = 'No per-seat data recorded.';
 		}
 
 		return $v;

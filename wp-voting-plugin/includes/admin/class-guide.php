@@ -316,11 +316,11 @@ class WPVP_Guide {
 							</thead>
 							<tbody>
 								<tr>
-									<td><?php esc_html_e( 'Single Choice / RCV / STV / Condorcet', 'wp-voting-plugin' ); ?></td>
+									<td><?php esc_html_e( 'Single Choice / RCV / STV / Sequential RCV / Condorcet', 'wp-voting-plugin' ); ?></td>
 									<td><?php esc_html_e( 'Shows the options editor — add at least 2 options.', 'wp-voting-plugin' ); ?></td>
 								</tr>
 								<tr>
-									<td><?php esc_html_e( 'STV (Single Transferable Vote)', 'wp-voting-plugin' ); ?></td>
+									<td><?php esc_html_e( 'STV / Sequential RCV', 'wp-voting-plugin' ); ?></td>
 									<td><?php esc_html_e( 'Also shows a "Number of Winners" field for multi-seat elections.', 'wp-voting-plugin' ); ?></td>
 								</tr>
 								<tr>
@@ -378,7 +378,7 @@ class WPVP_Guide {
 							<button type="button" id="wpvp_gb_add_option" class="button"><?php esc_html_e( '+ Add Option', 'wp-voting-plugin' ); ?></button>
 
 							<p id="wpvp_gb_num_winners" style="margin-top: 15px; display: none;">
-								<label for="wpvp_gb_winners"><?php esc_html_e( 'Number of Winners (for STV)', 'wp-voting-plugin' ); ?></label><br>
+								<label for="wpvp_gb_winners"><?php esc_html_e( 'Number of Winners', 'wp-voting-plugin' ); ?></label><br>
 								<input type="number" id="wpvp_gb_winners" name="number_of_winners" min="1" value="1" class="small-text">
 							</p>
 						</div>
@@ -761,84 +761,154 @@ class WPVP_Guide {
 	 * ----------------------------------------------------------------*/
 
 	private function render_voting_types(): void {
+		$first = true;
 		?>
 		<section class="wpvp-guide-section" id="wpvp-guide-types">
 			<h2><?php esc_html_e( 'Voting Types', 'wp-voting-plugin' ); ?></h2>
 
-			<p><?php esc_html_e( 'The plugin supports the following voting methods. Each uses a different algorithm to determine the outcome.', 'wp-voting-plugin' ); ?></p>
+			<p><?php esc_html_e( 'The plugin supports the following voting methods. Click each type to see how it works.', 'wp-voting-plugin' ); ?></p>
+
+			<div class="wpvp-guide-type-accordion" id="wpvp-guide-type-accordion">
 
 			<?php foreach ( $this->data['vote_types'] as $slug => $type ) : ?>
-				<div class="wpvp-guide-type-block">
-					<h3><?php echo esc_html( $type['label'] ); ?>
+				<div class="wpvp-guide-type-panel<?php echo $first ? ' is-open' : ''; ?>" data-type="<?php echo esc_attr( $slug ); ?>">
+					<button type="button" class="wpvp-guide-type-panel__header" aria-expanded="<?php echo $first ? 'true' : 'false'; ?>">
+						<span class="wpvp-guide-type-panel__title"><?php echo esc_html( $type['label'] ); ?></span>
 						<code class="wpvp-guide-slug"><?php echo esc_html( $slug ); ?></code>
-					</h3>
-					<p><em><?php echo esc_html( $type['description'] ); ?></em></p>
+						<span class="wpvp-guide-type-panel__toggle" aria-hidden="true"></span>
+					</button>
+					<div class="wpvp-guide-type-panel__body">
+						<p><em><?php echo esc_html( $type['description'] ); ?></em></p>
 
-					<?php
-					switch ( $slug ) {
-						case 'singleton':
-							?>
-							<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Each voter picks exactly one option. The option with the most votes wins (First Past The Post). If two or more options are tied for the lead, a tie is declared.', 'wp-voting-plugin' ); ?></p>
-							<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Simple yes/no questions, officer elections with few candidates, or any straightforward single-winner decision.', 'wp-voting-plugin' ); ?></p>
-							<?php
-							break;
+						<?php
+						switch ( $slug ) {
+							case 'singleton':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'Each voter selects exactly one option from the list.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'The option with the most votes wins (First Past The Post).', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'If two or more options are tied for the most votes, a tie is declared.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Simple yes/no questions, officer elections with few candidates, or any straightforward single-winner decision.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
 
-						case 'rcv':
-							?>
-							<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Voters drag to rank options from most to least preferred. If no option has a majority (>50%) of first-choice votes, the option with the fewest votes is eliminated and those ballots transfer to their next choice. This repeats until one option achieves a majority.', 'wp-voting-plugin' ); ?></p>
-							<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Single-winner elections with 3+ candidates where you want to avoid vote splitting and ensure the winner has broad support.', 'wp-voting-plugin' ); ?></p>
-							<?php
-							break;
+							case 'rcv':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'Voters drag to rank candidates from most to least preferred. Partial rankings are allowed.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'First-choice votes are counted. If any candidate has a majority (more than 50% of active ballots), they win.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'If no majority exists, the candidate with the fewest first-choice votes is eliminated.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Ballots for the eliminated candidate transfer to each voter\'s next-ranked active choice. If a ballot has no remaining preferences, it becomes "exhausted".', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Steps 2-4 repeat until one candidate achieves a majority or only one candidate remains.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<div class="wpvp-guide-callout wpvp-guide-callout--info">
+									<p><strong><?php esc_html_e( 'Tie-breaking:', 'wp-voting-plugin' ); ?></strong>
+									<?php esc_html_e( 'When multiple candidates tie for fewest votes, the one with fewer first-round votes is eliminated first. If still tied, alphabetical order is used (deterministic).', 'wp-voting-plugin' ); ?></p>
+								</div>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Single-winner elections with 3+ candidates where you want to avoid vote splitting and ensure the winner has broad support.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
 
-						case 'stv':
-							?>
-							<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Multi-winner ranked voting. A quota is calculated using the Droop formula: floor(total_votes / (seats + 1)) + 1. Candidates reaching the quota are elected and their surplus votes transfer proportionally to next preferences. If no one reaches the quota, the candidate with the fewest votes is eliminated and their votes transfer.', 'wp-voting-plugin' ); ?></p>
-							<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Electing multiple people to a committee or council. Set the "Number of Winners" field to the number of seats.', 'wp-voting-plugin' ); ?></p>
-							<?php
-							break;
+							case 'stv':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'Voters rank candidates in order of preference, same ballot format as RCV.', 'wp-voting-plugin' ); ?></li>
+									<li><?php printf( esc_html__( 'A winning threshold (Droop quota) is calculated: %s.', 'wp-voting-plugin' ), '<code>floor(total_votes / (seats + 1)) + 1</code>' ); ?></li>
+									<li><?php esc_html_e( 'Any candidate reaching the quota is elected. Their surplus votes (votes above the quota) transfer proportionally to voters\' next preferences using the Weighted Inclusive Gregory Method (WIGM).', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'If no candidate reaches the quota, the candidate with the fewest votes is eliminated and their votes transfer at current weight.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'This continues until all seats are filled or remaining candidates equal remaining seats.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<div class="wpvp-guide-callout wpvp-guide-callout--info">
+									<p><strong><?php esc_html_e( 'Key difference from Sequential RCV:', 'wp-voting-plugin' ); ?></strong>
+									<?php esc_html_e( 'STV uses fractional surplus transfer — a voter whose first choice wins with surplus votes gets partial weight on their second choice. Sequential RCV gives every voter full weight in each seat election.', 'wp-voting-plugin' ); ?></p>
+								</div>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Proportional representation on committees. Set the "Number of Winners" field to the number of seats.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
 
-						case 'condorcet':
-							?>
-							<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Voters rank options. Every possible head-to-head matchup is computed. If one option beats all others in pairwise comparisons, it is the Condorcet winner. If no such option exists (a cycle), the Schulze method is used to break the cycle and determine the winner.', 'wp-voting-plugin' ); ?></p>
-							<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Decisions where you want the most broadly preferred option to win, even if it is not the plurality favorite.', 'wp-voting-plugin' ); ?></p>
-							<?php
-							break;
+							case 'sequential_rcv':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'Voters rank candidates in order of preference, same ballot format as RCV and STV.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'A full Instant Runoff (IRO) election runs on all ballots to determine the Seat 1 winner.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'The Seat 1 winner is removed from every ballot, as if they had never been a candidate.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'A fresh IRO election runs on the modified ballots — every voter votes at full weight — to determine the Seat 2 winner.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'This repeats until all seats are filled.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<div class="wpvp-guide-callout wpvp-guide-callout--info">
+									<p><strong><?php esc_html_e( 'Batch tie elimination:', 'wp-voting-plugin' ); ?></strong>
+									<?php esc_html_e( 'Within each seat\'s IRO election, when multiple candidates tie for fewest votes, all tied candidates are eliminated simultaneously. This matches OWBN\'s historical election practice.', 'wp-voting-plugin' ); ?></p>
+								</div>
+								<div class="wpvp-guide-callout wpvp-guide-callout--info">
+									<p><strong><?php esc_html_e( 'Key difference from STV:', 'wp-voting-plugin' ); ?></strong>
+									<?php esc_html_e( 'There is no fractional surplus transfer between seats. Each seat is a clean, independent IRO election. Prior winners\' supporters get to vote at full weight for subsequent seats.', 'wp-voting-plugin' ); ?></p>
+								</div>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Multi-seat elections where you want independent IRO elections per seat. This is the method historically used by OWBN for AHC, Mediation, and similar multi-seat races.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
 
-						case 'disciplinary':
-							?>
-							<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Voters choose a punishment level. Options are ordered from most to least severe. Starting with the most severe option, votes cascade downward: if an option does not reach a majority, its votes are added to the next less-severe option. The first level to accumulate a majority wins.', 'wp-voting-plugin' ); ?></p>
-							<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Disciplinary proceedings where the organization needs to determine an appropriate punishment level, ensuring that a vote for a harsher punishment also counts toward milder ones.', 'wp-voting-plugin' ); ?></p>
-							<div class="wpvp-guide-callout wpvp-guide-callout--warning">
-								<p><?php esc_html_e( 'Tip: When you select Disciplinary as the type, the editor auto-populates the 8 standard OWBN punishment levels. You can customize the text and order if needed.', 'wp-voting-plugin' ); ?></p>
-							</div>
-							<?php
-							break;
+							case 'condorcet':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'Voters rank candidates in order of preference.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Every possible head-to-head matchup between two candidates is computed from the rankings.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'If one candidate beats every other candidate in pairwise comparison, they are the Condorcet winner.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'If no Condorcet winner exists (a cycle like A beats B, B beats C, C beats A), the Schulze method is used to resolve the cycle and determine the winner.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Decisions where you want the most broadly preferred option to win, even if it is not the plurality favorite.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
 
-						case 'consent':
-							?>
-							<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'The proposal is posted for a review period. If nobody objects during this time, it passes automatically. Any voter who submits the form is filing an objection. If one or more objections are filed, the proposal is marked as "Objected".', 'wp-voting-plugin' ); ?></p>
-							<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
-							<?php esc_html_e( 'Routine approvals, procedural changes, or any proposal expected to pass without controversy. Silence is consent.', 'wp-voting-plugin' ); ?></p>
-							<div class="wpvp-guide-callout wpvp-guide-callout--info">
-								<p><?php esc_html_e( 'Important: Consent votes require a closing date. Set one so the cron system knows when to auto-close and process the results. If no objections are filed, the result will be "Passed".', 'wp-voting-plugin' ); ?></p>
-							</div>
-							<?php
-							break;
-					}
-					?>
+							case 'disciplinary':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'Each voter selects a punishment level from the list (ordered most to least severe).', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Starting with the most severe level, votes cascade downward: if the most severe level does not reach a majority, its votes are added to the next less-severe level.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'The first level to reach or exceed a majority of accumulated votes becomes the outcome.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<div class="wpvp-guide-callout wpvp-guide-callout--warning">
+									<p><?php esc_html_e( 'Tip: When you select Disciplinary as the type, the editor auto-populates the 8 standard OWBN punishment levels (Permanent Ban through Condemnation). You can customize the text and order if needed.', 'wp-voting-plugin' ); ?></p>
+								</div>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Disciplinary proceedings where the organization needs to determine an appropriate punishment level, ensuring that a vote for a harsher punishment also counts toward milder ones.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
+
+							case 'consent':
+								?>
+								<p><strong><?php esc_html_e( 'How it works:', 'wp-voting-plugin' ); ?></strong></p>
+								<ol>
+									<li><?php esc_html_e( 'A proposal is posted for a review period (set via the closing date).', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'If nobody objects during this period, it passes automatically when the closing date arrives.', 'wp-voting-plugin' ); ?></li>
+									<li><?php esc_html_e( 'Any voter who submits the form is filing an objection. If one or more objections are filed, the proposal is marked as "Objected" and is converted to a standard approval vote.', 'wp-voting-plugin' ); ?></li>
+								</ol>
+								<div class="wpvp-guide-callout wpvp-guide-callout--info">
+									<p><?php esc_html_e( 'Important: Consent votes require a closing date. Set one so the cron system knows when to auto-close and process the results. If no objections are filed, the result will be "Passed".', 'wp-voting-plugin' ); ?></p>
+								</div>
+								<p><strong><?php esc_html_e( 'Best for:', 'wp-voting-plugin' ); ?></strong>
+								<?php esc_html_e( 'Routine approvals, procedural changes, or any proposal expected to pass without controversy. Silence is consent.', 'wp-voting-plugin' ); ?></p>
+								<?php
+								break;
+						}
+						?>
+					</div>
 				</div>
+				<?php $first = false; ?>
 			<?php endforeach; ?>
+
+			</div>
 		</section>
 		<?php
 	}

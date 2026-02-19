@@ -40,6 +40,7 @@ class WPVP_Plugin {
 		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-singleton.php';
 		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-rcv.php';
 		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-stv.php';
+		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-sequential-rcv.php';
 		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-condorcet.php';
 		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-disciplinary.php';
 		require_once WPVP_PLUGIN_DIR . 'includes/voting/class-consent.php';

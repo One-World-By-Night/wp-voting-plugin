@@ -48,6 +48,7 @@ class WPVP_Processor {
 		self::register( new WPVP_Singleton() );
 		self::register( new WPVP_RCV() );
 		self::register( new WPVP_STV() );
+		self::register( new WPVP_Sequential_RCV() );
 		self::register( new WPVP_Condorcet() );
 		self::register( new WPVP_Disciplinary() );
 		self::register( new WPVP_Consent() );

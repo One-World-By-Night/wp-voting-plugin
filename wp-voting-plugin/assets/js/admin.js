@@ -82,8 +82,8 @@
         // Update description.
         $('#wpvp-type-description').text(typeData.description || '');
 
-        // Show/hide num winners (STV only).
-        if (type === 'stv') {
+        // Show/hide num winners (STV and Sequential RCV).
+        if (type === 'stv' || type === 'sequential_rcv') {
             $('#wpvp-num-winners').show();
         } else {
             $('#wpvp-num-winners').hide();
@@ -101,8 +101,7 @@
         }
 
         // Hide majority threshold for ranked/algorithmic voting types that determine winners internally.
-        // RCV, STV, Condorcet, and Consent use built-in logic, not a majority threshold.
-        if (type === 'rcv' || type === 'stv' || type === 'condorcet' || type === 'consent') {
+        if (type === 'rcv' || type === 'stv' || type === 'sequential_rcv' || type === 'condorcet' || type === 'consent') {
             $('#wpvp-majority-threshold-section').hide();
         } else {
             $('#wpvp-majority-threshold-section').show();
@@ -530,6 +529,27 @@
     }
 
     /* ------------------------------------------------------------------
+     *  Guide: Voting Types Accordion
+     * ----------------------------------------------------------------*/
+
+    var $typeAccordion = $('#wpvp-guide-type-accordion');
+
+    if ($typeAccordion.length) {
+        $typeAccordion.on('click', '.wpvp-guide-type-panel__header', function () {
+            var $panel = $(this).closest('.wpvp-guide-type-panel');
+            var isOpen = $panel.hasClass('is-open');
+
+            if (isOpen) {
+                $panel.removeClass('is-open');
+                $(this).attr('aria-expanded', 'false');
+            } else {
+                $panel.addClass('is-open');
+                $(this).attr('aria-expanded', 'true');
+            }
+        });
+    }
+
+    /* ------------------------------------------------------------------
      *  Guide: Interactive Vote Builder
      * ----------------------------------------------------------------*/
 
@@ -640,7 +660,7 @@
                 $('#wpvp_gb_options_list').find('input[name$="[text]"]').prop('required', true);
             }
 
-            if (type === 'stv') {
+            if (type === 'stv' || type === 'sequential_rcv') {
                 $('#wpvp_gb_num_winners').show();
             } else {
                 $('#wpvp_gb_num_winners').hide();
