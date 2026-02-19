@@ -181,7 +181,7 @@ class WPVP_Results_Display {
 								<span class="wpvp-results__winner-badge"><?php echo esc_html( $badge_label ); ?></span>
 							<?php endif; ?>
 						</td>
-						<td><strong><?php echo esc_html( $count ); ?></strong></td>
+						<td><strong><?php echo esc_html( ( abs( $count - round( $count ) ) < 0.001 ) ? number_format( $count, 0 ) : number_format( $count, 2 ) ); ?></strong></td>
 						<td><strong><?php echo esc_html( number_format( $percentages[ $option ] ?? 0, 1 ) . '%' ); ?></strong></td>
 						<td>
 							<div class="wpvp-bar">

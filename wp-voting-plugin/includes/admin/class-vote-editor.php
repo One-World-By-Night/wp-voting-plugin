@@ -73,17 +73,6 @@ class WPVP_Vote_Editor {
 			return;
 		}
 
-		// Prevent opening a vote before its scheduled opening date.
-		// Override to draft so the hourly cron auto-opens it and sends notifications at the right time.
-		$stage_overridden = false;
-		if ( 'open' === $data['voting_stage'] && ! empty( $data['opening_date'] ) ) {
-			$opening_mysql = str_replace( 'T', ' ', $data['opening_date'] );
-			if ( $opening_mysql > current_time( 'mysql' ) ) {
-				$data['voting_stage'] = 'draft';
-				$stage_overridden = true;
-			}
-		}
-
 		// Save.
 		if ( $this->vote_id ) {
 			$old_vote  = WPVP_Database::get_vote( $this->vote_id );
@@ -91,15 +80,7 @@ class WPVP_Vote_Editor {
 
 			$result = WPVP_Database::update_vote( $this->vote_id, $data );
 			if ( $result ) {
-				if ( $stage_overridden ) {
-					$this->success = sprintf(
-						/* translators: %s: formatted opening date */
-						__( 'Vote saved as Draft. It will automatically open on %s and notifications will be sent at that time.', 'wp-voting-plugin' ),
-						wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $data['opening_date'] ) )
-					);
-				} else {
-					$this->success = __( 'Vote updated.', 'wp-voting-plugin' );
-				}
+				$this->success = __( 'Vote updated.', 'wp-voting-plugin' );
 
 				// Fire stage change action if stage changed.
 				if ( $old_stage && $old_stage !== $data['voting_stage'] ) {
@@ -113,9 +94,6 @@ class WPVP_Vote_Editor {
 			if ( $new_id ) {
 				// PRG: redirect to edit page with the new ID.
 				$redirect_url = admin_url( 'admin.php?page=wpvp-vote-edit&id=' . $new_id . '&wpvp_saved=1' );
-				if ( $stage_overridden ) {
-					$redirect_url = add_query_arg( 'wpvp_stage_deferred', '1', $redirect_url );
-				}
 				wp_safe_redirect( $redirect_url );
 				exit;
 			} else {
@@ -290,11 +268,7 @@ class WPVP_Vote_Editor {
 
 		// Check for redirect notice.
 		if ( isset( $_GET['wpvp_saved'] ) ) {
-			if ( isset( $_GET['wpvp_stage_deferred'] ) ) {
-				$this->success = __( 'Vote created as Draft. It will automatically open on the scheduled opening date and notifications will be sent at that time.', 'wp-voting-plugin' );
-			} else {
-				$this->success = __( 'Vote created.', 'wp-voting-plugin' );
-			}
+			$this->success = __( 'Vote created.', 'wp-voting-plugin' );
 		}
 
 		?>

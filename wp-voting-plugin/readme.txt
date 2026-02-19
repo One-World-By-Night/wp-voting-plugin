@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.8.5
+Stable tag: 3.8.6
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,12 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.8.6 =
+* Fix: Admins can now set a vote to "Open" with a future opening date — vote publishes immediately and front-end shows "Opens on {date}" until the date arrives
+* Fix: Open notification is deferred via wp_cron and fires at the scheduled opening date instead of immediately on publish
+* Fix: Singleton vote results now format whole-number counts without trailing decimals
+* Fix: Added sequential_rcv to ranked types in email ballot formatting
 
 = 3.8.5 =
 * Front-end vote list: added direct link icon next to every vote action button for opening in a new tab

@@ -28,6 +28,9 @@ class WPVP_Notifications {
 
 		// Handle scheduled closing reminders.
 		add_action( 'wpvp_closing_reminder', array( $this, 'send_closing_reminder' ) );
+
+		// Handle deferred open notifications (vote set to open with future opening_date).
+		add_action( 'wpvp_deferred_open_notification', array( $this, 'handle_deferred_open_notification' ) );
 	}
 
 	/*
@@ -142,9 +145,17 @@ class WPVP_Notifications {
 			return;
 		}
 
-		// Safety net: suppress "vote opened" notification if opening_date hasn't arrived yet.
+		// If opening_date hasn't arrived yet, schedule a deferred notification instead of sending now.
 		if ( 'open' === $new_stage && ! empty( $vote->opening_date ) ) {
 			if ( $vote->opening_date > current_time( 'mysql' ) ) {
+				// Clear any previously scheduled deferred notification for this vote.
+				wp_clear_scheduled_hook( 'wpvp_deferred_open_notification', array( $vote_id ) );
+
+				// Schedule notification for when opening_date arrives.
+				$open_timestamp = strtotime( $vote->opening_date );
+				if ( $open_timestamp && $open_timestamp > time() ) {
+					wp_schedule_single_event( $open_timestamp, 'wpvp_deferred_open_notification', array( $vote_id ) );
+				}
 				return;
 			}
 		}
@@ -435,6 +446,30 @@ class WPVP_Notifications {
 		return $email;
 	}
 
+	/**
+	 * Handle deferred open notification (fired by wp_cron when opening_date arrives).
+	 *
+	 * Called when an admin sets a vote to "open" with a future opening_date.
+	 * The notification is deferred until the opening_date and sent via this handler.
+	 *
+	 * @param int $vote_id The vote ID.
+	 */
+	public function handle_deferred_open_notification( int $vote_id ): void {
+		if ( ! get_option( 'wpvp_enable_email_notifications', false ) ) {
+			return;
+		}
+
+		$vote = WPVP_Database::get_vote( $vote_id );
+		if ( ! $vote || 'open' !== $vote->voting_stage ) {
+			return;
+		}
+
+		$vote_settings = json_decode( $vote->settings, true );
+		$vote_settings = $vote_settings ? $vote_settings : array();
+
+		$this->send_vote_opened_notification( $vote, $vote_settings );
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Voter confirmation emails (sent when user casts ballot).
@@ -562,7 +597,7 @@ class WPVP_Notifications {
 		$output = '';
 
 		// Format the choice based on voting type.
-		if ( in_array( $voting_type, array( 'rcv', 'stv', 'condorcet' ), true ) && is_array( $choice ) ) {
+		if ( in_array( $voting_type, array( 'rcv', 'stv', 'condorcet', 'sequential_rcv' ), true ) && is_array( $choice ) ) {
 			// Ranked voting types.
 			foreach ( $choice as $rank => $option ) {
 				$output .= '  ' . ( $rank + 1 ) . '. ' . $option . "\n";
