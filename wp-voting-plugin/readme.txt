@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.8.1
+Stable tag: 3.8.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,11 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.8.2 =
+* Participation tracker now shows resolved entity titles (e.g., "Admin Coordinator") as links to detail pages instead of raw slugs
+* Vote list no longer shows "Vote" button for votes with future opening dates — shows "Opens {date}" instead
+* Groups in participation tracker sorted by resolved title
 
 = 3.8.1 =
 * Fix: Sequential RCV results banner now shows all winners and tied candidates (e.g., "Winners: A, B, (Tie: C, D)") instead of only the first winner

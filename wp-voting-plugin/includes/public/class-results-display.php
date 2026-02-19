@@ -858,9 +858,98 @@ class WPVP_Results_Display {
 	}
 
 	/**
+	 * Build a group key from a voting role path and resolve its display header.
+	 *
+	 * Parses the role path into type/slug, resolves the entity title via
+	 * owbn-client when available, and builds a link to the detail page.
+	 * Populates the $headers map as a side-effect (one entry per unique key).
+	 *
+	 * @param string $role_path Full role path (e.g. "coordinator/ahc1/head").
+	 * @param array  $headers   Reference to headers map (key => HTML).
+	 * @return string Group key like "coordinator/ahc1".
+	 */
+	private static function build_group_key( $role_path, array &$headers ) {
+		if ( '' === $role_path ) {
+			$key = '_unknown';
+			if ( ! isset( $headers[ $key ] ) ) {
+				$headers[ $key ] = esc_html__( 'Unknown', 'wp-voting-plugin' );
+			}
+			return $key;
+		}
+
+		$parts = explode( '/', trim( $role_path, '/' ) );
+		$type  = isset( $parts[0] ) ? strtolower( $parts[0] ) : '';
+		$slug  = isset( $parts[1] ) ? $parts[1] : '';
+
+		// Non-entity paths (e.g. "Administrator", "Logged-in User").
+		if ( '' === $slug ) {
+			$key = $parts[0];
+			if ( ! isset( $headers[ $key ] ) ) {
+				$headers[ $key ] = esc_html( ucfirst( $parts[0] ) );
+			}
+			return $key;
+		}
+
+		$key = $type . '/' . $slug;
+
+		// Only resolve once per key.
+		if ( isset( $headers[ $key ] ) ) {
+			return $key;
+		}
+
+		// Resolve title via owbn-client.
+		$title = null;
+		if ( function_exists( 'owc_resolve_asc_path' ) ) {
+			$title = owc_resolve_asc_path( $type . '/' . $slug, 'title', false );
+		}
+
+		$label = $title ? $title : ucfirst( $slug );
+
+		// Build a detail page link when possible.
+		if ( function_exists( 'owc_option_name' ) ) {
+			$page_option = '';
+			if ( 'coordinator' === $type ) {
+				$page_option = 'coordinators_detail_page';
+			} elseif ( 'chronicle' === $type ) {
+				$page_option = 'chronicles_detail_page';
+			}
+
+			if ( $page_option ) {
+				$page_id = get_option( owc_option_name( $page_option ), 0 );
+				if ( $page_id ) {
+					$base_url = get_permalink( $page_id );
+					if ( $base_url ) {
+						$url = add_query_arg( 'slug', rawurlencode( $slug ), $base_url );
+						$headers[ $key ] = '<a href="' . esc_url( $url ) . '">' . esc_html( $label ) . '</a>';
+						return $key;
+					}
+				}
+			}
+		}
+
+		$headers[ $key ] = esc_html( $label );
+		return $key;
+	}
+
+	/**
+	 * Sort group arrays by their resolved header text (strip HTML for sort).
+	 *
+	 * @param array $groups  Group key => array of names.
+	 * @param array $headers Group key => HTML header string.
+	 */
+	private static function sort_groups_by_title( array &$groups, array $headers ) {
+		uksort( $groups, function ( $a, $b ) use ( $headers ) {
+			$ta = isset( $headers[ $a ] ) ? strip_tags( $headers[ $a ] ) : $a;
+			$tb = isset( $headers[ $b ] ) ? strip_tags( $headers[ $b ] ) : $b;
+			return strcasecmp( $ta, $tb );
+		} );
+	}
+
+	/**
 	 * Render participation tracker accordion below results.
 	 *
-	 * Shows Voted / Not Voted columns grouped by role path segment.
+	 * Shows Voted / Not Voted columns grouped by entity (chronicle or coordinator).
+	 * Group headers resolve to linked entity titles via owbn-client when available.
 	 * - Non-anonymous restricted votes: both Voted and Not Voted columns.
 	 * - Non-anonymous public/private votes: Voted column only.
 	 * - Anonymous votes: hidden for non-admins; admins see Voted column only.
@@ -896,9 +985,12 @@ class WPVP_Results_Display {
 			$ballots = array();
 		}
 
-		// Build voted list grouped by role segment.
+		// Shared header map: group_key => HTML string (resolved title with link).
+		$group_headers = array();
+
+		// Build voted list grouped by entity.
 		$voted_users  = array(); // user_id => true (for lookup).
-		$voted_groups = array(); // group_name => array of display_name.
+		$voted_groups = array(); // group_key => array of display_name.
 
 		foreach ( $ballots as $ballot ) {
 			$user_id     = (int) $ballot['user_id'];
@@ -913,7 +1005,7 @@ class WPVP_Results_Display {
 			$user = get_userdata( $user_id );
 			$name = $user ? $user->display_name : ( 'User #' . $user_id );
 
-			$group = self::extract_role_group( $voting_role );
+			$group = self::build_group_key( $voting_role, $group_headers );
 			if ( ! isset( $voted_groups[ $group ] ) ) {
 				$voted_groups[ $group ] = array();
 			}
@@ -937,7 +1029,7 @@ class WPVP_Results_Display {
 				if ( empty( $roles ) ) {
 					continue;
 				}
-				$group = self::extract_role_group( $roles[0] );
+				$group = self::build_group_key( $roles[0], $group_headers );
 				if ( ! isset( $not_voted_groups[ $group ] ) ) {
 					$not_voted_groups[ $group ] = array();
 				}
@@ -949,9 +1041,9 @@ class WPVP_Results_Display {
 		$total_eligible    = $voted_count + $not_voted_count;
 		$show_not_voted    = $is_restricted && ! $anonymous_voting;
 
-		// Sort groups alphabetically.
-		ksort( $voted_groups );
-		ksort( $not_voted_groups );
+		// Sort groups by resolved title.
+		self::sort_groups_by_title( $voted_groups, $group_headers );
+		self::sort_groups_by_title( $not_voted_groups, $group_headers );
 
 		// Sort names within each group.
 		foreach ( $voted_groups as &$names ) {
@@ -994,9 +1086,9 @@ class WPVP_Results_Display {
 					<?php if ( empty( $voted_groups ) ) : ?>
 						<p class="wpvp-participation-tracker__none"><?php esc_html_e( 'No votes cast yet.', 'wp-voting-plugin' ); ?></p>
 					<?php else : ?>
-						<?php foreach ( $voted_groups as $group_name => $names ) : ?>
+						<?php foreach ( $voted_groups as $group_key => $names ) : ?>
 							<div class="wpvp-participation-tracker__group">
-								<strong><?php echo esc_html( $group_name ); ?></strong>
+								<strong><?php echo isset( $group_headers[ $group_key ] ) ? $group_headers[ $group_key ] : esc_html( $group_key ); ?></strong>
 								<ul>
 									<?php foreach ( $names as $name ) : ?>
 										<li><?php echo esc_html( $name ); ?></li>
@@ -1019,9 +1111,9 @@ class WPVP_Results_Display {
 						<?php if ( empty( $not_voted_groups ) ) : ?>
 							<p class="wpvp-participation-tracker__none"><?php esc_html_e( 'All eligible users have voted.', 'wp-voting-plugin' ); ?></p>
 						<?php else : ?>
-							<?php foreach ( $not_voted_groups as $group_name => $names ) : ?>
+							<?php foreach ( $not_voted_groups as $group_key => $names ) : ?>
 								<div class="wpvp-participation-tracker__group">
-									<strong><?php echo esc_html( $group_name ); ?></strong>
+									<strong><?php echo isset( $group_headers[ $group_key ] ) ? $group_headers[ $group_key ] : esc_html( $group_key ); ?></strong>
 									<ul>
 										<?php foreach ( $names as $name ) : ?>
 											<li><?php echo esc_html( $name ); ?></li>

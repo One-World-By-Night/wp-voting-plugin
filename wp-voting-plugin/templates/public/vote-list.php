@@ -85,7 +85,14 @@ defined( 'ABSPATH' ) || exit;
 							</span>
 						</td>
 						<td class="wpvp-vote-table__action">
-							<?php if ( 'open' === $vote->voting_stage ) : ?>
+							<?php
+							// Check if voting is truly available (open AND opening_date has passed).
+							$is_actually_open = ( 'open' === $vote->voting_stage );
+							if ( $is_actually_open && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) {
+								$is_actually_open = false;
+							}
+							?>
+							<?php if ( $is_actually_open ) : ?>
 								<?php if ( $is_results_context ) : ?>
 									<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
 										<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
@@ -121,6 +128,15 @@ defined( 'ABSPATH' ) || exit;
 										</a>
 									<?php endif; ?>
 								<?php endif; ?>
+							<?php elseif ( 'open' === $vote->voting_stage && ! empty( $vote->opening_date ) ) : ?>
+								<span class="wpvp-vote-table__opens-label">
+									<?php
+									printf(
+										esc_html__( 'Opens %s', 'wp-voting-plugin' ),
+										esc_html( wp_date( $date_format, strtotime( $vote->opening_date ) ) )
+									);
+									?>
+								</span>
 							<?php elseif ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true ) ) : ?>
 								<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
 									<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
