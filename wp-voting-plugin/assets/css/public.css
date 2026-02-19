@@ -213,6 +213,20 @@
     white-space: nowrap;
 }
 
+.wpvp-vote-table__new-tab {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 16px;
+    line-height: 1;
+    text-decoration: none;
+    color: #646970;
+    vertical-align: middle;
+}
+
+.wpvp-vote-table__new-tab:hover {
+    color: #0073aa;
+}
+
 /* Small button variant for table */
 .wpvp-btn--small {
     padding: 6px 12px;

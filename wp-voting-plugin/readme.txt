@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.8.4
+Stable tag: 3.8.5
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -68,7 +68,8 @@ A consent agenda proposal passes automatically when the vote closes unless someo
 
 == Changelog ==
 
-= 3.8.4 =
+= 3.8.5 =
+* Front-end vote list: added direct link icon next to every vote action button for opening in a new tab
 * Admin vote list: added "View" row action that opens the public vote page in a new tab for any vote stage
 * Admin vote list: "Results" row action now also opens in a new tab
 

@@ -91,6 +91,11 @@ defined( 'ABSPATH' ) || exit;
 							if ( $is_actually_open && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) {
 								$is_actually_open = false;
 							}
+
+							// Direct link URL for the "open in new tab" button.
+							$direct_url = in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true )
+								? $results_url
+								: $url;
 							?>
 							<?php if ( $is_actually_open ) : ?>
 								<?php if ( $is_results_context ) : ?>
@@ -141,6 +146,10 @@ defined( 'ABSPATH' ) || exit;
 								<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
 									<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
 								</a>
+							<?php endif; ?>
+							<?php if ( $direct_url && '#' !== $direct_url ) : ?>
+								<a href="<?php echo esc_url( $direct_url ); ?>" target="_blank" rel="noopener"
+								   class="wpvp-vote-table__new-tab" title="<?php esc_attr_e( 'Open in new tab', 'wp-voting-plugin' ); ?>">&#8599;</a>
 							<?php endif; ?>
 						</td>
 					</tr>
