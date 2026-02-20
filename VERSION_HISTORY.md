@@ -1,6 +1,20 @@
 # WP Voting Plugin - Version History
 
-## Version 3.6.0 (Current - February 2026)
+## Version 3.9.5 (Current - February 2026)
+
+**Fix Sequential RCV ballot submission.**
+
+### Bug Fixes
+
+- **Sequential RCV voting broken**: The JavaScript ballot handler did not recognize `sequential_rcv` as a ranked voting type, causing it to fall through to the radio-button handler. Since ranked ballots render a sortable list (not radio buttons), `ballot_data` was sent as `undefined`, triggering "Invalid ballot data" on the server. Added `sequential_rcv` to the ranked type check in `public.js`.
+
+### Technical Details
+
+In `assets/js/public.js`, the type check on line 39 only covered `rcv`, `stv`, and `condorcet`. The `sequential_rcv` type (introduced for multi-winner ranked elections) was handled correctly on the PHP side (`class-ballot.php` validation and `ballot-form.php` template) but was missing from the JS submission handler. The fix adds `|| type === 'sequential_rcv'` to the conditional.
+
+---
+
+## Version 3.6.0 (February 2026)
 
 **Indexed entity columns on ballots table for vote history lookup.**
 

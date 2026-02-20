@@ -36,7 +36,7 @@
                 $status.text(wpvp_public.i18n.select_option).removeClass('success').addClass('error');
                 return;
             }
-        } else if (type === 'rcv' || type === 'stv' || type === 'condorcet') {
+        } else if (type === 'rcv' || type === 'stv' || type === 'condorcet' || type === 'sequential_rcv') {
             // Collect ranked items in order.
             var ranked = [];
             $form.find('.wpvp-ballot__sortable-item').each(function () {
