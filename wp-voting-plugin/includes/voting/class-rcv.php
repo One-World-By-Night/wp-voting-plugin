@@ -67,8 +67,12 @@ class WPVP_RCV implements WPVP_Voting_Algorithm {
 			if ( ! is_array( $ranking ) ) {
 				continue;
 			}
-			// Check for abstain before filtering to valid candidates.
-			$has_abstain = in_array( WPVP_ABSTAIN_LABEL, $ranking, true );
+			// Truncate at Abstain: everything at and below is dropped.
+			$abstain_pos = array_search( WPVP_ABSTAIN_LABEL, $ranking, true );
+			$has_abstain = false !== $abstain_pos;
+			if ( $has_abstain ) {
+				$ranking = array_slice( $ranking, 0, $abstain_pos );
+			}
 			// Filter to valid options only and preserve order.
 			$ranking = array_values(
 				array_filter(

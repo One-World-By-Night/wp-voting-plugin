@@ -107,7 +107,8 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 	<?php
 	// Show current results for open votes (after ballot form).
-	if ( $is_voting_open && ! empty( $settings['show_results_before_closing'] ) && WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) :
+	$is_admin = $user_id && user_can( $user_id, 'manage_options' );
+	if ( $is_voting_open && ( $is_admin || ! empty( $settings['show_results_before_closing'] ) ) && WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) :
 		$current_results = null;
 
 		try {

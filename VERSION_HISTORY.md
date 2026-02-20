@@ -1,6 +1,34 @@
 # WP Voting Plugin - Version History
 
-## Version 3.9.5 (Current - February 2026)
+## Version 3.9.7 (Current - February 2026)
+
+**Fix Abstain truncation in ranked voting algorithms.**
+
+### Bug Fixes
+
+- **Abstain did not truncate lower preferences**: In all ranked voting algorithms (RCV, STV, Sequential RCV, Condorcet), placing Abstain in a ranked ballot silently removed it and kept all candidates below. Now the ranking is truncated at Abstain's position — all preferences at and below Abstain are dropped. A ballot of `[Alice, Abstain, Bob]` now counts as `[Alice]` only, not `[Alice, Bob]`.
+
+### Technical Details
+
+All four ranked algorithms used `array_filter` to remove Abstain as a non-candidate, which preserved preferences ranked below it. The fix uses `array_search` to find Abstain's position and `array_slice` to truncate the ranking before filtering. If Abstain is first, the ballot becomes a full abstention (empty ranking, counted separately). If Abstain is last, all candidates above it still count normally.
+
+---
+
+## Version 3.9.6 (February 2026)
+
+**Fix admin live-results visibility during open votes.**
+
+### Bug Fixes
+
+- **Admins could not see live results on open votes**: The vote detail template required the `show_results_before_closing` setting to be enabled before displaying live results, even for WordPress administrators. Admins with `manage_options` now bypass the `show_results_before_closing` gate and can always view live-calculated results while a vote is open.
+
+### Technical Details
+
+In `templates/public/vote-detail.php`, the live results block was gated by `! empty( $settings['show_results_before_closing'] )` before calling `WPVP_Permissions::can_view_results()`. The permission method already had the correct admin bypass (returning `true` for `manage_options` users), but the template short-circuited before reaching it. The fix adds an `$is_admin` check so that administrators always enter the live results block regardless of the setting.
+
+---
+
+## Version 3.9.5 (February 2026)
 
 **Fix Sequential RCV ballot submission.**
 

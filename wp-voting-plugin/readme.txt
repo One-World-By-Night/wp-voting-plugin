@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.9.5
+Stable tag: 3.9.7
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,12 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.9.7 =
+* Fix: Abstain in ranked ballots now truncates all preferences below it (RCV, STV, Sequential RCV, Condorcet)
+
+= 3.9.6 =
+* Fix: WordPress administrators can now always see live results on open votes, regardless of the "show results before closing" setting
 
 = 3.9.5 =
 * Fix: Sequential RCV votes now submit correctly — added missing `sequential_rcv` type to JS ballot handler

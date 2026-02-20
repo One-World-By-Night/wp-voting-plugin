@@ -63,8 +63,12 @@ class WPVP_Sequential_RCV implements WPVP_Voting_Algorithm {
 				continue;
 			}
 
-			$has_abstain = in_array( WPVP_ABSTAIN_LABEL, $ranking, true );
-
+			// Truncate at Abstain: everything at and below is dropped.
+			$abstain_pos = array_search( WPVP_ABSTAIN_LABEL, $ranking, true );
+			$has_abstain = false !== $abstain_pos;
+			if ( $has_abstain ) {
+				$ranking = array_slice( $ranking, 0, $abstain_pos );
+			}
 			// Filter to valid options only.
 			$ranking = array_values(
 				array_filter(
