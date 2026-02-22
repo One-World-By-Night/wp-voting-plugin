@@ -137,15 +137,6 @@ class WPVP_Permissions {
 			return true;
 		}
 
-		// Non-blind open votes: results visible to everyone (including guests).
-		if ( 'open' === $vote->voting_stage ) {
-			$settings_data = json_decode( $vote->settings, true );
-			$settings_data = $settings_data ? $settings_data : array();
-			if ( ! empty( $settings_data['show_results_before_closing'] ) ) {
-				return true;
-			}
-		}
-
 		// From here on, user must be logged in.
 		if ( ! $user_id ) {
 			return false;
@@ -158,23 +149,17 @@ class WPVP_Permissions {
 
 		// Completed or archived → anyone who voted OR is an eligible voter can see.
 		if ( in_array( $vote->voting_stage, array( 'completed', 'archived' ), true ) ) {
-			// Has voted? They should definitely see the results.
 			if ( WPVP_Database::user_has_voted( $user_id, $vote_id ) ) {
 				return true;
 			}
-			// Was an eligible voter (even if they didn't vote)?
 			return self::user_can_vote_on( $user_id, $vote );
 		}
 
-		// Open vote with "show results before close" enabled.
+		// Open vote with "show results before close" — eligible voters only.
 		if ( 'open' === $vote->voting_stage ) {
 			$settings = json_decode( $vote->settings, true );
 			$settings = $settings ? $settings : array();
 			if ( ! empty( $settings['show_results_before_closing'] ) ) {
-				// Public visibility: anyone can see live results.
-				if ( 'public' === $vote->visibility ) {
-					return true;
-				}
 				return self::user_can_vote_on( $user_id, $vote );
 			}
 		}
@@ -250,18 +235,14 @@ class WPVP_Permissions {
 			return true;
 		}
 
+		// Draft votes are only visible to admins (handled above).
+		if ( 'draft' === $vote->voting_stage ) {
+			return false;
+		}
+
 		// Public votes are visible to everyone.
 		if ( 'public' === $vote->visibility ) {
 			return true;
-		}
-
-		// Non-blind open votes are visible to everyone (results transparency).
-		if ( 'open' === $vote->voting_stage ) {
-			$decoded_settings = json_decode( $vote->settings, true );
-			$decoded_settings = $decoded_settings ? $decoded_settings : array();
-			if ( ! empty( $decoded_settings['show_results_before_closing'] ) ) {
-				return true;
-			}
 		}
 
 		// Private = any logged-in user can view.

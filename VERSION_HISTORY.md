@@ -1,6 +1,22 @@
 # WP Voting Plugin - Version History
 
-## Version 3.9.7 (Current - February 2026)
+## Version 3.9.8 (Current - February 2026)
+
+**Enforce restricted visibility on votes and results.**
+
+### Bug Fixes
+
+- **Restricted votes visible to all users**: `can_view_vote()` had a blanket early return when `show_results_before_closing` was enabled on an open vote, bypassing the restricted visibility check entirely. All users — including those with only `player/approved` roles — could see restricted votes. Removed the blanket return; restricted votes now always check `allowed_roles`.
+- **Restricted results visible to all users**: `can_view_results()` had the same blanket early return for `show_results_before_closing`, letting any user view live results on restricted votes. Removed the duplicate block; the correct role-checked logic lower in the method now handles all visibility levels.
+- **Draft votes visible to non-admins**: `can_view_vote()` had no draft stage check, so users with matching `allowed_roles` could see draft votes. Draft votes are now hidden from all non-admin users.
+
+### Technical Details
+
+In `class-permissions.php`, both `can_view_vote()` and `can_view_results()` had an early-exit block (lines 258-265 and 140-147 respectively) that returned `true` for any open vote with `show_results_before_closing` enabled, regardless of visibility level. This was intended for transparency on public/private votes but incorrectly applied to restricted votes too. The fix removes these blanket returns and relies on the existing role-checked logic further down in each method.
+
+---
+
+## Version 3.9.7 (February 2026)
 
 **Fix Abstain truncation in ranked voting algorithms.**
 
