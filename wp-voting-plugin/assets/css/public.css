@@ -950,7 +950,28 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+}
+
+.wpvp-results-wrap__meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 12px;
+}
+
+.wpvp-results-wrap__proposal-meta {
+    display: flex;
+    gap: 16px;
+    font-size: 13px;
+    color: #646970;
+    margin-bottom: 12px;
+}
+
+.wpvp-results-wrap__description {
+    margin-bottom: 24px;
+    line-height: 1.6;
 }
 
 /* === Modal / Lightbox === */

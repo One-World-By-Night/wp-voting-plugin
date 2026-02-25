@@ -1034,9 +1034,12 @@ class WPVP_Database {
 			$total_voters,
 			wp_json_encode(
 				array(
-					'vote_counts' => $results['vote_counts'] ?? array(),
-					'percentages' => $results['percentages'] ?? array(),
-					'rankings'    => $results['rankings'] ?? array(),
+					'vote_counts'     => $results['vote_counts'] ?? array(),
+					'percentages'     => $results['percentages'] ?? array(),
+					'rankings'        => $results['rankings'] ?? array(),
+					'passed'          => $results['passed'] ?? null,
+					'objectors'       => $results['objectors'] ?? null,
+					'objection_count' => $results['objection_count'] ?? null,
 				)
 			),
 			wp_json_encode(

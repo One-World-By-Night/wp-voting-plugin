@@ -50,6 +50,7 @@ class WPVP_Notifications {
 	public function run_cron(): void {
 		$this->auto_open_votes();
 		$this->auto_close_votes();
+		$this->catch_up_open_notifications();
 	}
 
 	/*
@@ -117,6 +118,54 @@ class WPVP_Notifications {
 
 			// Auto-process results on close.
 			WPVP_Processor::process( (int) $vote_id );
+		}
+	}
+
+	/*
+	------------------------------------------------------------------
+	 *  Catch-up: send open notifications that were missed due to cron latency.
+	 * ----------------------------------------------------------------*/
+
+	/**
+	 * Find 'open' votes whose opening_date has passed but no open notification was sent.
+	 * Sends the notification and sets the flag to prevent duplicates.
+	 */
+	private function catch_up_open_notifications(): void {
+		if ( ! get_option( 'wpvp_enable_email_notifications', false ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$now   = current_time( 'mysql' );
+		$table = WPVP_Database::votes_table();
+
+		// Find open votes whose opening_date has passed.
+		$votes = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id FROM {$table}
+				 WHERE voting_stage = 'open'
+				   AND opening_date IS NOT NULL
+				   AND opening_date <= %s",
+				$now
+			)
+		);
+
+		foreach ( $votes as $row ) {
+			$vote_id = (int) $row->id;
+			// Skip if notification was already sent.
+			if ( get_option( '_wpvp_open_notification_sent_' . $vote_id ) ) {
+				continue;
+			}
+
+			$vote = WPVP_Database::get_vote( $vote_id );
+			if ( ! $vote ) {
+				continue;
+			}
+
+			$vote_settings = json_decode( $vote->settings, true );
+			$vote_settings = $vote_settings ? $vote_settings : array();
+
+			$this->send_vote_opened_notification( $vote, $vote_settings );
 		}
 	}
 
@@ -289,6 +338,9 @@ class WPVP_Notifications {
 
 		$this->send_bulk_email( $recipients, $subject, $message );
 
+		// Mark that open notification was sent (prevents duplicate sends from catch-up).
+		update_option( '_wpvp_open_notification_sent_' . $vote->id, time(), false );
+
 		// Schedule closing reminder if enabled.
 		if ( ! isset( $vote_settings['notify_before_close'] ) || ! empty( $vote_settings['notify_before_close'] ) ) {
 			$this->schedule_closing_reminder( $vote, $vote_settings );
@@ -327,25 +379,11 @@ class WPVP_Notifications {
 			$vote->proposal_name
 		);
 
-		$page_ids    = get_option( 'wpvp_page_ids', array() );
-		$results_url = ! empty( $page_ids['vote-results'] )
-			? add_query_arg( 'wpvp_vote', $vote->id, get_permalink( $page_ids['vote-results'] ) )
-			: home_url();
-
-		// Get results for formatting.
-		$results = WPVP_Database::get_results( $vote->id );
-		$results_summary = $results ? $this->format_results_summary( $results ) : '';
-
-		$message = sprintf(
-			/* translators: 1: vote title, 2: results URL */
-			__( "The following vote has been completed:\n\n%1\$s\n\n%2\$s\n\nView full results: %3\$s", 'wp-voting-plugin' ),
-			$vote->proposal_name,
-			$results_summary,
-			$results_url
-		);
+		// Build full HTML email with results, voted/not-voted entities.
+		$message = $this->build_closed_vote_html( $vote );
 
 		if ( ! empty( $recipients ) ) {
-			$this->send_bulk_email( $recipients, $subject, $message );
+			$this->send_bulk_email( $recipients, $subject, $message, true );
 		}
 	}
 
@@ -442,7 +480,7 @@ class WPVP_Notifications {
 	/**
 	 * Send an email to multiple recipients using BCC to protect privacy.
 	 */
-	private function send_bulk_email( array $recipients, string $subject, string $message ): void {
+	private function send_bulk_email( array $recipients, string $subject, string $message, bool $html = false ): void {
 		if ( empty( $recipients ) ) {
 			return;
 		}
@@ -453,6 +491,10 @@ class WPVP_Notifications {
 		$headers = array(
 			'From: ' . $site_name . ' <' . $admin_email . '>',
 		);
+
+		if ( $html ) {
+			$headers[] = 'Content-Type: text/html; charset=UTF-8';
+		}
 
 		// Send individually to avoid exposing email addresses.
 		// Batched in groups of 50 to avoid timeouts.
@@ -660,10 +702,29 @@ class WPVP_Notifications {
 			return;
 		}
 
-		// Calculate 9am on the closing date in site timezone.
-		$close_timestamp = WPVP_Database::local_timestamp( $vote->closing_date );
-		$close_date_only = gmdate( 'Y-m-d', $close_timestamp );
-		$reminder_time   = strtotime( $close_date_only . ' 09:00:00' );
+		// Target: 9am ET on closing day, with 15-hour minimum window before close.
+		// If less than 15 hours between 9am ET and close, send 6pm ET the evening before.
+		$close_timestamp = strtotime( $vote->closing_date );
+
+		$et       = new DateTimeZone( 'America/New_York' );
+		$close_dt = new DateTime( $vote->closing_date, new DateTimeZone( 'UTC' ) );
+		$close_dt->setTimezone( $et );
+
+		// 9am ET on the closing day.
+		$reminder_dt = clone $close_dt;
+		$reminder_dt->setTime( 9, 0, 0 );
+
+		// If less than 15 hours between reminder and close, use 6pm ET the evening before.
+		$hours_until_close = ( $close_timestamp - $reminder_dt->getTimestamp() ) / 3600;
+		if ( $hours_until_close < 15 ) {
+			$reminder_dt->modify( '-1 day' );
+			$reminder_dt->setTime( 18, 0, 0 );
+		}
+
+		$reminder_time = $reminder_dt->getTimestamp();
+
+		// Clear any previously scheduled reminder for this vote.
+		wp_clear_scheduled_hook( 'wpvp_closing_reminder', array( $vote->id ) );
 
 		// Only schedule if the reminder time is in the future.
 		if ( $reminder_time > time() ) {
@@ -747,6 +808,373 @@ class WPVP_Notifications {
 		);
 
 		$this->send_bulk_email( $recipients, $subject, $message );
+	}
+
+	/**
+	 * Build full HTML email for a closed/completed vote.
+	 *
+	 * @param object $vote Vote object.
+	 * @return string HTML email body.
+	 */
+	private function build_closed_vote_html( object $vote ): string {
+		$page_ids    = get_option( 'wpvp_page_ids', array() );
+		$results_url = ! empty( $page_ids['vote-results'] )
+			? add_query_arg( 'wpvp_vote', $vote->id, get_permalink( $page_ids['vote-results'] ) )
+			: home_url();
+		$site_name   = get_bloginfo( 'name' );
+		$results     = WPVP_Database::get_results( $vote->id );
+
+		// Vote type label.
+		$types     = WPVP_Database::get_vote_types();
+		$type_info = $types[ $vote->voting_type ] ?? array();
+		$type_label = $type_info['label'] ?? $vote->voting_type;
+
+		// Winner / outcome.
+		$winner_html = '';
+		if ( $results ) {
+			$winner = $results->winner_data ? $results->winner_data : array();
+			$final  = $results->final_results ? $results->final_results : array();
+
+			// Check consent passed field.
+			if ( isset( $final['passed'] ) ) {
+				if ( $final['passed'] ) {
+					$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>RESULT:</strong> Passed by Consent</div>';
+				} else {
+					$winner_html = '<div style="background:#fce4e4;border:1px solid #d63638;color:#8a1f1f;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>RESULT:</strong> Objected</div>';
+				}
+			} elseif ( ! empty( $winner['winner'] ) ) {
+				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNER:</strong> ' . esc_html( $winner['winner'] ) . '</div>';
+			} elseif ( ! empty( $winner['winners'] ) ) {
+				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNERS:</strong> ' . esc_html( implode( ', ', $winner['winners'] ) ) . '</div>';
+			}
+
+			if ( ! empty( $winner['tie'] ) ) {
+				$winner_html = '<div style="background:#fff8e5;border:1px solid #dba617;color:#654b00;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>TIE:</strong> ' . esc_html( implode( ', ', $winner['tied_candidates'] ?? array() ) ) . '</div>';
+			}
+		}
+
+		// Vote counts table.
+		$counts_html = '';
+		if ( $results && ! empty( $results->final_results['vote_counts'] ) ) {
+			$counts = $results->final_results['vote_counts'];
+			arsort( $counts );
+			$counts_html .= '<table style="width:100%;border-collapse:collapse;margin:16px 0;">';
+			$counts_html .= '<tr style="background:#f6f7f7;"><th style="padding:8px 12px;text-align:left;border-bottom:2px solid #dcdcde;font-size:13px;">Option</th><th style="padding:8px 12px;text-align:right;border-bottom:2px solid #dcdcde;font-size:13px;">Votes</th></tr>';
+			foreach ( $counts as $option => $count ) {
+				$counts_html .= '<tr><td style="padding:8px 12px;border-bottom:1px solid #f0f0f1;">' . esc_html( $option ) . '</td><td style="padding:8px 12px;text-align:right;border-bottom:1px solid #f0f0f1;">' . intval( $count ) . '</td></tr>';
+			}
+			$counts_html .= '</table>';
+		}
+
+		// Voting options list.
+		$options_html = '';
+		$raw_options  = json_decode( $vote->voting_options, true );
+		if ( is_array( $raw_options ) && ! empty( $raw_options ) ) {
+			$options_html .= '<h3 style="font-size:14px;margin:16px 0 8px;">Voting Options</h3><ul style="margin:0 0 0 20px;padding:0;">';
+			foreach ( $raw_options as $opt ) {
+				$text = is_array( $opt ) ? ( $opt['text'] ?? '' ) : $opt;
+				if ( $text ) {
+					$options_html .= '<li style="padding:2px 0;">' . esc_html( $text ) . '</li>';
+				}
+			}
+			$options_html .= '</ul>';
+		}
+
+		// Voted / Not Voted entities.
+		$voted_entities     = $this->get_voted_entities( $vote );
+		$not_voted_entities = $this->get_not_voted_entities( $vote, $voted_entities );
+
+		$voted_html = '';
+		if ( ! empty( $voted_entities ) ) {
+			$voted_html .= '<h3 style="font-size:14px;margin:16px 0 8px;color:#1e4620;">Voted (' . count( $voted_entities ) . ')</h3>';
+			$voted_html .= '<ul style="margin:0 0 0 20px;padding:0;">';
+			foreach ( $voted_entities as $title ) {
+				$voted_html .= '<li style="padding:2px 0;">' . esc_html( $title ) . '</li>';
+			}
+			$voted_html .= '</ul>';
+		}
+
+		$not_voted_html = '';
+		if ( ! empty( $not_voted_entities ) ) {
+			$not_voted_html .= '<h3 style="font-size:14px;margin:16px 0 8px;color:#8a1f1f;">Not Voted (' . count( $not_voted_entities ) . ')</h3>';
+			$not_voted_html .= '<ul style="margin:0 0 0 20px;padding:0;">';
+			foreach ( $not_voted_entities as $title ) {
+				$not_voted_html .= '<li style="padding:2px 0;">' . esc_html( $title ) . '</li>';
+			}
+			$not_voted_html .= '</ul>';
+		}
+
+		// Build the HTML email.
+		$html = '<!DOCTYPE html><html><head><meta charset="UTF-8"></head><body style="font-family:-apple-system,BlinkMacSystemFont,\'Segoe UI\',Roboto,sans-serif;color:#1d2327;line-height:1.6;max-width:640px;margin:0 auto;padding:20px;">';
+
+		// Header.
+		$html .= '<h2 style="margin:0 0 8px;">' . esc_html( $vote->proposal_name ) . '</h2>';
+		$html .= '<p style="color:#646970;font-size:13px;margin:0 0 16px;">' . esc_html( $type_label );
+		if ( ! empty( $vote->classification ) ) {
+			$html .= ' &mdash; ' . esc_html( $vote->classification );
+		}
+		$html .= '</p>';
+
+		// Description.
+		if ( ! empty( $vote->proposal_description ) ) {
+			$html .= '<div style="margin:0 0 16px;padding:12px 16px;background:#f9f9f9;border-left:4px solid #2271b1;border-radius:0 4px 4px 0;">' . wp_kses_post( wpautop( $vote->proposal_description ) ) . '</div>';
+		}
+
+		// Proposed by / Seconded by.
+		if ( ! empty( $vote->proposed_by ) || ! empty( $vote->seconded_by ) ) {
+			$html .= '<p style="color:#646970;font-size:13px;margin:0 0 16px;">';
+			if ( ! empty( $vote->proposed_by ) ) {
+				$html .= 'Proposed by: ' . esc_html( $vote->proposed_by );
+			}
+			if ( ! empty( $vote->seconded_by ) ) {
+				$html .= ( ! empty( $vote->proposed_by ) ? ' | ' : '' ) . 'Seconded by: ' . esc_html( $vote->seconded_by );
+			}
+			$html .= '</p>';
+		}
+
+		$html .= $options_html;
+		$html .= $winner_html;
+		$html .= $counts_html;
+
+		if ( $results ) {
+			$html .= '<p style="color:#646970;font-size:13px;">Total votes: ' . intval( $results->total_votes ) . '</p>';
+		}
+
+		$html .= $voted_html;
+		$html .= $not_voted_html;
+
+		// Results link.
+		$html .= '<p style="margin:24px 0 0;"><a href="' . esc_url( $results_url ) . '" style="display:inline-block;padding:10px 20px;background:#2271b1;color:#fff;text-decoration:none;border-radius:4px;font-weight:600;">View Full Results</a></p>';
+
+		// Footer.
+		$html .= '<hr style="border:none;border-top:1px solid #dcdcde;margin:24px 0;">';
+		$html .= '<p style="color:#646970;font-size:12px;">' . esc_html( $site_name ) . '</p>';
+		$html .= '</body></html>';
+
+		return $html;
+	}
+
+	/**
+	 * Get entity titles of entities that voted on a given vote.
+	 * Returns alphabetically sorted, chronicles first.
+	 *
+	 * @param object $vote Vote object.
+	 * @return string[] Entity titles.
+	 */
+	private function get_voted_entities( object $vote ): array {
+		global $wpdb;
+		$table   = WPVP_Database::ballots_table();
+		$ballots = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ballot_data FROM {$table} WHERE vote_id = %d",
+				$vote->id
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $ballots ) ) {
+			return array();
+		}
+
+		$chronicles = array();
+		$others     = array();
+
+		foreach ( $ballots as $ballot ) {
+			$data        = json_decode( $ballot['ballot_data'], true );
+			$voting_role = is_array( $data ) ? ( $data['voting_role'] ?? '' ) : '';
+			if ( empty( $voting_role ) ) {
+				continue;
+			}
+
+			$title = $this->resolve_entity_title( $voting_role );
+			$parts = explode( '/', $voting_role );
+			$type  = strtolower( $parts[0] ?? '' );
+
+			if ( 'chronicle' === $type ) {
+				$chronicles[ $title ] = true;
+			} else {
+				$others[ $title ] = true;
+			}
+		}
+
+		$chronicle_titles = array_keys( $chronicles );
+		$other_titles     = array_keys( $others );
+		sort( $chronicle_titles );
+		sort( $other_titles );
+
+		return array_merge( $chronicle_titles, $other_titles );
+	}
+
+	/**
+	 * Get entity titles of entities that did NOT vote on a given vote.
+	 * Returns alphabetically sorted, chronicles first.
+	 *
+	 * @param object   $vote            Vote object.
+	 * @param string[] $voted_entities  Entity titles that voted (from get_voted_entities).
+	 * @return string[] Entity titles that did not vote.
+	 */
+	private function get_not_voted_entities( object $vote, array $voted_entities ): array {
+		if ( 'restricted' !== $vote->voting_eligibility ) {
+			return array();
+		}
+
+		$voted_set = array_flip( $voted_entities );
+
+		// Get all eligible users.
+		global $wpdb;
+		$asc_mode = get_option( 'wpvp_accessschema_mode', 'none' );
+
+		if ( 'none' !== $asc_mode ) {
+			$all_users = $this->query_eligible_users( $vote );
+		} else {
+			$voting_roles = json_decode( $vote->voting_roles, true );
+			$role_slugs   = array();
+			if ( is_array( $voting_roles ) ) {
+				foreach ( $voting_roles as $r ) {
+					$r = sanitize_text_field( $r );
+					if ( '' !== $r && false === strpos( $r, '/' ) && false === strpos( $r, '*' ) ) {
+						$role_slugs[] = $r;
+					}
+				}
+			}
+			$all_users = get_users( array(
+				'fields'   => array( 'ID', 'display_name' ),
+				'role__in' => $role_slugs,
+			) );
+		}
+
+		// Get voted user IDs.
+		$table          = WPVP_Database::ballots_table();
+		$voted_user_ids = $wpdb->get_col(
+			$wpdb->prepare(
+				"SELECT DISTINCT user_id FROM {$table} WHERE vote_id = %d",
+				$vote->id
+			)
+		);
+		$voted_uid_set = array_flip( $voted_user_ids );
+
+		$chronicles = array();
+		$others     = array();
+
+		foreach ( $all_users as $wp_user ) {
+			$uid = (int) $wp_user->ID;
+			if ( isset( $voted_uid_set[ $uid ] ) ) {
+				continue;
+			}
+
+			$roles = WPVP_Permissions::get_eligible_voting_roles( $uid, $vote );
+			if ( empty( $roles ) ) {
+				continue;
+			}
+
+			$role  = $roles[0];
+			$title = $this->resolve_entity_title( $role );
+
+			// Skip if already in voted list (entity-level dedup).
+			if ( isset( $voted_set[ $title ] ) ) {
+				continue;
+			}
+
+			$parts = explode( '/', $role );
+			$type  = strtolower( $parts[0] ?? '' );
+
+			if ( 'chronicle' === $type ) {
+				$chronicles[ $title ] = true;
+			} else {
+				$others[ $title ] = true;
+			}
+		}
+
+		$chronicle_titles = array_keys( $chronicles );
+		$other_titles     = array_keys( $others );
+		sort( $chronicle_titles );
+		sort( $other_titles );
+
+		return array_merge( $chronicle_titles, $other_titles );
+	}
+
+	/**
+	 * Resolve entity title from a voting role path.
+	 *
+	 * @param string $voting_role Role path (e.g., "chronicle/kony/cm").
+	 * @return string Entity title.
+	 */
+	private function resolve_entity_title( string $voting_role ): string {
+		$parts = explode( '/', trim( $voting_role, '/' ) );
+		$type  = strtolower( $parts[0] ?? '' );
+		$slug  = $parts[1] ?? '';
+
+		if ( empty( $slug ) ) {
+			return ucfirst( $type );
+		}
+
+		// Resolve via owbn-client.
+		if ( function_exists( 'owc_resolve_asc_path' ) ) {
+			$title = owc_resolve_asc_path( $type . '/' . $slug, 'title', false );
+			if ( $title ) {
+				return $title;
+			}
+		}
+
+		return ucfirst( $slug );
+	}
+
+	/**
+	 * Query users whose AccessSchema cached roles match the vote's role patterns.
+	 *
+	 * @param object $vote Vote object with voting_roles JSON.
+	 * @return array Array of user objects with ID and display_name.
+	 */
+	private function query_eligible_users( object $vote ): array {
+		global $wpdb;
+
+		$role_patterns = array();
+		$decoded       = isset( $vote->voting_roles ) ? json_decode( $vote->voting_roles, true ) : null;
+		if ( is_array( $decoded ) ) {
+			foreach ( $decoded as $r ) {
+				$r = trim( $r );
+				if ( '' !== $r ) {
+					$role_patterns[] = $r;
+				}
+			}
+		}
+
+		$role_patterns = array_unique( $role_patterns );
+		if ( empty( $role_patterns ) ) {
+			return array();
+		}
+
+		$like_clauses = array();
+		foreach ( $role_patterns as $pattern ) {
+			$segments = preg_split( '/(\*\*|\*)/', $pattern, -1, PREG_SPLIT_DELIM_CAPTURE );
+			$like     = '';
+			foreach ( $segments as $seg ) {
+				if ( '**' === $seg || '*' === $seg ) {
+					$like .= '%';
+				} else {
+					$like .= $wpdb->esc_like( $seg );
+				}
+			}
+			$like           = '%' . $wpdb->esc_like( '"' ) . $like . $wpdb->esc_like( '"' ) . '%';
+			$like_clauses[] = $wpdb->prepare( 'um.meta_value LIKE %s', $like );
+		}
+
+		if ( empty( $like_clauses ) ) {
+			return array();
+		}
+
+		$where = implode( ' OR ', $like_clauses );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$results = $wpdb->get_results(
+			"SELECT DISTINCT u.ID, u.display_name
+			 FROM {$wpdb->users} u
+			 INNER JOIN {$wpdb->usermeta} um ON u.ID = um.user_id
+			 WHERE um.meta_key = 'accessschema_cached_roles'
+			   AND ( {$where} )"
+		);
+
+		return is_array( $results ) ? $results : array();
 	}
 
 	/**
