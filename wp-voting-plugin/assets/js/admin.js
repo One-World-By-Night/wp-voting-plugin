@@ -166,9 +166,48 @@
         return $('<span>').text(str).html();
     }
 
+    /**
+     * Fill options with Approve / Deny / Abstain for FPTP votes.
+     */
+    function fillFPTP() {
+        var defaults = [
+            { text: 'Approve', description: '' },
+            { text: 'Deny', description: '' },
+            { text: 'Abstain', description: '' }
+        ];
+
+        var hasCustom = false;
+        $optList.find('input[name$="[text]"]').each(function () {
+            if ($(this).val().trim() !== '') {
+                hasCustom = true;
+                return false;
+            }
+        });
+
+        if (hasCustom && !confirm('Replace existing options with Approve / Deny / Abstain?')) {
+            return;
+        }
+
+        $optList.empty();
+        $.each(defaults, function (i, p) {
+            var row = $(
+                '<div class="wpvp-option-row" data-index="' + i + '">' +
+                    '<input type="text" name="voting_options[' + i + '][text]" ' +
+                        'value="' + escAttr(p.text) + '" class="regular-text" required> ' +
+                    '<input type="text" name="voting_options[' + i + '][description]" ' +
+                        'value="" class="regular-text"> ' +
+                    '<button type="button" class="button wpvp-remove-option">&times;</button>' +
+                '</div>'
+            );
+            $optList.append(row);
+        });
+        updateRemoveButtons();
+    }
+
     // Bind vote editor events.
     if ($form.length) {
         $('#wpvp-add-option').on('click', addOptionRow);
+        $('#wpvp-fill-fptp').on('click', fillFPTP);
         $optList.on('click', '.wpvp-remove-option', removeOptionRow);
         $typeSelect.on('change', function() {
             onTypeChange(true); // User-initiated change
@@ -591,6 +630,31 @@
             updateWizardClosingDate();
         }
 
+        // Fill FPTP defaults (Approve / Deny / Abstain) button.
+        $('#wpvp_gb_fill_fptp').on('click', function () {
+            var $list = $('#wpvp_gb_options_list');
+            var hasCustom = false;
+            $list.find('input[name$="[text]"]').each(function () {
+                if ($(this).val().trim() !== '') {
+                    hasCustom = true;
+                    return false;
+                }
+            });
+            if (hasCustom && !confirm('Replace existing options with Approve / Deny / Abstain?')) {
+                return;
+            }
+            $list.empty();
+            var defaults = ['Approve', 'Deny', 'Abstain'];
+            $.each(defaults, function (i, text) {
+                $list.append(
+                    '<p class="wpvp-gb-option-row">' +
+                        '<input type="text" name="voting_options[' + i + '][text]" class="regular-text" value="' + text + '" required> ' +
+                        '<input type="text" name="voting_options[' + i + '][description]" class="regular-text" placeholder="' + wpvp.i18n.description_optional + '">' +
+                    '</p>'
+                );
+            });
+        });
+
         // Add option button.
         $('#wpvp_gb_add_option').on('click', function () {
             var index = $('#wpvp_gb_options_list .wpvp-gb-option-row').length;
@@ -729,7 +793,7 @@
                 number_of_winners: $('#wpvp_gb_winners').val(),
                 voting_options: [],
                 // Step 2: Proposal metadata.
-                classification: $('#wpvp_gb_classification').val(),
+                classifications: $('#wpvp_gb_classifications').val() || [],
                 proposed_by: $('#wpvp_gb_proposed_by').val(),
                 seconded_by: $('#wpvp_gb_seconded_by').val(),
                 objection_by: $('#wpvp_gb_objection_by').val(),

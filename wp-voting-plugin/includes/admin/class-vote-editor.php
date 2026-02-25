@@ -92,6 +92,11 @@ class WPVP_Vote_Editor {
 		} else {
 			$new_id = WPVP_Database::save_vote( $data );
 			if ( $new_id ) {
+				// Fire stage change for new votes that aren't drafts.
+				if ( ! empty( $data['voting_stage'] ) && 'draft' !== $data['voting_stage'] ) {
+					do_action( 'wpvp_vote_stage_changed', $new_id, $data['voting_stage'], 'draft' );
+				}
+
 				// PRG: redirect to edit page with the new ID.
 				$redirect_url = admin_url( 'admin.php?page=wpvp-vote-edit&id=' . $new_id . '&wpvp_saved=1' );
 				wp_safe_redirect( $redirect_url );
@@ -163,7 +168,7 @@ class WPVP_Vote_Editor {
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
 			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),
 			'settings'             => $settings,
-			'classification'       => sanitize_text_field( wp_unslash( $_POST['classification'] ?? '' ) ),
+			'classifications'      => array_map( 'sanitize_text_field', array_map( 'wp_unslash', (array) ( $_POST['classifications'] ?? array() ) ) ),
 			'proposed_by'          => sanitize_text_field( wp_unslash( $_POST['proposed_by'] ?? '' ) ),
 			'seconded_by'          => sanitize_text_field( wp_unslash( $_POST['seconded_by'] ?? '' ) ),
 			'objection_by'         => sanitize_text_field( wp_unslash( $_POST['objection_by'] ?? '' ) ),
@@ -313,18 +318,25 @@ class WPVP_Vote_Editor {
 							<div class="postbox" style="margin-top:20px;">
 								<div class="postbox-header"><h2><?php esc_html_e( 'Proposal Metadata', 'wp-voting-plugin' ); ?></h2></div>
 								<div class="inside">
-									<?php $classifications = WPVP_Database::get_classifications(); ?>
+									<?php
+									$classifications    = WPVP_Database::get_classifications();
+									$selected_classes   = array();
+									if ( $is_edit && ! empty( $this->vote->classification ) ) {
+										$decoded = json_decode( $this->vote->classification, true );
+										$selected_classes = is_array( $decoded ) ? $decoded : array( $this->vote->classification );
+									}
+									?>
 									<p>
-										<label for="classification"><?php esc_html_e( 'Classification:', 'wp-voting-plugin' ); ?></label>
-										<select name="classification" id="classification" style="width:100%;">
-											<option value=""><?php esc_html_e( '-- None --', 'wp-voting-plugin' ); ?></option>
+										<label for="classifications"><?php esc_html_e( 'Proposal Type:', 'wp-voting-plugin' ); ?></label>
+										<select name="classifications[]" id="classifications" multiple style="width:100%; min-height:120px;">
 											<?php foreach ( $classifications as $class ) : ?>
 												<option value="<?php echo esc_attr( $class->classification_name ); ?>"
-													<?php selected( $is_edit ? $this->vote->classification : '', $class->classification_name ); ?>>
+													<?php echo in_array( $class->classification_name, $selected_classes, true ) ? 'selected' : ''; ?>>
 													<?php echo esc_html( $class->classification_name ); ?>
 												</option>
 											<?php endforeach; ?>
 										</select>
+										<br><small><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple.', 'wp-voting-plugin' ); ?></small>
 									</p>
 									<p>
 										<label for="proposed_by"><?php esc_html_e( 'Proposed By:', 'wp-voting-plugin' ); ?></label>
@@ -383,6 +395,9 @@ class WPVP_Vote_Editor {
 									</div>
 									<button type="button" class="button" id="wpvp-add-option">
 										<?php esc_html_e( '+ Add Option', 'wp-voting-plugin' ); ?>
+									</button>
+									<button type="button" class="button" id="wpvp-fill-fptp" title="<?php esc_attr_e( 'Fill with Approve / Deny / Abstain', 'wp-voting-plugin' ); ?>">
+										<?php esc_html_e( 'Approve/Deny/Abstain', 'wp-voting-plugin' ); ?>
 									</button>
 
 									<div id="wpvp-num-winners" style="margin-top:12px; <?php echo ( $is_edit && ! in_array( $this->vote->voting_type, array( 'stv', 'sequential_rcv' ), true ) ) ? 'display:none;' : ''; ?>">

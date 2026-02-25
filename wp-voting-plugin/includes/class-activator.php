@@ -65,6 +65,11 @@ class WPVP_Activator {
 				WPVP_Database::upgrade_to_360();
 			}
 
+			if ( version_compare( $stored, '3.10.0', '<' ) ) {
+				// Widen classification column to text, migrate single values to JSON arrays.
+				WPVP_Database::upgrade_to_3100();
+			}
+
 			update_option( 'wpvp_db_version', WPVP_VERSION );
 		}
 	}

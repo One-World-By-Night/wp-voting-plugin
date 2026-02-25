@@ -256,6 +256,69 @@
     });
 
     /* ------------------------------------------------------------------
+     *  Title search / filter
+     * ----------------------------------------------------------------*/
+
+    $(document).on('input', '.wpvp-vote-search__input', function () {
+        var query  = $(this).val().toLowerCase();
+        var $table = $(this).closest('.wpvp-vote-list').find('.wpvp-vote-table tbody');
+
+        $table.find('tr').each(function () {
+            var title = $(this).find('.wpvp-vote-table__title').text().trim().toLowerCase();
+            $(this).toggle(title.indexOf(query) !== -1);
+        });
+    });
+
+    /* ------------------------------------------------------------------
+     *  Sortable table columns
+     * ----------------------------------------------------------------*/
+
+    $(document).on('click', '.wpvp-sortable__col', function () {
+        var $th    = $(this);
+        var col    = parseInt($th.data('col'), 10);
+        var $table = $th.closest('table');
+        var $tbody = $table.find('tbody');
+        var rows   = $tbody.find('tr').get();
+
+        // Determine sort direction.
+        var asc = true;
+        if ($th.hasClass('wpvp-sortable__col--asc')) {
+            asc = false;
+        }
+
+        // Reset all headers.
+        $table.find('.wpvp-sortable__col').removeClass('wpvp-sortable__col--asc wpvp-sortable__col--desc');
+        $th.addClass(asc ? 'wpvp-sortable__col--asc' : 'wpvp-sortable__col--desc');
+
+        rows.sort(function (a, b) {
+            var $cellA = $(a).children('td').eq(col);
+            var $cellB = $(b).children('td').eq(col);
+            var valA   = $cellA.attr('data-sort-value');
+            var valB   = $cellB.attr('data-sort-value');
+
+            // If no data-sort-value, fall back to text content.
+            if (valA === undefined) { valA = $cellA.text().trim().toLowerCase(); }
+            if (valB === undefined) { valB = $cellB.text().trim().toLowerCase(); }
+
+            // Try numeric comparison.
+            var numA = parseFloat(valA);
+            var numB = parseFloat(valB);
+            if (!isNaN(numA) && !isNaN(numB)) {
+                return asc ? numA - numB : numB - numA;
+            }
+
+            // String comparison.
+            if (valA < valB) { return asc ? -1 : 1; }
+            if (valA > valB) { return asc ? 1 : -1; }
+            return 0;
+        });
+
+        $.each(rows, function (i, row) {
+            $tbody.append(row);
+        });
+    });
+
+    /* ------------------------------------------------------------------
      *  Radio option highlighting
      * ----------------------------------------------------------------*/
 

@@ -28,9 +28,6 @@ class WPVP_Notifications {
 
 		// Handle scheduled closing reminders.
 		add_action( 'wpvp_closing_reminder', array( $this, 'send_closing_reminder' ) );
-
-		// Handle deferred open notifications (vote set to open with future opening_date).
-		add_action( 'wpvp_deferred_open_notification', array( $this, 'handle_deferred_open_notification' ) );
 	}
 
 	/*
@@ -145,17 +142,11 @@ class WPVP_Notifications {
 			return;
 		}
 
-		// If opening_date hasn't arrived yet, schedule a deferred notification instead of sending now.
+		// If opening_date hasn't arrived yet, revert to draft so the hourly cron
+		// (auto_open_votes) handles the transition and sends the email at the right time.
 		if ( 'open' === $new_stage && ! empty( $vote->opening_date ) ) {
 			if ( $vote->opening_date > current_time( 'mysql' ) ) {
-				// Clear any previously scheduled deferred notification for this vote.
-				wp_clear_scheduled_hook( 'wpvp_deferred_open_notification', array( $vote_id ) );
-
-				// Schedule notification for when opening_date arrives.
-				$open_timestamp = strtotime( $vote->opening_date );
-				if ( $open_timestamp && $open_timestamp > time() ) {
-					wp_schedule_single_event( $open_timestamp, 'wpvp_deferred_open_notification', array( $vote_id ) );
-				}
+				WPVP_Database::update_vote( $vote_id, array( 'voting_stage' => 'draft' ) );
 				return;
 			}
 		}
@@ -241,9 +232,50 @@ class WPVP_Notifications {
 			: home_url();
 
 		$message = sprintf(
-			/* translators: 1: vote title, 2: vote URL */
-			__( "A new vote is now open for your participation:\n\n%1\$s\n\nCast your vote: %2\$s", 'wp-voting-plugin' ),
-			$vote->proposal_name,
+			/* translators: %s: vote title */
+			__( "A new vote is now open for your participation:\n\n%s", 'wp-voting-plugin' ),
+			$vote->proposal_name
+		);
+
+		// Description.
+		if ( ! empty( $vote->proposal_description ) ) {
+			$message .= "\n\n" . __( 'Description:', 'wp-voting-plugin' ) . "\n"
+				. wp_strip_all_tags( $vote->proposal_description );
+		}
+
+		// Voting options.
+		$raw_options = json_decode( $vote->voting_options, true );
+		if ( is_array( $raw_options ) && ! empty( $raw_options ) ) {
+			$message .= "\n\n" . __( 'Options:', 'wp-voting-plugin' );
+			$i = 1;
+			foreach ( $raw_options as $opt ) {
+				$label = is_array( $opt ) ? ( $opt['text'] ?? '' ) : (string) $opt;
+				if ( '' !== $label ) {
+					$message .= "\n  " . $i . '. ' . $label;
+					$i++;
+				}
+			}
+		}
+
+		// Proposal metadata.
+		$meta_lines = array();
+		$classifications = json_decode( $vote->classification, true );
+		if ( is_array( $classifications ) && ! empty( $classifications ) ) {
+			$meta_lines[] = __( 'Proposal Type:', 'wp-voting-plugin' ) . ' ' . implode( ', ', $classifications );
+		}
+		if ( ! empty( $vote->proposed_by ) ) {
+			$meta_lines[] = __( 'Proposed By:', 'wp-voting-plugin' ) . ' ' . $vote->proposed_by;
+		}
+		if ( ! empty( $vote->seconded_by ) ) {
+			$meta_lines[] = __( 'Seconded By:', 'wp-voting-plugin' ) . ' ' . $vote->seconded_by;
+		}
+		if ( ! empty( $meta_lines ) ) {
+			$message .= "\n\n" . implode( "\n", $meta_lines );
+		}
+
+		$message .= "\n\n" . sprintf(
+			/* translators: %s: vote URL */
+			__( 'Cast your vote: %s', 'wp-voting-plugin' ),
 			$vote_url
 		);
 
@@ -251,7 +283,7 @@ class WPVP_Notifications {
 			$message .= "\n\n" . sprintf(
 				/* translators: %s: closing date */
 				__( 'Voting closes: %s', 'wp-voting-plugin' ),
-				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->closing_date ) )
+				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->closing_date ) )
 			);
 		}
 
@@ -446,30 +478,6 @@ class WPVP_Notifications {
 		return $email;
 	}
 
-	/**
-	 * Handle deferred open notification (fired by wp_cron when opening_date arrives).
-	 *
-	 * Called when an admin sets a vote to "open" with a future opening_date.
-	 * The notification is deferred until the opening_date and sent via this handler.
-	 *
-	 * @param int $vote_id The vote ID.
-	 */
-	public function handle_deferred_open_notification( int $vote_id ): void {
-		if ( ! get_option( 'wpvp_enable_email_notifications', false ) ) {
-			return;
-		}
-
-		$vote = WPVP_Database::get_vote( $vote_id );
-		if ( ! $vote || 'open' !== $vote->voting_stage ) {
-			return;
-		}
-
-		$vote_settings = json_decode( $vote->settings, true );
-		$vote_settings = $vote_settings ? $vote_settings : array();
-
-		$this->send_vote_opened_notification( $vote, $vote_settings );
-	}
-
 	/*
 	------------------------------------------------------------------
 	 *  Voter confirmation emails (sent when user casts ballot).
@@ -550,7 +558,7 @@ class WPVP_Notifications {
 			$message .= sprintf(
 				/* translators: %s: closing date */
 				__( 'Voting closes: %s', 'wp-voting-plugin' ),
-				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->closing_date ) )
+				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->closing_date ) )
 			);
 		}
 
@@ -653,7 +661,7 @@ class WPVP_Notifications {
 		}
 
 		// Calculate 9am on the closing date in site timezone.
-		$close_timestamp = strtotime( $vote->closing_date );
+		$close_timestamp = WPVP_Database::local_timestamp( $vote->closing_date );
 		$close_date_only = gmdate( 'Y-m-d', $close_timestamp );
 		$reminder_time   = strtotime( $close_date_only . ' 09:00:00' );
 
@@ -728,7 +736,7 @@ class WPVP_Notifications {
 			$message .= sprintf(
 				/* translators: %s: closing time */
 				__( 'Voting closes: %s', 'wp-voting-plugin' ),
-				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->closing_date ) )
+				wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->closing_date ) )
 			);
 		}
 

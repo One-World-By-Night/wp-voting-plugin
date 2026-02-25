@@ -70,7 +70,7 @@ class WPVP_Database {
             opening_date datetime DEFAULT NULL,
             closing_date datetime DEFAULT NULL,
             settings longtext,
-            classification varchar(100) DEFAULT NULL,
+            classification text DEFAULT NULL,
             proposed_by varchar(255) DEFAULT NULL,
             seconded_by varchar(255) DEFAULT NULL,
             objection_by varchar(255) DEFAULT NULL,
@@ -202,6 +202,7 @@ class WPVP_Database {
 				'Disciplinary',
 				'Genre Packet',
 				'Global/Meta Plot',
+				'Membership',
 				'Opinion Poll',
 				'Other Private',
 				'Other Public',
@@ -333,6 +334,39 @@ class WPVP_Database {
 		return $result;
 	}
 
+	/**
+	 * Upgrade to version 3.10.0: Widen classification column and migrate to JSON arrays.
+	 */
+	public static function upgrade_to_3100(): void {
+		global $wpdb;
+
+		$table = self::votes_table();
+
+		// Widen column for JSON array storage (dbDelta handles this too, but be explicit).
+		$wpdb->query( "ALTER TABLE {$table} MODIFY classification text DEFAULT NULL" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		// Migrate existing single-value classifications to JSON arrays.
+		$rows = $wpdb->get_results(
+			"SELECT id, classification FROM {$table} WHERE classification IS NOT NULL AND classification != ''" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+
+		if ( $rows ) {
+			foreach ( $rows as $row ) {
+				// Skip if already a JSON array.
+				if ( 0 === strpos( $row->classification, '[' ) ) {
+					continue;
+				}
+				$wpdb->update(
+					$table,
+					array( 'classification' => wp_json_encode( array( $row->classification ) ) ),
+					array( 'id' => $row->id ),
+					array( '%s' ),
+					array( '%d' )
+				);
+			}
+		}
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Votes — CRUD.
@@ -361,7 +395,7 @@ class WPVP_Database {
 			'opening_date'         => self::sanitize_datetime( $data['opening_date'] ?? null ),
 			'closing_date'         => self::sanitize_datetime( $data['closing_date'] ?? null ),
 			'settings'             => wp_json_encode( $data['settings'] ?? array() ),
-			'classification'       => sanitize_text_field( $data['classification'] ?? '' ),
+			'classification'       => wp_json_encode( array_map( 'sanitize_text_field', (array) ( $data['classifications'] ?? array() ) ) ),
 			'proposed_by'          => sanitize_text_field( $data['proposed_by'] ?? '' ),
 			'seconded_by'          => sanitize_text_field( $data['seconded_by'] ?? '' ),
 			'objection_by'         => sanitize_text_field( $data['objection_by'] ?? '' ),
@@ -410,7 +444,6 @@ class WPVP_Database {
 			'voting_type'        => 'sanitize_key',
 			'visibility'         => 'sanitize_key',
 			'voting_eligibility' => 'sanitize_key',
-			'classification'     => 'sanitize_text_field',
 			'proposed_by'        => 'sanitize_text_field',
 			'seconded_by'        => 'sanitize_text_field',
 			'objection_by'       => 'sanitize_text_field',
@@ -452,6 +485,11 @@ class WPVP_Database {
 		if ( isset( $data['additional_viewers'] ) ) {
 			$row['additional_viewers'] = wp_json_encode( $data['additional_viewers'] );
 			$formats[]                = '%s';
+		}
+
+		if ( isset( $data['classifications'] ) ) {
+			$row['classification'] = wp_json_encode( array_map( 'sanitize_text_field', (array) $data['classifications'] ) );
+			$formats[]             = '%s';
 		}
 
 		if ( isset( $data['voting_stage'] ) ) {
@@ -1228,6 +1266,20 @@ class WPVP_Database {
 		);
 	}
 
+	/**
+	 * Convert a stored local-time datetime string to a Unix timestamp.
+	 *
+	 * Dates are stored as WordPress local time (not UTC). This method
+	 * interprets the value in the site timezone so that wp_date() can
+	 * convert it back correctly for display.
+	 *
+	 * @param string $datetime MySQL datetime string (YYYY-MM-DD HH:MM:SS).
+	 * @return int Unix timestamp.
+	 */
+	public static function local_timestamp( string $datetime ): int {
+		return ( new \DateTime( $datetime, wp_timezone() ) )->getTimestamp();
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Private helpers.
@@ -1243,14 +1295,38 @@ class WPVP_Database {
 
 	/**
 	 * Sanitize a datetime string. Returns null if invalid.
+	 *
+	 * Accepts datetime-local (YYYY-MM-DDTHH:MM) or MySQL (YYYY-MM-DD HH:MM:SS).
+	 * Normalises to MySQL format without any timezone conversion so that stored
+	 * values match the WordPress local time used by current_time('mysql') in
+	 * cron comparisons.
 	 */
 	private static function sanitize_datetime( ?string $datetime ): ?string {
 		if ( empty( $datetime ) ) {
 			return null;
 		}
-		// Accept MySQL datetime or datetime-local input format.
-		$timestamp = strtotime( $datetime );
-		return $timestamp ? gmdate( 'Y-m-d H:i:s', $timestamp ) : null;
+
+		// Normalise: replace T separator with space.
+		$clean = str_replace( 'T', ' ', trim( $datetime ) );
+
+		// Append :00 seconds if missing (datetime-local omits seconds).
+		if ( preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/', $clean ) ) {
+			$clean .= ':00';
+		}
+
+		// Must match MySQL datetime format.
+		if ( ! preg_match( '/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/', $clean ) ) {
+			return null;
+		}
+
+		// Validate the date portion is real.
+		$parts = explode( ' ', $clean );
+		$d     = explode( '-', $parts[0] );
+		if ( count( $d ) !== 3 || ! checkdate( (int) $d[1], (int) $d[2], (int) $d[0] ) ) {
+			return null;
+		}
+
+		return $clean;
 	}
 
 	/**

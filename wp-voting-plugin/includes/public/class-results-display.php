@@ -70,7 +70,7 @@ class WPVP_Results_Display {
 					printf(
 						esc_html__( 'Total votes: %1$d | Calculated: %2$s', 'wp-voting-plugin' ),
 						intval( $results->total_votes ),
-						esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $results->calculated_at ) ) )
+						esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $results->calculated_at ) ) )
 					);
 					?>
 				</p>
@@ -95,7 +95,6 @@ class WPVP_Results_Display {
 
 		<?php self::render_voter_list( $vote ); ?>
 		<?php self::render_voter_comments( $vote ); ?>
-		<?php self::render_participation_tracker( $vote ); ?>
 		</div>
 		<?php
 	}
@@ -1056,7 +1055,7 @@ class WPVP_Results_Display {
 	 *
 	 * @param object $vote Vote object.
 	 */
-	private static function render_participation_tracker( $vote ) {
+	public static function render_participation_tracker( $vote ) {
 		$decoded_settings = json_decode( $vote->settings, true );
 		if ( ! is_array( $decoded_settings ) ) {
 			$decoded_settings = array();
@@ -1064,11 +1063,6 @@ class WPVP_Results_Display {
 		$anonymous_voting = ! empty( $decoded_settings['anonymous_voting'] );
 		$is_admin         = current_user_can( 'manage_options' );
 		$is_restricted    = 'restricted' === $vote->voting_eligibility;
-
-		// Anonymous votes: hide for non-admins entirely.
-		if ( $anonymous_voting && ! $is_admin ) {
-			return;
-		}
 
 		// Fetch ballots.
 		global $wpdb;

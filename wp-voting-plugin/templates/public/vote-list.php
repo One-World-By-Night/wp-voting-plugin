@@ -18,13 +18,18 @@ defined( 'ABSPATH' ) || exit;
 			<?php esc_html_e( 'No votes found.', 'wp-voting-plugin' ); ?>
 		</p>
 	<?php else : ?>
-		<table class="wpvp-vote-table">
+		<div class="wpvp-vote-search">
+			<input type="text" class="wpvp-vote-search__input" placeholder="<?php esc_attr_e( 'Search by title...', 'wp-voting-plugin' ); ?>">
+		</div>
+		<table class="wpvp-vote-table wpvp-sortable">
 			<thead>
 				<tr>
-					<th><?php esc_html_e( 'Title', 'wp-voting-plugin' ); ?></th>
-					<th><?php esc_html_e( 'Start Date', 'wp-voting-plugin' ); ?></th>
-					<th><?php esc_html_e( 'End Date', 'wp-voting-plugin' ); ?></th>
-					<th><?php esc_html_e( 'Status', 'wp-voting-plugin' ); ?></th>
+					<th class="wpvp-sortable__col" data-col="0"><?php esc_html_e( 'Title', 'wp-voting-plugin' ); ?></th>
+					<th class="wpvp-sortable__col" data-col="1"><?php esc_html_e( 'Proposal Type', 'wp-voting-plugin' ); ?></th>
+					<th class="wpvp-sortable__col" data-col="2"><?php esc_html_e( 'Votes', 'wp-voting-plugin' ); ?></th>
+					<th class="wpvp-sortable__col" data-col="3"><?php esc_html_e( 'Start Date', 'wp-voting-plugin' ); ?></th>
+					<th class="wpvp-sortable__col" data-col="4"><?php esc_html_e( 'End Date', 'wp-voting-plugin' ); ?></th>
+					<th class="wpvp-sortable__col" data-col="5"><?php esc_html_e( 'Status', 'wp-voting-plugin' ); ?></th>
 					<th><?php esc_html_e( 'Action', 'wp-voting-plugin' ); ?></th>
 				</tr>
 			</thead>
@@ -56,30 +61,43 @@ defined( 'ABSPATH' ) || exit;
 					}
 					?>
 					<tr class="wpvp-vote-row wpvp-vote-row--<?php echo esc_attr( $vote->voting_stage ); ?>">
-						<td class="wpvp-vote-table__title">
+						<?php
+					$type_list    = json_decode( $vote->classification, true );
+					$type_display = is_array( $type_list ) && ! empty( $type_list ) ? implode( ', ', $type_list ) : '';
+					$ballot_count = WPVP_Database::get_ballot_count( (int) $vote->id );
+					$open_ts      = $vote->opening_date ? WPVP_Database::local_timestamp( $vote->opening_date ) : 0;
+					$close_ts     = $vote->closing_date ? WPVP_Database::local_timestamp( $vote->closing_date ) : 0;
+					?>
+					<td class="wpvp-vote-table__title" data-sort-value="<?php echo esc_attr( strtolower( $vote->proposal_name ) ); ?>">
 							<a href="#" data-lightbox-url="<?php echo esc_url( $url ); ?>" class="wpvp-vote-table__link">
 								<?php echo esc_html( $vote->proposal_name ); ?>
 							</a>
 						</td>
-						<td class="wpvp-vote-table__date">
+						<td class="wpvp-vote-table__type" data-label="<?php esc_attr_e( 'Proposal Type', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( strtolower( $type_display ) ); ?>">
+							<?php echo $type_display ? esc_html( $type_display ) : '—'; ?>
+						</td>
+						<td class="wpvp-vote-table__votes" data-label="<?php esc_attr_e( 'Votes', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( $ballot_count ); ?>">
+							<?php echo esc_html( $ballot_count ); ?>
+						</td>
+						<td class="wpvp-vote-table__date" data-label="<?php esc_attr_e( 'Start Date', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( $open_ts ); ?>">
 							<?php
 							if ( $vote->opening_date ) {
-								echo esc_html( wp_date( $date_format . ' ' . $time_format, strtotime( $vote->opening_date ) ) );
+								echo esc_html( wp_date( $date_format . ' ' . $time_format, $open_ts ) );
 							} else {
 								echo '—';
 							}
 							?>
 						</td>
-						<td class="wpvp-vote-table__date">
+						<td class="wpvp-vote-table__date" data-label="<?php esc_attr_e( 'End Date', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( $close_ts ); ?>">
 							<?php
 							if ( $vote->closing_date ) {
-								echo esc_html( wp_date( $date_format . ' ' . $time_format, strtotime( $vote->closing_date ) ) );
+								echo esc_html( wp_date( $date_format . ' ' . $time_format, $close_ts ) );
 							} else {
 								echo '—';
 							}
 							?>
 						</td>
-						<td class="wpvp-vote-table__status">
+						<td class="wpvp-vote-table__status" data-sort-value="<?php echo esc_attr( $vote->voting_stage ); ?>">
 							<span class="wpvp-badge wpvp-badge--<?php echo esc_attr( $vote->voting_stage ); ?>">
 								<?php echo esc_html( $stage_label ); ?>
 							</span>
@@ -138,7 +156,7 @@ defined( 'ABSPATH' ) || exit;
 									<?php
 									printf(
 										esc_html__( 'Opens %s', 'wp-voting-plugin' ),
-										esc_html( wp_date( $date_format, strtotime( $vote->opening_date ) ) )
+										esc_html( wp_date( $date_format, WPVP_Database::local_timestamp( $vote->opening_date ) ) )
 									);
 									?>
 								</span>

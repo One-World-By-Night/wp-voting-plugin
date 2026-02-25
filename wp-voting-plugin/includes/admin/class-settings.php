@@ -778,7 +778,7 @@ class WPVP_Settings {
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
 			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),
 			'settings'             => $settings,
-			'classification'       => sanitize_text_field( wp_unslash( $_POST['classification'] ?? '' ) ),
+			'classifications'      => array_map( 'sanitize_text_field', array_map( 'wp_unslash', (array) ( $_POST['classifications'] ?? array() ) ) ),
 			'proposed_by'          => sanitize_text_field( wp_unslash( $_POST['proposed_by'] ?? '' ) ),
 			'seconded_by'          => sanitize_text_field( wp_unslash( $_POST['seconded_by'] ?? '' ) ),
 			'objection_by'         => sanitize_text_field( wp_unslash( $_POST['objection_by'] ?? '' ) ),

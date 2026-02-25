@@ -265,16 +265,15 @@ class WPVP_Guide {
 						<div class="wpvp-guide-form-section">
 							<?php $classifications = WPVP_Database::get_classifications(); ?>
 							<p>
-								<label for="wpvp_gb_classification"><?php esc_html_e( 'Classification', 'wp-voting-plugin' ); ?></label><br>
-								<select id="wpvp_gb_classification" name="classification" class="regular-text">
-									<option value=""><?php esc_html_e( '-- None --', 'wp-voting-plugin' ); ?></option>
+								<label for="wpvp_gb_classifications"><?php esc_html_e( 'Proposal Type', 'wp-voting-plugin' ); ?></label><br>
+								<select id="wpvp_gb_classifications" name="classifications[]" class="regular-text" multiple style="min-height:120px;">
 									<?php foreach ( $classifications as $class ) : ?>
 										<option value="<?php echo esc_attr( $class->classification_name ); ?>">
 											<?php echo esc_html( $class->classification_name ); ?>
 										</option>
 									<?php endforeach; ?>
 								</select>
-								<span class="description"><?php esc_html_e( 'Type of vote (Chronicle Admission, Bylaw Revision, etc.)', 'wp-voting-plugin' ); ?></span>
+								<br><span class="description"><?php esc_html_e( 'Hold Ctrl/Cmd to select multiple types.', 'wp-voting-plugin' ); ?></span>
 							</p>
 							<p>
 								<label for="wpvp_gb_proposed_by"><?php esc_html_e( 'Proposed By', 'wp-voting-plugin' ); ?></label><br>
@@ -376,6 +375,7 @@ class WPVP_Guide {
 								</p>
 							</div>
 							<button type="button" id="wpvp_gb_add_option" class="button"><?php esc_html_e( '+ Add Option', 'wp-voting-plugin' ); ?></button>
+							<button type="button" id="wpvp_gb_fill_fptp" class="button" title="<?php esc_attr_e( 'Fill with Approve / Deny / Abstain', 'wp-voting-plugin' ); ?>"><?php esc_html_e( 'Approve/Deny/Abstain', 'wp-voting-plugin' ); ?></button>
 
 							<p id="wpvp_gb_num_winners" style="margin-top: 15px; display: none;">
 								<label for="wpvp_gb_winners"><?php esc_html_e( 'Number of Winners', 'wp-voting-plugin' ); ?></label><br>

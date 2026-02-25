@@ -39,7 +39,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php
 				printf(
 					esc_html__( 'Opens: %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->opening_date ) ) )
+					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->opening_date ) ) )
 				);
 				?>
 			</span>
@@ -49,7 +49,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php
 				printf(
 					esc_html__( 'Closes: %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->closing_date ) ) )
+					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->closing_date ) ) )
 				);
 				?>
 			</span>
@@ -96,7 +96,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php
 				printf(
 					esc_html__( 'Voting opens on %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->opening_date ) ) )
+					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->opening_date ) ) )
 				);
 				?>
 			</p>
@@ -185,6 +185,14 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 			</div>
 			<?php
 		endif;
+	endif;
+	?>
+
+	<?php
+	// Participation tracker: show who has/hasn't voted (separate from results).
+	// Visible to any logged-in user who can see the vote.
+	if ( $user_id ) :
+		WPVP_Results_Display::render_participation_tracker( $vote );
 	endif;
 	?>
 
@@ -309,7 +317,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 									$vote_date = wp_date(
 										get_option( 'date_format' ) . ' ' . get_option( 'time_format' ),
-										strtotime( $mb['voted_at'] )
+										WPVP_Database::local_timestamp( $mb['voted_at'] )
 									);
 								?>
 								<tr>
