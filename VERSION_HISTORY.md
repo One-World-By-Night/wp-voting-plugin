@@ -1,6 +1,61 @@
 # WP Voting Plugin - Version History
 
-## Version 3.9.8 (Current - February 2026)
+## Version 3.10.2 (Current - February 2026)
+
+**Fix consent results display, entity-based voter lists, notification timing, and HTML results emails.**
+
+### Bug Fixes
+
+- **Consent agenda showed "passed AND failed"**: `save_results()` was not including the consent-specific `passed`, `objectors`, and `objection_count` fields in the `final_results` JSON. The results display read these fields to determine pass/fail, but they were always null. Added all three fields to the `wp_json_encode()` call.
+- **Results page missing vote description**: When accessing results via the email notification link, the results template only showed the title and vote counts. Added vote metadata (type, classification, dates), proposed_by/seconded_by, and the full proposal description to the results template.
+- **Voter lists exposed user identity**: The voter list showed WordPress display names and the participation tracker listed individual users under each group. Replaced all user identity references with entity titles resolved via `owc_resolve_asc_path()`. Voter lists now show only the entity (chronicle/coordinator) that cast the vote.
+- **Voter list sorting**: Voter lists and participation tracker now sort alphabetically with chronicles before all other entity types, with no indication of voting order.
+- **Closing reminder sent at wrong time**: The reminder was scheduled for 9am UTC, which could be 4-5am ET. Replaced with Eastern Time-aware scheduling: targets 9am ET on closing day, with 15-hour minimum window before close. If insufficient time, falls back to 6pm ET the evening before.
+- **Open notifications not sent for some votes**: When WP-Cron missed the exact scheduled time, the open notification was lost. Added `catch_up_open_notifications()` to the hourly cron that scans for open votes with past opening dates and sends the notification if the `_wpvp_open_notification_sent_` flag is missing.
+- **New vote creation skipped notifications**: Creating a new vote directly in "open" stage did not fire `wpvp_vote_stage_changed`, so no open notification was sent. Added the action hook after new vote creation when stage isn't draft.
+
+### New Features
+
+- **HTML results email**: Closed-vote notification emails now include a full HTML email with inline CSS containing the proposal title, description, classification, voting options, winner/outcome banner, vote counts table, voted entities list, and not-voted entities list.
+
+### Technical Details
+
+Files modified: `class-database.php` (save_results), `results.php` (template), `public.css` (styles), `class-results-display.php` (entity display + sorting), `class-vote-editor.php` (stage change hook), `class-notifications.php` (ET scheduling, catch-up, HTML email builder).
+
+---
+
+## Version 3.10.1 (February 2026)
+
+**Fix date offsets, email timing, participation tracker, multi-classification, sortable vote lists.**
+
+### Bug Fixes
+
+- **Date display offset**: `sanitize_datetime()` timezone round-trip shifted dates by one day. Added `local_timestamp()` helper for correct frontend date display.
+- **Notification email timing**: Vote-opened emails tied to cron-based opening instead of fragile deferred scheduling.
+
+### Enhancements
+
+- Vote-opened emails now include description, options, proposal type, and proposer info.
+- Participation tracker visible to all logged-in users (not gated behind results visibility).
+- Multiple classifications per vote (JSON array storage, multi-select admin UI).
+- "Membership" added to default classification list.
+- Proposal Type and Votes columns in public vote list tables.
+- FPTP quick-fill button for Approve/Deny/Abstain options.
+- Sortable columns (click headers) and title search on public vote lists.
+
+---
+
+## Version 3.10.0 (February 2026)
+
+**Centralized AccessSchema wrappers for role resolution.**
+
+### Internal
+
+- Migrated to centralized ASC wrapper functions for entity resolution, tracking source.
+
+---
+
+## Version 3.9.8 (February 2026)
 
 **Enforce restricted visibility on votes and results.**
 

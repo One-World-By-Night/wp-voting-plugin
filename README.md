@@ -1,12 +1,15 @@
-> **Current Version**: 3.6.0 (Production Release - February 2026)
+> **Current Version**: 3.10.2 (Production Release - February 2026)
 > **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 >
-> ### Recent Changes (3.6.0)
-> - Indexed `entity_type` and `entity_slug` columns on ballots table for efficient vote history lookup by chronicle or coordinator
-> - Automatic backfill of existing ballots from ballot_data JSON on upgrade
-> - `cast_ballot()` and `update_ballot()` now populate entity columns on every write
+> ### Recent Changes (3.10.2)
+> - Fix consent agenda pass/fail display (include passed/objectors in results JSON)
+> - Results page shows vote description, metadata, proposed_by, seconded_by
+> - Voter lists display entity titles instead of user identities, sorted chronicles first
+> - ET-aware closing reminder scheduling with 15-hour minimum window
+> - Catch-up mechanism for missed open-vote notifications
+> - HTML results email for closed votes with inline CSS
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

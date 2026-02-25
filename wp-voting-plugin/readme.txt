@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.9.8
+Stable tag: 3.10.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,30 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.10.2 =
+* Fix: Consent agenda results now correctly show passed/failed status instead of both simultaneously
+* Fix: Results page displays vote description, metadata (type, classification, dates), proposed_by, and seconded_by when accessed via email link
+* Fix: Voter lists and participation tracker show entity titles (chronicle/coordinator names) instead of user identities
+* Fix: Voter lists sorted alphabetically with chronicles first
+* Fix: Email closing reminders use Eastern Time scheduling with 15-hour minimum window before close
+* Fix: Catch-up mechanism sends missed open-vote notifications on next cron run
+* New: Closed-vote notification emails include full HTML results with vote counts, voted/not-voted entity lists
+
+= 3.10.1 =
+* Fix: Date display offset caused by timezone round-trip in sanitize_datetime()
+* Fix: Frontend dates now use local_timestamp() helper to correct 5-hour UTC offset
+* Fix: Vote-opened notification emails tied to cron-based opening instead of fragile deferred scheduling
+* Enhancement: Vote-opened emails include description, options, proposal type, and proposer info
+* Enhancement: Participation tracker visible to all logged-in users (not gated behind results visibility)
+* Enhancement: Multiple classifications per vote (JSON array storage, multi-select admin UI)
+* Enhancement: "Membership" added to default classification list
+* Enhancement: Proposal Type and Votes columns in public vote list tables
+* Enhancement: FPTP quick-fill button for Approve/Deny/Abstain options
+* Enhancement: Sortable columns (click headers) and title search on public vote lists
+
+= 3.10.0 =
+* Internal: Centralized AccessSchema wrappers for role resolution
 
 = 3.9.8 =
 * Security: Restricted votes no longer leak to unauthorized users via show_results_before_closing
