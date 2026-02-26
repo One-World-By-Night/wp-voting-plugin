@@ -919,8 +919,15 @@ class WPVP_Settings {
 		if ( is_array( $input ) ) {
 			$roles = array_values( array_filter( array_map( 'sanitize_text_field', $input ) ) );
 		} else {
-			$lines = preg_split( '/[\r\n,]+/', (string) $input );
-			$roles = array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'trim', $lines ) ) ) );
+			$str = trim( (string) $input );
+			// If the input is already a JSON array, decode it rather than splitting on commas.
+			$decoded = json_decode( $str, true );
+			if ( is_array( $decoded ) ) {
+				$roles = array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'trim', $decoded ) ) ) );
+			} else {
+				$lines = preg_split( '/[\r\n]+/', $str );
+				$roles = array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'trim', $lines ) ) ) );
+			}
 		}
 		return wp_json_encode( $roles );
 	}
