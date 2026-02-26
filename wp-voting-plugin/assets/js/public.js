@@ -261,34 +261,29 @@
 
     $(document).on('input', '.wpvp-vote-search__input', function () {
         var query  = $(this).val().toLowerCase();
-        var $table = $(this).closest('.wpvp-vote-list').find('.wpvp-vote-table tbody');
+        var $table = $(this).closest('.wpvp-vote-list').find('.wpvp-vote-table');
 
-        $table.find('tr').each(function () {
+        $table.find('tbody tr').each(function () {
             var title = $(this).find('.wpvp-vote-table__title').text().trim().toLowerCase();
-            $(this).toggle(title.indexOf(query) !== -1);
+            if (title.indexOf(query) !== -1) {
+                $(this).removeClass('wpvp-search-hidden');
+            } else {
+                $(this).addClass('wpvp-search-hidden');
+            }
         });
+
+        // Reset to page 1 after filtering.
+        wpvpPageState($table).page = 1;
+        wpvpApplyPagination($table);
     });
 
     /* ------------------------------------------------------------------
      *  Sortable table columns
      * ----------------------------------------------------------------*/
 
-    $(document).on('click', '.wpvp-sortable__col', function () {
-        var $th    = $(this);
-        var col    = parseInt($th.data('col'), 10);
-        var $table = $th.closest('table');
+    function wpvpSortTable($table, col, asc) {
         var $tbody = $table.find('tbody');
         var rows   = $tbody.find('tr').get();
-
-        // Determine sort direction.
-        var asc = true;
-        if ($th.hasClass('wpvp-sortable__col--asc')) {
-            asc = false;
-        }
-
-        // Reset all headers.
-        $table.find('.wpvp-sortable__col').removeClass('wpvp-sortable__col--asc wpvp-sortable__col--desc');
-        $th.addClass(asc ? 'wpvp-sortable__col--asc' : 'wpvp-sortable__col--desc');
 
         rows.sort(function (a, b) {
             var $cellA = $(a).children('td').eq(col);
@@ -296,25 +291,151 @@
             var valA   = $cellA.attr('data-sort-value');
             var valB   = $cellB.attr('data-sort-value');
 
-            // If no data-sort-value, fall back to text content.
             if (valA === undefined) { valA = $cellA.text().trim().toLowerCase(); }
             if (valB === undefined) { valB = $cellB.text().trim().toLowerCase(); }
 
-            // Try numeric comparison.
             var numA = parseFloat(valA);
             var numB = parseFloat(valB);
             if (!isNaN(numA) && !isNaN(numB)) {
                 return asc ? numA - numB : numB - numA;
             }
 
-            // String comparison.
             if (valA < valB) { return asc ? -1 : 1; }
             if (valA > valB) { return asc ? 1 : -1; }
             return 0;
         });
 
-        $.each(rows, function (i, row) {
-            $tbody.append(row);
+        $.each(rows, function (i, row) { $tbody.append(row); });
+
+        // Update header indicators.
+        $table.find('.wpvp-sortable__col').removeClass('wpvp-sortable__col--asc wpvp-sortable__col--desc');
+        $table.find('.wpvp-sortable__col[data-col="' + col + '"]')
+            .addClass(asc ? 'wpvp-sortable__col--asc' : 'wpvp-sortable__col--desc');
+    }
+
+    $(document).on('click', '.wpvp-sortable__col', function () {
+        var $th    = $(this);
+        var col    = parseInt($th.data('col'), 10);
+        var $table = $th.closest('table');
+        var asc    = !$th.hasClass('wpvp-sortable__col--asc');
+
+        wpvpSortTable($table, col, asc);
+
+        // Go to page 1 of sorted results.
+        wpvpPageState($table).page = 1;
+        wpvpApplyPagination($table);
+    });
+
+    /* ------------------------------------------------------------------
+     *  Pagination
+     * ----------------------------------------------------------------*/
+
+    var _wpvpPageState = {};
+
+    function wpvpTableKey($table) {
+        // Stable key: use the index of the .wpvp-vote-list container.
+        return $table.closest('.wpvp-vote-list').index('.wpvp-vote-list');
+    }
+
+    function wpvpPageState($table) {
+        var key = wpvpTableKey($table);
+        if (!_wpvpPageState[key]) {
+            _wpvpPageState[key] = { page: 1 };
+        }
+        return _wpvpPageState[key];
+    }
+
+    function wpvpApplyPagination($table) {
+        var perPage     = parseInt($table.data('per-page'), 10) || 20;
+        var state       = wpvpPageState($table);
+        var $allRows    = $table.find('tbody tr');
+        var $activeRows = $allRows.filter(':not(.wpvp-search-hidden)');
+        var total       = $activeRows.length;
+        var totalPages  = Math.max(1, Math.ceil(total / perPage));
+
+        // Clamp page.
+        if (state.page > totalPages) { state.page = totalPages; }
+        if (state.page < 1)          { state.page = 1; }
+
+        var start = (state.page - 1) * perPage;
+        var end   = state.page * perPage;
+
+        // Hide all, show the current page slice of active rows.
+        $allRows.addClass('wpvp-page-hidden');
+        $activeRows.slice(start, end).removeClass('wpvp-page-hidden');
+
+        // Build pagination controls.
+        var $list       = $table.closest('.wpvp-vote-list');
+        var $pagination = $list.find('.wpvp-pagination');
+        $pagination.empty();
+
+        if (totalPages <= 1 && total <= perPage) { return; }
+
+        var showing = total === 0
+            ? '0'
+            : (Math.min(start + 1, total)) + '–' + Math.min(end, total);
+        var html = '<div class="wpvp-pagination__info">Showing ' + showing + ' of ' + total + '</div>';
+        html += '<div class="wpvp-pagination__controls">';
+
+        // Prev.
+        html += '<button class="wpvp-pagination__btn" data-page="' + (state.page - 1) + '"' +
+            (state.page <= 1 ? ' disabled' : '') + '>&lsaquo; Prev</button>';
+
+        // Page numbers with ellipsis.
+        var startP = Math.max(1, state.page - 2);
+        var endP   = Math.min(totalPages, state.page + 2);
+
+        if (startP > 1) {
+            html += '<button class="wpvp-pagination__btn" data-page="1">1</button>';
+            if (startP > 2) { html += '<span class="wpvp-pagination__ellipsis">&hellip;</span>'; }
+        }
+        for (var p = startP; p <= endP; p++) {
+            var activeClass = (p === state.page) ? ' wpvp-pagination__btn--active' : '';
+            html += '<button class="wpvp-pagination__btn' + activeClass + '" data-page="' + p + '">' + p + '</button>';
+        }
+        if (endP < totalPages) {
+            if (endP < totalPages - 1) { html += '<span class="wpvp-pagination__ellipsis">&hellip;</span>'; }
+            html += '<button class="wpvp-pagination__btn" data-page="' + totalPages + '">' + totalPages + '</button>';
+        }
+
+        // Next.
+        html += '<button class="wpvp-pagination__btn" data-page="' + (state.page + 1) + '"' +
+            (state.page >= totalPages ? ' disabled' : '') + '>Next &rsaquo;</button>';
+
+        html += '</div>';
+        $pagination.html(html);
+    }
+
+    // Page button clicks.
+    $(document).on('click', '.wpvp-pagination__btn:not([disabled])', function () {
+        var page   = parseInt($(this).data('page'), 10);
+        var $table = $(this).closest('.wpvp-vote-list').find('.wpvp-vote-table');
+        wpvpPageState($table).page = page;
+        wpvpApplyPagination($table);
+        // Scroll to top of list.
+        var top = $table.closest('.wpvp-vote-list').offset().top - 60;
+        $('html, body').animate({ scrollTop: top }, 200);
+    });
+
+    // Per-page selector.
+    $(document).on('change', '.wpvp-per-page-select', function () {
+        var perPage = parseInt($(this).val(), 10);
+        var $table  = $(this).closest('.wpvp-vote-list').find('.wpvp-vote-table');
+        $table.data('per-page', perPage);
+        wpvpPageState($table).page = 1;
+        wpvpApplyPagination($table);
+    });
+
+    // Initialize: apply default sort then paginate.
+    $(document).ready(function () {
+        $('.wpvp-vote-table').each(function () {
+            var $table     = $(this);
+            var defaultCol = parseInt($table.data('default-sort-col'), 10);
+            var defaultDir = $table.data('default-sort-dir');
+            if (!isNaN(defaultCol)) {
+                wpvpSortTable($table, defaultCol, defaultDir !== 'desc');
+            }
+            wpvpApplyPagination($table);
         });
     });
 

@@ -342,9 +342,11 @@ class WPVP_Vote_List {
 					}
 					break;
 				case 'open':
+					$old_vote  = WPVP_Database::get_vote( $vote_id );
+					$old_stage = $old_vote ? $old_vote->voting_stage : 'draft';
 					if ( WPVP_Database::update_vote( $vote_id, array( 'voting_stage' => 'open' ) ) ) {
 						++$count;
-						do_action( 'wpvp_vote_stage_changed', $vote_id, 'open', 'draft' );
+						do_action( 'wpvp_vote_stage_changed', $vote_id, 'open', $old_stage );
 					}
 					break;
 				case 'close':

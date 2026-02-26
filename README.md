@@ -1,15 +1,17 @@
-> **Current Version**: 3.10.2 (Production Release - February 2026)
+> **Current Version**: 3.10.4 (Production Release - February 2026)
 > **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 >
-> ### Recent Changes (3.10.2)
-> - Fix consent agenda pass/fail display (include passed/objectors in results JSON)
-> - Results page shows vote description, metadata, proposed_by, seconded_by
-> - Voter lists display entity titles instead of user identities, sorted chronicles first
-> - ET-aware closing reminder scheduling with 15-hour minimum window
-> - Catch-up mechanism for missed open-vote notifications
-> - HTML results email for closed votes with inline CSS
+> ### Recent Changes (3.10.4)
+> - Configurable default sort column and direction on public vote lists (shortcode + Elementor widget)
+> - Per-page selector (10 / 20 / 50) with default of 10; pagination across full dataset
+> - Default sort: Start Date ascending so upcoming votes appear first
+>
+> ### Recent Changes (3.10.3)
+> - New "Scheduled" vote stage: votes with future opening dates are visible on the dashboard before they open
+> - Fix: votes with future opening dates no longer dropped to Draft (invisible)
+> - Auto-open cron promotes Scheduled → Open at the correct ET-aware time, firing notifications
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

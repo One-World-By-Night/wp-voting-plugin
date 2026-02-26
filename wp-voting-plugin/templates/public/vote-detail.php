@@ -89,7 +89,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 		else :
 			WPVP_Ballot::render_form( $vote, $user_id );
 		endif;
-	elseif ( in_array( $vote->voting_stage, array( 'draft', 'open' ), true ) && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) :
+	elseif ( in_array( $vote->voting_stage, array( 'draft', 'scheduled', 'open' ), true ) && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) :
 		?>
 		<div class="wpvp-notice wpvp-notice--info">
 			<p>

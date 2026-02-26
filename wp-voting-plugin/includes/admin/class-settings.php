@@ -774,7 +774,7 @@ class WPVP_Settings {
 			'voting_roles'         => $voting_roles,
 			'additional_viewers'   => $additional_viewers,
 			'voting_eligibility'   => sanitize_key( wp_unslash( $_POST['voting_eligibility'] ?? 'private' ) ),
-			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'draft' ) ),
+			'voting_stage'         => sanitize_key( wp_unslash( $_POST['voting_stage'] ?? 'open' ) ),
 			'opening_date'         => sanitize_text_field( wp_unslash( $_POST['opening_date'] ?? '' ) ),
 			'closing_date'         => sanitize_text_field( wp_unslash( $_POST['closing_date'] ?? '' ) ),
 			'settings'             => $settings,
@@ -802,6 +802,11 @@ class WPVP_Settings {
 		$new_id = WPVP_Database::save_vote( $data );
 		if ( ! $new_id ) {
 			wp_send_json_error( __( 'Failed to create vote. Please try again.', 'wp-voting-plugin' ) );
+		}
+
+		// Fire stage change for new votes that aren't drafts.
+		if ( ! empty( $data['voting_stage'] ) && 'draft' !== $data['voting_stage'] ) {
+			do_action( 'wpvp_vote_stage_changed', $new_id, $data['voting_stage'], 'draft' );
 		}
 
 		wp_send_json_success(

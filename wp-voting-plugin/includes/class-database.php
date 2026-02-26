@@ -1188,6 +1188,7 @@ class WPVP_Database {
 	public static function get_vote_stages(): array {
 		return array(
 			'draft'     => __( 'Draft', 'wp-voting-plugin' ),
+			'scheduled' => __( 'Scheduled', 'wp-voting-plugin' ),
 			'open'      => __( 'Open', 'wp-voting-plugin' ),
 			'closed'    => __( 'Closed', 'wp-voting-plugin' ),
 			'completed' => __( 'Completed', 'wp-voting-plugin' ),

@@ -53,9 +53,10 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 			array(
 				'label'   => __( 'Status Filter', 'wp-voting-plugin' ),
 				'type'    => \Elementor\Controls_Manager::SELECT,
-				'default' => 'open',
+				'default' => 'scheduled,open',
 				'options' => array(
-					'open'                       => __( 'Open Votes', 'wp-voting-plugin' ),
+					'scheduled,open'             => __( 'Scheduled & Open Votes', 'wp-voting-plugin' ),
+					'open'                       => __( 'Open Votes Only', 'wp-voting-plugin' ),
 					'closed,completed,archived'  => __( 'Vote Results (closed / completed / archived)', 'wp-voting-plugin' ),
 					'all'                        => __( 'All Votes', 'wp-voting-plugin' ),
 				),
@@ -67,9 +68,39 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 			array(
 				'label'   => __( 'Number of Votes', 'wp-voting-plugin' ),
 				'type'    => \Elementor\Controls_Manager::NUMBER,
-				'default' => 20,
+				'default' => 10,
 				'min'     => 1,
 				'max'     => 100,
+			)
+		);
+
+		$this->add_control(
+			'sort_col',
+			array(
+				'label'   => __( 'Default Sort Column', 'wp-voting-plugin' ),
+				'type'    => \Elementor\Controls_Manager::SELECT,
+				'default' => 'start_date',
+				'options' => array(
+					'title'      => __( 'Title', 'wp-voting-plugin' ),
+					'type'       => __( 'Proposal Type', 'wp-voting-plugin' ),
+					'votes'      => __( 'Votes', 'wp-voting-plugin' ),
+					'start_date' => __( 'Start Date', 'wp-voting-plugin' ),
+					'end_date'   => __( 'End Date', 'wp-voting-plugin' ),
+					'status'     => __( 'Status', 'wp-voting-plugin' ),
+				),
+			)
+		);
+
+		$this->add_control(
+			'sort_dir',
+			array(
+				'label'   => __( 'Default Sort Direction', 'wp-voting-plugin' ),
+				'type'    => \Elementor\Controls_Manager::SELECT,
+				'default' => 'asc',
+				'options' => array(
+					'asc'  => __( 'Ascending', 'wp-voting-plugin' ),
+					'desc' => __( 'Descending', 'wp-voting-plugin' ),
+				),
 			)
 		);
 
@@ -80,9 +111,11 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 		$settings = $this->get_settings_for_display();
 		echo do_shortcode(
 			sprintf(
-				'[wpvp_votes status="%s" limit="%d"]',
+				'[wpvp_votes status="%s" limit="%d" sort_col="%s" sort_dir="%s"]',
 				esc_attr( $settings['status'] ),
-				intval( $settings['limit'] )
+				intval( $settings['limit'] ),
+				esc_attr( $settings['sort_col'] ),
+				esc_attr( $settings['sort_dir'] )
 			)
 		);
 	}

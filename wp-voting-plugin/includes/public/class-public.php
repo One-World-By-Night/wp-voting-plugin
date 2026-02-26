@@ -107,25 +107,41 @@ class WPVP_Public {
 	 * [wpvp_votes] — List of votes.
 	 *
 	 * Attributes:
-	 *  - status: open|closed|completed|all (default: open)
-	 *  - limit:  number of votes to show (default: 20)
+	 *  - status:   open|closed|completed|all (default: scheduled,open)
+	 *  - limit:    number of votes per page (default: 10)
+	 *  - sort_col: title|type|votes|start_date|end_date|status (default: start_date)
+	 *  - sort_dir: asc|desc (default: asc)
 	 */
 	public function shortcode_votes( $atts ): string {
 		$this->flag_enqueue();
 
 		$atts = shortcode_atts(
 			array(
-				'status' => 'open',
-				'limit'  => 20,
+				'status'   => 'scheduled,open',
+				'limit'    => 10,
+				'sort_col' => 'start_date',
+				'sort_dir' => 'asc',
 			),
 			$atts,
 			'wpvp_votes'
 		);
 
-		$limit = max( 1, intval( $atts['limit'] ) );
+		$per_page = max( 1, intval( $atts['limit'] ) );
+
+		// Map column name → table column index.
+		$col_map        = array(
+			'title'      => 0,
+			'type'       => 1,
+			'votes'      => 2,
+			'start_date' => 3,
+			'end_date'   => 4,
+			'status'     => 5,
+		);
+		$sort_col_index = isset( $col_map[ $atts['sort_col'] ] ) ? $col_map[ $atts['sort_col'] ] : 3;
+		$sort_dir       = in_array( $atts['sort_dir'], array( 'asc', 'desc' ), true ) ? $atts['sort_dir'] : 'asc';
 
 		$args = array(
-			'per_page' => $limit * 3, // Over-fetch to account for permission filtering.
+			'per_page' => 500, // Fetch all; JS handles pagination.
 			'page'     => 1,
 		);
 
@@ -147,9 +163,6 @@ class WPVP_Public {
 		foreach ( $all_votes as $vote ) {
 			if ( WPVP_Permissions::can_view_vote( $user_id, $vote ) ) {
 				$votes[] = $vote;
-			}
-			if ( count( $votes ) >= $limit ) {
-				break;
 			}
 		}
 

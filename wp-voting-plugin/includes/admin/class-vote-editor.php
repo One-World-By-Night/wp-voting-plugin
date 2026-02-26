@@ -411,20 +411,39 @@ class WPVP_Vote_Editor {
 							<div class="postbox">
 								<div class="postbox-header"><h2><?php esc_html_e( 'Status & Schedule', 'wp-voting-plugin' ); ?></h2></div>
 								<div class="inside">
+									<?php
+								$current_stage = $is_edit ? $this->vote->voting_stage : 'open';
+								$is_scheduled  = $is_edit && 'scheduled' === $this->vote->voting_stage;
+								?>
 									<p>
 										<label for="voting_stage"><?php esc_html_e( 'Status:', 'wp-voting-plugin' ); ?></label>
-										<select name="voting_stage" id="voting_stage" style="width:100%;">
-											<?php foreach ( $stages as $key => $label ) : ?>
+										<?php if ( $is_scheduled ) : ?>
+											<input type="hidden" name="voting_stage" value="open">
+											<select disabled style="width:100%;">
+												<option selected><?php esc_html_e( 'Scheduled', 'wp-voting-plugin' ); ?></option>
+											</select>
+											<p class="description" style="margin-top:6px;">
 												<?php
-												if ( 'completed' === $key ) {
-													continue;} // Completed is set by processing, not manually.
+												printf(
+													esc_html__( 'This vote will open automatically on %s. To change, update the opening date or set status to Draft.', 'wp-voting-plugin' ),
+													esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $this->vote->opening_date ) ) )
+												);
 												?>
-												<option value="<?php echo esc_attr( $key ); ?>"
-													<?php selected( $is_edit ? $this->vote->voting_stage : 'draft', $key ); ?>>
-													<?php echo esc_html( $label ); ?>
-												</option>
-											<?php endforeach; ?>
-										</select>
+											</p>
+										<?php else : ?>
+											<select name="voting_stage" id="voting_stage" style="width:100%;">
+												<?php foreach ( $stages as $key => $label ) : ?>
+													<?php
+													if ( in_array( $key, array( 'completed', 'scheduled' ), true ) ) {
+														continue;} // Completed is set by processing; Scheduled is set automatically for future-dated votes.
+													?>
+													<option value="<?php echo esc_attr( $key ); ?>"
+														<?php selected( $current_stage, $key ); ?>>
+														<?php echo esc_html( $label ); ?>
+													</option>
+												<?php endforeach; ?>
+											</select>
+										<?php endif; ?>
 									</p>
 									<p>
 										<label for="opening_date"><?php esc_html_e( 'Opens:', 'wp-voting-plugin' ); ?></label><br>

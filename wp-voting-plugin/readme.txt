@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.10.2
+Stable tag: 3.10.4
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,17 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.10.4 =
+* Enhancement: Configurable default sort column and direction on public vote lists (shortcode attributes sort_col, sort_dir; Elementor widget controls)
+* Enhancement: Per-page selector (10 / 20 / 50) on public vote lists; default changed to 10
+* Enhancement: Default sort is Start Date ascending so upcoming votes appear first
+
+= 3.10.3 =
+* New: "Scheduled" vote stage — votes with a future opening date are visible on the public dashboard before they open, showing an "Opens {date}" label
+* Fix: Votes with future opening dates were reverted to Draft (invisible) instead of remaining visible as Scheduled
+* Fix: Auto-open cron promotes Scheduled → Open when the opening date arrives, firing notifications at the correct time
+* Fix: Admin vote editor shows Scheduled status with info notice; hidden input re-triggers notifications handler on save
 
 = 3.10.2 =
 * Fix: Consent agenda results now correctly show passed/failed status instead of both simultaneously

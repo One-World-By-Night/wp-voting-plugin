@@ -55,7 +55,7 @@ class WPVP_Notifications {
 
 	/*
 	------------------------------------------------------------------
-	 *  Auto-open: draft → open when opening_date has passed.
+	 *  Auto-open: scheduled → open when opening_date has passed.
 	 * ----------------------------------------------------------------*/
 
 	private function auto_open_votes(): void {
@@ -64,11 +64,11 @@ class WPVP_Notifications {
 		$now   = current_time( 'mysql' );
 		$table = WPVP_Database::votes_table();
 
-		// Find draft votes whose opening_date has passed.
+		// Find scheduled (or legacy draft) votes whose opening_date has passed.
 		$vote_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT id FROM {$table}
-             WHERE voting_stage = 'draft'
+             WHERE voting_stage IN ('scheduled', 'draft')
                AND opening_date IS NOT NULL
                AND opening_date <= %s",
 				$now
@@ -76,6 +76,9 @@ class WPVP_Notifications {
 		);
 
 		foreach ( $vote_ids as $vote_id ) {
+			$old_vote  = WPVP_Database::get_vote( (int) $vote_id );
+			$old_stage = $old_vote ? $old_vote->voting_stage : 'scheduled';
+
 			WPVP_Database::update_vote( (int) $vote_id, array( 'voting_stage' => 'open' ) );
 
 			/**
@@ -85,7 +88,7 @@ class WPVP_Notifications {
 			 * @param string $new_stage The new stage.
 			 * @param string $old_stage The previous stage.
 			 */
-			do_action( 'wpvp_vote_stage_changed', (int) $vote_id, 'open', 'draft' );
+			do_action( 'wpvp_vote_stage_changed', (int) $vote_id, 'open', $old_stage );
 		}
 	}
 
@@ -191,11 +194,11 @@ class WPVP_Notifications {
 			return;
 		}
 
-		// If opening_date hasn't arrived yet, revert to draft so the hourly cron
+		// If opening_date hasn't arrived yet, set to scheduled so the hourly cron
 		// (auto_open_votes) handles the transition and sends the email at the right time.
 		if ( 'open' === $new_stage && ! empty( $vote->opening_date ) ) {
 			if ( $vote->opening_date > current_time( 'mysql' ) ) {
-				WPVP_Database::update_vote( $vote_id, array( 'voting_stage' => 'draft' ) );
+				WPVP_Database::update_vote( $vote_id, array( 'voting_stage' => 'scheduled' ) );
 				return;
 			}
 		}

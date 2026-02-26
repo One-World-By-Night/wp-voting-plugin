@@ -1,5 +1,43 @@
 # WP Voting Plugin - Version History
 
+## Version 3.10.4 (Current - February 2026)
+
+**Configurable sort column/direction on public vote lists; per-page selector.**
+
+### New Features
+
+- **Configurable default sort**: `[wpvp_votes]` shortcode accepts `sort_col` (title|type|votes|start_date|end_date|status) and `sort_dir` (asc|desc) attributes. Default is Start Date ascending so upcoming votes appear first.
+- **Elementor widget controls**: Vote List widget gains "Default Sort Column" and "Default Sort Direction" dropdowns matching the shortcode attributes.
+- **Per-page selector**: "Show 10/20/50 per page" dropdown on all public vote lists. Default changed to 10.
+
+### Technical Details
+
+Files modified: `class-elementor-widgets.php` (sort controls, render), `class-public.php` (shortcode attrs, column mapping), `templates/public/vote-list.php` (PHP vars for sort attrs).
+
+---
+
+## Version 3.10.3 (February 2026)
+
+**New "Scheduled" vote stage; pagination on public vote lists.**
+
+### New Features
+
+- **Scheduled vote stage**: Votes with a future opening date now get `scheduled` status instead of being reverted to `draft`. Scheduled votes are visible on the public voting dashboard with an "Opens {date}" label but cannot receive ballots.
+- **Auto-open cron**: Hourly cron promotes `scheduled` → `open` when the opening date arrives (ET-aware), firing the stage-change action and sending the open notification.
+- **Client-side pagination**: Public vote lists paginate at 20 per page by default (configurable via shortcode `limit` attribute). Sort and search operate across the full dataset with all rows in DOM.
+- **Admin editor UI**: Editing a scheduled vote shows a disabled dropdown labeled "Scheduled" with an info notice showing the opening date. Hidden input re-triggers the notifications handler on save.
+
+### Bug Fixes
+
+- Votes with future opening dates were reverted to `draft` (invisible) by `on_stage_change()`. Changed revert target to `scheduled` so they remain visible.
+- Bulk "Set Open" admin action now captures the actual old stage before updating (was hardcoded to `draft`).
+
+### Technical Details
+
+Files modified: `class-database.php` (scheduled stage), `class-notifications.php` (revert to scheduled, auto-open query), `class-public.php` (default status, fetch all), `class-vote-editor.php` (scheduled UI), `class-vote-list.php` (bulk action old stage), `class-settings.php` (wizard stage change hook), `templates/public/vote-list.php` (toolbar, pagination), `assets/js/public.js` (pagination, per-page, default sort), `assets/css/public.css` (scheduled badge, pagination styles).
+
+---
+
 ## Version 3.10.2 (Current - February 2026)
 
 **Fix consent results display, entity-based voter lists, notification timing, and HTML results emails.**

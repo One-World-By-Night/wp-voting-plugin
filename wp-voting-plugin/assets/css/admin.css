@@ -21,6 +21,11 @@
     color: #50575e;
 }
 
+.wpvp-badge--scheduled {
+    background: #e8d5f5;
+    color: #6b3fa0;
+}
+
 .wpvp-badge--open {
     background: #dff0d8;
     color: #3c763d;

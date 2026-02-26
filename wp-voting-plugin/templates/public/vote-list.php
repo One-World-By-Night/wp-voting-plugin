@@ -18,10 +18,24 @@ defined( 'ABSPATH' ) || exit;
 			<?php esc_html_e( 'No votes found.', 'wp-voting-plugin' ); ?>
 		</p>
 	<?php else : ?>
-		<div class="wpvp-vote-search">
-			<input type="text" class="wpvp-vote-search__input" placeholder="<?php esc_attr_e( 'Search by title...', 'wp-voting-plugin' ); ?>">
+		<?php $pp = isset( $per_page ) ? (int) $per_page : 10; ?>
+		<div class="wpvp-vote-list__toolbar">
+			<div class="wpvp-vote-search">
+				<input type="text" class="wpvp-vote-search__input" placeholder="<?php esc_attr_e( 'Search by title...', 'wp-voting-plugin' ); ?>">
+			</div>
+			<div class="wpvp-per-page">
+				<label>
+					<?php esc_html_e( 'Show', 'wp-voting-plugin' ); ?>
+					<select class="wpvp-per-page-select">
+						<?php foreach ( array( 10, 20, 50 ) as $opt ) : ?>
+							<option value="<?php echo esc_attr( $opt ); ?>"<?php selected( $pp, $opt ); ?>><?php echo esc_html( $opt ); ?></option>
+						<?php endforeach; ?>
+					</select>
+					<?php esc_html_e( 'per page', 'wp-voting-plugin' ); ?>
+				</label>
+			</div>
 		</div>
-		<table class="wpvp-vote-table wpvp-sortable">
+		<table class="wpvp-vote-table wpvp-sortable" data-per-page="<?php echo esc_attr( $pp ); ?>" data-default-sort-col="<?php echo esc_attr( isset( $sort_col_index ) ? $sort_col_index : 3 ); ?>" data-default-sort-dir="<?php echo esc_attr( isset( $sort_dir ) ? $sort_dir : 'asc' ); ?>">
 			<thead>
 				<tr>
 					<th class="wpvp-sortable__col" data-col="0"><?php esc_html_e( 'Title', 'wp-voting-plugin' ); ?></th>
@@ -151,7 +165,7 @@ defined( 'ABSPATH' ) || exit;
 										</a>
 									<?php endif; ?>
 								<?php endif; ?>
-							<?php elseif ( 'open' === $vote->voting_stage && ! empty( $vote->opening_date ) ) : ?>
+							<?php elseif ( 'scheduled' === $vote->voting_stage && ! empty( $vote->opening_date ) ) : ?>
 								<span class="wpvp-vote-table__opens-label">
 									<?php
 									printf(
@@ -174,5 +188,6 @@ defined( 'ABSPATH' ) || exit;
 				<?php endforeach; ?>
 			</tbody>
 		</table>
+		<div class="wpvp-pagination"></div>
 	<?php endif; ?>
 </div>
