@@ -70,6 +70,11 @@ class WPVP_Activator {
 				WPVP_Database::upgrade_to_3100();
 			}
 
+			if ( version_compare( $stored, '3.10.5', '<' ) ) {
+				// Add admin_note and note_public columns to votes table.
+				WPVP_Database::upgrade_to_3105();
+			}
+
 			update_option( 'wpvp_db_version', WPVP_VERSION );
 		}
 	}

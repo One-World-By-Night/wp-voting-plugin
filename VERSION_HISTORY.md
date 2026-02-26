@@ -1,6 +1,32 @@
 # WP Voting Plugin - Version History
 
-## Version 3.10.4 (Current - February 2026)
+## Version 3.10.6 (Current - February 2026)
+
+**Entity dropdowns for proposed/seconded/objected fields; global eligibility defaults; withdrawn status; admin notes.**
+
+### New Features
+
+- **Entity dropdowns**: Proposed By, Seconded By, and Objected By fields in the vote editor (and creation wizard) are now Select2 AJAX dropdowns backed by OWBN-Client's entity resolution API. Chronicles and coordinators are searchable by name; free-text entry is still allowed via tags mode.
+- **Global access defaults**: New "Default Access Control for New Votes" section in Settings → Permissions. Set default visibility (Public/Private/Restricted) and default voting eligibility (All/Restricted) once; all new votes pre-fill from these defaults.
+- **Withdrawn status**: New `withdrawn` vote stage (red badge) for votes pulled before completion. Withdrawn votes appear in the vote history alongside closed/completed/archived. The creation wizard and bulk actions do not expose this stage — it must be set manually via the editor on an already-closed or completed vote.
+- **Admin notes on closed votes**: Admins can attach an optional note to closed, completed, or withdrawn votes. A "Show publicly" checkbox controls whether the note appears as a yellow callout on the public results page.
+
+### Bug Fixes
+
+- Fixed: editing a completed vote caused the status to revert to Draft. The `completed` stage was omitted from the status dropdown, so the browser defaulted to the first option. `completed` now appears (and is selected) when the current stage is already `completed`.
+- Fixed: rich text editor in the vote creation wizard was using teeny mode; now uses the full toolbar.
+
+### Database Changes
+
+- Added `admin_note TEXT` and `note_public TINYINT(1)` columns to `lqw_wpvp_votes`. Migration runs automatically on plugin load via `upgrade_to_3105()`.
+
+### Technical Details
+
+Files modified: `class-vote-editor.php` (entity selects, admin note UI, stage dropdown fix, new-vote defaults), `class-guide.php` (entity selects, teeny fix), `class-database.php` (withdrawn stage, admin_note/note_public columns), `class-activator.php` (upgrade call), `class-settings.php` (global defaults settings, AJAX entity search), `class-public.php` (withdrawn in results list, auto-include withdrawn), `class-elementor-widgets.php` (withdrawn label), `templates/public/vote-list.php` (withdrawn actions), `templates/public/results.php` (admin note display), `assets/js/admin.js` (initEntitySelect2), `assets/css/admin.css` (withdrawn badge), `assets/css/public.css` (withdrawn badge, admin-note callout).
+
+---
+
+## Version 3.10.4 (February 2026)
 
 **Configurable sort column/direction on public vote lists; per-page selector.**
 

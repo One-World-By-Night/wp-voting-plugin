@@ -148,8 +148,12 @@ class WPVP_Public {
 		if ( 'all' !== $atts['status'] ) {
 			// Support comma-separated status values (e.g., "closed,completed,archived").
 			if ( strpos( $atts['status'], ',' ) !== false ) {
-				$statuses         = array_map( 'sanitize_key', explode( ',', $atts['status'] ) );
-				$args['status']   = array_filter( $statuses );
+				$statuses = array_filter( array_map( 'sanitize_key', explode( ',', $atts['status'] ) ) );
+				// Auto-include 'withdrawn' alongside 'closed' — it's a terminal state like closed/completed.
+				if ( in_array( 'closed', $statuses, true ) && ! in_array( 'withdrawn', $statuses, true ) ) {
+					$statuses[] = 'withdrawn';
+				}
+				$args['status'] = $statuses;
 			} else {
 				$args['status'] = sanitize_key( $atts['status'] );
 			}
@@ -350,8 +354,8 @@ class WPVP_Public {
 		// Filter to votes with results that user can view.
 		$votes_with_results = array();
 		foreach ( $all_votes as $vote ) {
-			// Include completed, closed, or open votes with "show results before closing" enabled.
-			$is_completed_or_closed = in_array( $vote->voting_stage, array( 'completed', 'closed' ), true );
+			// Include completed, closed, withdrawn, or open votes with "show results before closing" enabled.
+			$is_completed_or_closed = in_array( $vote->voting_stage, array( 'completed', 'closed', 'withdrawn' ), true );
 
 			$show_open_results = false;
 			if ( 'open' === $vote->voting_stage ) {

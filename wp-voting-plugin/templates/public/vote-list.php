@@ -125,7 +125,7 @@ defined( 'ABSPATH' ) || exit;
 							}
 
 							// Direct link URL for the "open in new tab" button.
-							$direct_url = in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true )
+							$direct_url = in_array( $vote->voting_stage, array( 'closed', 'completed', 'withdrawn', 'archived' ), true )
 								? $results_url
 								: $url;
 							?>
@@ -174,7 +174,7 @@ defined( 'ABSPATH' ) || exit;
 									);
 									?>
 								</span>
-							<?php elseif ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'archived' ), true ) ) : ?>
+							<?php elseif ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'withdrawn', 'archived' ), true ) ) : ?>
 								<a href="#" data-lightbox-url="<?php echo esc_url( $results_url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small">
 									<?php esc_html_e( 'View', 'wp-voting-plugin' ); ?>
 								</a>

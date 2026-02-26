@@ -237,7 +237,7 @@ class WPVP_Guide {
 										'textarea_name' => 'proposal_description',
 										'textarea_rows' => 6,
 										'media_buttons' => false,
-										'teeny'         => true,
+										'teeny'         => false,
 										'quicktags'     => true,
 									)
 								);
@@ -277,15 +277,15 @@ class WPVP_Guide {
 							</p>
 							<p>
 								<label for="wpvp_gb_proposed_by"><?php esc_html_e( 'Proposed By', 'wp-voting-plugin' ); ?></label><br>
-								<input type="text" id="wpvp_gb_proposed_by" name="proposed_by" class="regular-text" placeholder="<?php esc_attr_e( 'Person who proposed this vote', 'wp-voting-plugin' ); ?>">
+								<select id="wpvp_gb_proposed_by" name="proposed_by" class="wpvp-select2-entity" style="width:100%;" data-placeholder="<?php esc_attr_e( 'Type to search or enter a name...', 'wp-voting-plugin' ); ?>"></select>
 							</p>
 							<p>
 								<label for="wpvp_gb_seconded_by"><?php esc_html_e( 'Seconded By', 'wp-voting-plugin' ); ?></label><br>
-								<input type="text" id="wpvp_gb_seconded_by" name="seconded_by" class="regular-text" placeholder="<?php esc_attr_e( 'Person who seconded this vote', 'wp-voting-plugin' ); ?>">
+								<select id="wpvp_gb_seconded_by" name="seconded_by" class="wpvp-select2-entity" style="width:100%;" data-placeholder="<?php esc_attr_e( 'Type to search or enter a name...', 'wp-voting-plugin' ); ?>"></select>
 							</p>
 							<p>
 								<label for="wpvp_gb_objection_by"><?php esc_html_e( 'Objection By', 'wp-voting-plugin' ); ?></label><br>
-								<input type="text" id="wpvp_gb_objection_by" name="objection_by" class="regular-text" placeholder="<?php esc_attr_e( 'Person who objected (for consent agenda)', 'wp-voting-plugin' ); ?>">
+								<select id="wpvp_gb_objection_by" name="objection_by" class="wpvp-select2-entity" style="width:100%;" data-placeholder="<?php esc_attr_e( 'Type to search or enter a name...', 'wp-voting-plugin' ); ?>"></select>
 								<span class="description"><?php esc_html_e( 'For consent agenda votes that were objected to', 'wp-voting-plugin' ); ?></span>
 							</p>
 						</div>

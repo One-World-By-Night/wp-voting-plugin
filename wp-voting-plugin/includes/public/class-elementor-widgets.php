@@ -55,10 +55,10 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 				'type'    => \Elementor\Controls_Manager::SELECT,
 				'default' => 'scheduled,open',
 				'options' => array(
-					'scheduled,open'             => __( 'Scheduled & Open Votes', 'wp-voting-plugin' ),
-					'open'                       => __( 'Open Votes Only', 'wp-voting-plugin' ),
-					'closed,completed,archived'  => __( 'Vote Results (closed / completed / archived)', 'wp-voting-plugin' ),
-					'all'                        => __( 'All Votes', 'wp-voting-plugin' ),
+					'scheduled,open'            => __( 'Scheduled & Open Votes', 'wp-voting-plugin' ),
+					'open'                      => __( 'Open Votes Only', 'wp-voting-plugin' ),
+					'closed,completed,archived' => __( 'Vote Results (closed / completed / withdrawn / archived)', 'wp-voting-plugin' ),
+					'all'                       => __( 'All Votes', 'wp-voting-plugin' ),
 				),
 			)
 		);

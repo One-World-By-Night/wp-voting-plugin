@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.10.4
+Stable tag: 3.10.6
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,14 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.10.6 =
+* New: Entity dropdowns (Select2 AJAX) for Proposed By, Seconded By, and Objected By fields — searches chronicles and coordinators via OWBN-Client; free-text entry still allowed
+* New: Global access defaults in Settings → Permissions — set default visibility and voting eligibility once; all new votes pre-fill from these defaults
+* New: Withdrawn vote stage (red badge) for votes pulled before completion; appears in vote history alongside closed/completed/archived
+* New: Admin notes on closed/completed/withdrawn votes with optional public display as a yellow callout on the results page
+* Fix: Editing a completed vote reverted its status to Draft — completed stage now stays selected in the dropdown for already-completed votes
+* Fix: Vote creation wizard rich text editor was using teeny mode; now uses the full toolbar
 
 = 3.10.4 =
 * Enhancement: Configurable default sort column and direction on public vote lists (shortcode attributes sort_col, sort_dir; Elementor widget controls)

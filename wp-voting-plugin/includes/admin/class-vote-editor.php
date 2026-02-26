@@ -173,6 +173,8 @@ class WPVP_Vote_Editor {
 			'seconded_by'          => sanitize_text_field( wp_unslash( $_POST['seconded_by'] ?? '' ) ),
 			'objection_by'         => sanitize_text_field( wp_unslash( $_POST['objection_by'] ?? '' ) ),
 			'majority_threshold'   => sanitize_key( wp_unslash( $_POST['majority_threshold'] ?? 'simple' ) ),
+			'admin_note'           => sanitize_textarea_field( wp_unslash( $_POST['admin_note'] ?? '' ) ),
+			'note_public'          => ! empty( $_POST['note_public'] ),
 		);
 	}
 
@@ -266,8 +268,10 @@ class WPVP_Vote_Editor {
 		} else {
 			$options      = array();
 			$settings     = array();
-			$roles        = array();
-			$voting_roles = array();
+			$decoded_def_roles    = json_decode( get_option( 'wpvp_default_visibility_roles', '[]' ), true );
+			$roles                = is_array( $decoded_def_roles ) ? $decoded_def_roles : array();
+			$decoded_def_v_roles  = json_decode( get_option( 'wpvp_default_voting_roles', '[]' ), true );
+			$voting_roles         = is_array( $decoded_def_v_roles ) ? $decoded_def_v_roles : array();
 			$additional_viewers = array();
 		}
 
@@ -340,21 +344,30 @@ class WPVP_Vote_Editor {
 									</p>
 									<p>
 										<label for="proposed_by"><?php esc_html_e( 'Proposed By:', 'wp-voting-plugin' ); ?></label>
-										<input type="text" name="proposed_by" id="proposed_by" class="regular-text"
-												value="<?php echo esc_attr( $is_edit && isset( $this->vote->proposed_by ) ? $this->vote->proposed_by : '' ); ?>"
-												placeholder="<?php esc_attr_e( 'Person who proposed this vote', 'wp-voting-plugin' ); ?>">
+										<select name="proposed_by" id="proposed_by" class="wpvp-select2-entity" style="width:100%;"
+											data-placeholder="<?php esc_attr_e( 'Type to search or enter a name...', 'wp-voting-plugin' ); ?>">
+											<?php if ( $is_edit && ! empty( $this->vote->proposed_by ) ) : ?>
+												<option value="<?php echo esc_attr( $this->vote->proposed_by ); ?>" selected><?php echo esc_html( $this->vote->proposed_by ); ?></option>
+											<?php endif; ?>
+										</select>
 									</p>
 									<p>
 										<label for="seconded_by"><?php esc_html_e( 'Seconded By:', 'wp-voting-plugin' ); ?></label>
-										<input type="text" name="seconded_by" id="seconded_by" class="regular-text"
-												value="<?php echo esc_attr( $is_edit && isset( $this->vote->seconded_by ) ? $this->vote->seconded_by : '' ); ?>"
-												placeholder="<?php esc_attr_e( 'Person who seconded this vote', 'wp-voting-plugin' ); ?>">
+										<select name="seconded_by" id="seconded_by" class="wpvp-select2-entity" style="width:100%;"
+											data-placeholder="<?php esc_attr_e( 'Type to search or enter a name...', 'wp-voting-plugin' ); ?>">
+											<?php if ( $is_edit && ! empty( $this->vote->seconded_by ) ) : ?>
+												<option value="<?php echo esc_attr( $this->vote->seconded_by ); ?>" selected><?php echo esc_html( $this->vote->seconded_by ); ?></option>
+											<?php endif; ?>
+										</select>
 									</p>
 									<p>
 										<label for="objection_by"><?php esc_html_e( 'Objection By:', 'wp-voting-plugin' ); ?></label>
-										<input type="text" name="objection_by" id="objection_by" class="regular-text"
-												value="<?php echo esc_attr( $is_edit && isset( $this->vote->objection_by ) ? $this->vote->objection_by : '' ); ?>"
-												placeholder="<?php esc_attr_e( 'Person who objected (consent agenda)', 'wp-voting-plugin' ); ?>">
+										<select name="objection_by" id="objection_by" class="wpvp-select2-entity" style="width:100%;"
+											data-placeholder="<?php esc_attr_e( 'Type to search or enter a name...', 'wp-voting-plugin' ); ?>">
+											<?php if ( $is_edit && ! empty( $this->vote->objection_by ) ) : ?>
+												<option value="<?php echo esc_attr( $this->vote->objection_by ); ?>" selected><?php echo esc_html( $this->vote->objection_by ); ?></option>
+											<?php endif; ?>
+										</select>
 										<span class="description"><?php esc_html_e( 'For consent agenda votes that were objected to', 'wp-voting-plugin' ); ?></span>
 									</p>
 								</div>
@@ -434,8 +447,14 @@ class WPVP_Vote_Editor {
 											<select name="voting_stage" id="voting_stage" style="width:100%;">
 												<?php foreach ( $stages as $key => $label ) : ?>
 													<?php
-													if ( in_array( $key, array( 'completed', 'scheduled' ), true ) ) {
-														continue;} // Completed is set by processing; Scheduled is set automatically for future-dated votes.
+													// 'scheduled' is set automatically for future-dated votes; never show in dropdown.
+													// 'completed' is set by processing, but show it when the vote is already completed.
+													if ( 'scheduled' === $key ) {
+														continue;
+													}
+													if ( 'completed' === $key && 'completed' !== $current_stage ) {
+														continue;
+													}
 													?>
 													<option value="<?php echo esc_attr( $key ); ?>"
 														<?php selected( $current_stage, $key ); ?>>
@@ -467,7 +486,7 @@ class WPVP_Vote_Editor {
 										<select name="visibility" id="visibility" style="width:100%;">
 											<?php foreach ( $vis_opts as $key => $label ) : ?>
 												<option value="<?php echo esc_attr( $key ); ?>"
-													<?php selected( $is_edit ? $this->vote->visibility : 'private', $key ); ?>>
+													<?php selected( $is_edit ? $this->vote->visibility : get_option( 'wpvp_default_visibility', 'private' ), $key ); ?>>
 													<?php echo esc_html( $label ); ?>
 												</option>
 											<?php endforeach; ?>
@@ -515,7 +534,7 @@ class WPVP_Vote_Editor {
 										<select name="voting_eligibility" id="voting_eligibility" style="width:100%;">
 											<?php foreach ( $voting_opts as $key => $label ) : ?>
 												<option value="<?php echo esc_attr( $key ); ?>"
-													<?php selected( $is_edit ? $this->vote->voting_eligibility : 'private', $key ); ?>>
+													<?php selected( $is_edit ? $this->vote->voting_eligibility : get_option( 'wpvp_default_voting_eligibility', 'private' ), $key ); ?>>
 													<?php echo esc_html( $label ); ?>
 												</option>
 											<?php endforeach; ?>
@@ -677,6 +696,25 @@ class WPVP_Vote_Editor {
 									</label>
 								</div>
 							</div>
+
+							<!-- Admin Note (only on closed/completed/withdrawn votes) -->
+							<?php if ( $is_edit && in_array( $this->vote->voting_stage, array( 'closed', 'completed', 'withdrawn' ), true ) ) : ?>
+							<div class="postbox">
+								<div class="postbox-header"><h2><?php esc_html_e( 'Admin Note', 'wp-voting-plugin' ); ?></h2></div>
+								<div class="inside">
+									<p>
+										<textarea name="admin_note" rows="5" class="widefat"
+											placeholder="<?php esc_attr_e( 'Optional note or rationale visible on the results page...', 'wp-voting-plugin' ); ?>"
+										><?php echo esc_textarea( $this->vote->admin_note ?? '' ); ?></textarea>
+									</p>
+									<label style="display:block;">
+										<input type="checkbox" name="note_public" value="1"
+											<?php checked( ! empty( $this->vote->note_public ) ); ?>>
+										<?php esc_html_e( 'Show this note publicly on the results page', 'wp-voting-plugin' ); ?>
+									</label>
+								</div>
+							</div>
+							<?php endif; ?>
 
 							<!-- Publish Actions -->
 							<div class="postbox">

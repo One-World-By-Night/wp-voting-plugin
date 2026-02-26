@@ -15,6 +15,7 @@ class WPVP_Settings {
 		add_action( 'wp_ajax_wpvp_guide_create_vote', array( $this, 'ajax_guide_create_vote' ) );
 		add_action( 'wp_ajax_wpvp_get_template_roles', array( $this, 'ajax_get_template_roles' ) );
 		add_action( 'wp_ajax_wpvp_get_all_templates', array( $this, 'ajax_get_all_templates' ) );
+		add_action( 'wp_ajax_wpvp_search_entities', array( $this, 'ajax_search_entities' ) );
 
 		// Whitelist option groups for multisite (must be in constructor, not in register_settings).
 		add_filter( 'allowed_options', array( $this, 'whitelist_options' ), 1 );
@@ -146,6 +147,10 @@ class WPVP_Settings {
 				),
 			)
 		);
+		register_setting( 'wpvp_permissions', 'wpvp_default_visibility', array( 'sanitize_callback' => 'sanitize_key', 'default' => 'private' ) );
+		register_setting( 'wpvp_permissions', 'wpvp_default_visibility_roles', array( 'sanitize_callback' => array( $this, 'sanitize_roles_option' ), 'default' => '[]' ) );
+		register_setting( 'wpvp_permissions', 'wpvp_default_voting_eligibility', array( 'sanitize_callback' => 'sanitize_key', 'default' => 'private' ) );
+		register_setting( 'wpvp_permissions', 'wpvp_default_voting_roles', array( 'sanitize_callback' => array( $this, 'sanitize_roles_option' ), 'default' => '[]' ) );
 
 		// Advanced tab.
 		register_setting(
@@ -192,6 +197,10 @@ class WPVP_Settings {
 			'wpvp_accessschema_client_key',
 			'wpvp_capability_map',
 			'wpvp_wp_capabilities',
+			'wpvp_default_visibility',
+			'wpvp_default_visibility_roles',
+			'wpvp_default_voting_eligibility',
+			'wpvp_default_voting_roles',
 		);
 		$allowed_options['wpvp_advanced']    = array(
 			'wpvp_remove_data_on_uninstall',
@@ -225,6 +234,10 @@ class WPVP_Settings {
 				update_option( 'wpvp_accessschema_client_key', isset( $_POST['wpvp_accessschema_client_key'] ) ? sanitize_text_field( wp_unslash( $_POST['wpvp_accessschema_client_key'] ) ) : '' );
 				update_option( 'wpvp_capability_map', isset( $_POST['wpvp_capability_map'] ) ? $this->sanitize_capability_map( wp_unslash( $_POST['wpvp_capability_map'] ) ) : array() );
 				update_option( 'wpvp_wp_capabilities', isset( $_POST['wpvp_wp_capabilities'] ) ? $this->sanitize_wp_capabilities( wp_unslash( $_POST['wpvp_wp_capabilities'] ) ) : array() );
+				update_option( 'wpvp_default_visibility', isset( $_POST['wpvp_default_visibility'] ) ? sanitize_key( $_POST['wpvp_default_visibility'] ) : 'private' );
+				update_option( 'wpvp_default_visibility_roles', $this->sanitize_roles_option( wp_unslash( $_POST['wpvp_default_visibility_roles'] ?? '' ) ) );
+				update_option( 'wpvp_default_voting_eligibility', isset( $_POST['wpvp_default_voting_eligibility'] ) ? sanitize_key( $_POST['wpvp_default_voting_eligibility'] ) : 'private' );
+				update_option( 'wpvp_default_voting_roles', $this->sanitize_roles_option( wp_unslash( $_POST['wpvp_default_voting_roles'] ?? '' ) ) );
 				break;
 
 			case 'advanced':
@@ -508,6 +521,57 @@ class WPVP_Settings {
 					</td>
 				</tr>
 			<?php endforeach; ?>
+		</table>
+
+		<h2><?php esc_html_e( 'Default Access Control for New Votes', 'wp-voting-plugin' ); ?></h2>
+		<p class="description">
+			<?php esc_html_e( 'These settings pre-populate the visibility and voting eligibility fields whenever a new vote is created.', 'wp-voting-plugin' ); ?>
+		</p>
+		<?php
+		$vis_opts    = WPVP_Database::get_visibility_options();
+		$voting_opts = WPVP_Database::get_voting_eligibility_options();
+		$def_vis     = get_option( 'wpvp_default_visibility', 'private' );
+		$def_vis_roles_raw = get_option( 'wpvp_default_visibility_roles', '[]' );
+		$def_vis_roles = implode( "\n", json_decode( $def_vis_roles_raw, true ) ?: array() );
+		$def_vote_elig  = get_option( 'wpvp_default_voting_eligibility', 'private' );
+		$def_vote_roles_raw = get_option( 'wpvp_default_voting_roles', '[]' );
+		$def_vote_roles = implode( "\n", json_decode( $def_vote_roles_raw, true ) ?: array() );
+		?>
+		<table class="form-table">
+			<tr>
+				<th scope="row"><label for="wpvp_default_visibility"><?php esc_html_e( 'Default Visibility', 'wp-voting-plugin' ); ?></label></th>
+				<td>
+					<select name="wpvp_default_visibility" id="wpvp_default_visibility">
+						<?php foreach ( $vis_opts as $key => $label ) : ?>
+							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $def_vis, $key ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="wpvp_default_visibility_roles"><?php esc_html_e( 'Default Visibility Roles', 'wp-voting-plugin' ); ?></label></th>
+				<td>
+					<textarea name="wpvp_default_visibility_roles" id="wpvp_default_visibility_roles" rows="5" class="large-text"><?php echo esc_textarea( $def_vis_roles ); ?></textarea>
+					<p class="description"><?php esc_html_e( 'One role path per line. Used when Default Visibility is set to Restricted.', 'wp-voting-plugin' ); ?></p>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="wpvp_default_voting_eligibility"><?php esc_html_e( 'Default Voting Eligibility', 'wp-voting-plugin' ); ?></label></th>
+				<td>
+					<select name="wpvp_default_voting_eligibility" id="wpvp_default_voting_eligibility">
+						<?php foreach ( $voting_opts as $key => $label ) : ?>
+							<option value="<?php echo esc_attr( $key ); ?>" <?php selected( $def_vote_elig, $key ); ?>><?php echo esc_html( $label ); ?></option>
+						<?php endforeach; ?>
+					</select>
+				</td>
+			</tr>
+			<tr>
+				<th scope="row"><label for="wpvp_default_voting_roles"><?php esc_html_e( 'Default Voting Roles', 'wp-voting-plugin' ); ?></label></th>
+				<td>
+					<textarea name="wpvp_default_voting_roles" id="wpvp_default_voting_roles" rows="5" class="large-text"><?php echo esc_textarea( $def_vote_roles ); ?></textarea>
+					<p class="description"><?php esc_html_e( 'One role path per line. Used when Default Voting Eligibility is set to Restricted.', 'wp-voting-plugin' ); ?></p>
+				</td>
+			</tr>
 		</table>
 		<?php
 	}
@@ -848,6 +912,19 @@ class WPVP_Settings {
 		return $clean;
 	}
 
+	/**
+	 * Sanitize a newline/comma-separated roles textarea into a JSON array string.
+	 */
+	public function sanitize_roles_option( $input ): string {
+		if ( is_array( $input ) ) {
+			$roles = array_values( array_filter( array_map( 'sanitize_text_field', $input ) ) );
+		} else {
+			$lines = preg_split( '/[\r\n,]+/', (string) $input );
+			$roles = array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'trim', $lines ) ) ) );
+		}
+		return wp_json_encode( $roles );
+	}
+
 	public function sanitize_wp_capabilities( $input ): array {
 		if ( ! is_array( $input ) ) {
 			return array();
@@ -915,5 +992,43 @@ class WPVP_Settings {
 		}
 
 		wp_send_json_success( $result );
+	}
+
+	/**
+	 * AJAX: Search chronicles and coordinators via owbn-client entity resolution.
+	 * Returns Select2-compatible { results: [{id, text}] } format.
+	 */
+	public function ajax_search_entities(): void {
+		check_ajax_referer( 'wpvp_admin', 'nonce' );
+
+		if ( ! current_user_can( 'manage_options' ) && ! current_user_can( 'wpvp_create_votes' ) ) {
+			wp_send_json( array( 'results' => array() ) );
+		}
+
+		$term = isset( $_GET['term'] ) ? sanitize_text_field( wp_unslash( $_GET['term'] ) ) : '';
+		if ( strlen( $term ) < 2 ) {
+			wp_send_json( array( 'results' => array() ) );
+			return;
+		}
+
+		$results = array();
+
+		if ( function_exists( 'owc_entity_search' ) ) {
+			foreach ( array( 'chronicle', 'coordinator' ) as $type ) {
+				$items = owc_entity_search( $type, $term, 10 );
+				foreach ( $items as $item ) {
+					$results[] = array(
+						'id'   => $item['title'],
+						'text' => $item['title'] . ' (' . ucfirst( $type ) . ')',
+					);
+				}
+			}
+			usort( $results, function ( $a, $b ) {
+				return strcmp( $a['text'], $b['text'] );
+			} );
+			$results = array_slice( $results, 0, 15 );
+		}
+
+		wp_send_json( array( 'results' => $results ) );
 	}
 }

@@ -367,6 +367,24 @@ class WPVP_Database {
 		}
 	}
 
+	/**
+	 * Upgrade to version 3.10.5: Add admin_note and note_public columns to votes.
+	 */
+	public static function upgrade_to_3105(): void {
+		global $wpdb;
+
+		$table   = self::votes_table();
+		$columns = $wpdb->get_col( "DESC {$table}", 0 ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+		if ( ! in_array( 'admin_note', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN admin_note text DEFAULT NULL AFTER settings" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+
+		if ( ! in_array( 'note_public', $columns, true ) ) {
+			$wpdb->query( "ALTER TABLE {$table} ADD COLUMN note_public tinyint(1) NOT NULL DEFAULT 0 AFTER admin_note" ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		}
+	}
+
 	/*
 	------------------------------------------------------------------
 	 *  Votes — CRUD.
@@ -510,6 +528,16 @@ class WPVP_Database {
 		if ( isset( $data['settings'] ) ) {
 			$row['settings'] = wp_json_encode( $data['settings'] );
 			$formats[]       = '%s';
+		}
+
+		if ( isset( $data['admin_note'] ) ) {
+			$row['admin_note'] = sanitize_textarea_field( $data['admin_note'] );
+			$formats[]         = '%s';
+		}
+
+		if ( isset( $data['note_public'] ) ) {
+			$row['note_public'] = (int) (bool) $data['note_public'];
+			$formats[]          = '%d';
 		}
 
 		if ( empty( $row ) ) {
@@ -1192,6 +1220,7 @@ class WPVP_Database {
 			'open'      => __( 'Open', 'wp-voting-plugin' ),
 			'closed'    => __( 'Closed', 'wp-voting-plugin' ),
 			'completed' => __( 'Completed', 'wp-voting-plugin' ),
+			'withdrawn' => __( 'Withdrawn', 'wp-voting-plugin' ),
 			'archived'  => __( 'Archived', 'wp-voting-plugin' ),
 		);
 	}

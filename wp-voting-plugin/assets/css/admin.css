@@ -41,6 +41,11 @@
     color: #31708f;
 }
 
+.wpvp-badge--withdrawn {
+    background: #f8d7da;
+    color: #842029;
+}
+
 .wpvp-badge--archived {
     background: #e8e8e8;
     color: #666;

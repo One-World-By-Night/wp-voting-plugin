@@ -306,8 +306,42 @@
         });
     }
 
+    function initEntitySelect2() {
+        $('.wpvp-select2-entity').each(function () {
+            var $el = $(this);
+            $el.select2({
+                tags: true,
+                allowClear: true,
+                width: '100%',
+                minimumInputLength: 2,
+                placeholder: $el.data('placeholder') || 'Type to search or enter a name...',
+                ajax: {
+                    url: wpvp.ajax_url,
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            action: 'wpvp_search_entities',
+                            nonce: wpvp.nonce,
+                            term: params.term
+                        };
+                    },
+                    processResults: function (data) {
+                        return data && data.results ? data : { results: [] };
+                    }
+                },
+                createTag: function (params) {
+                    var term = $.trim(params.term);
+                    if (!term) { return null; }
+                    return { id: term, text: term };
+                }
+            });
+        });
+    }
+
     if ($.fn.select2) {
         initSelect2();
+        initEntitySelect2();
     }
 
     /* ------------------------------------------------------------------
