@@ -855,7 +855,7 @@ class WPVP_Notifications {
 			}
 
 			if ( ! empty( $winner['tie'] ) ) {
-				$winner_html = '<div style="background:#fff8e5;border:1px solid #dba617;color:#654b00;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>TIE:</strong> ' . esc_html( implode( ', ', $winner['tied_candidates'] ?? array() ) ) . '</div>';
+				$winner_html .= '<div style="background:#fff8e5;border:1px solid #dba617;color:#654b00;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>TIE:</strong> ' . esc_html( implode( ', ', $winner['tied_candidates'] ?? array() ) ) . '</div>';
 			}
 		}
 
