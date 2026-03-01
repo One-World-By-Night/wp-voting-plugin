@@ -1,6 +1,24 @@
 # WP Voting Plugin - Version History
 
-## Version 3.10.6 (Current - February 2026)
+## Version 3.10.7 (Current - March 2026)
+
+**Fix vote-closed email: winner data, multi-winner display, tie handling.**
+
+### Bug Fixes
+
+- Fixed: Vote-closed notification email was missing winner data due to a race condition — `auto_close_votes()` sent the email before `WPVP_Processor::process()` ran, so `get_results()` returned null. Processing now runs before notification dispatch.
+- Fixed: Multi-winner elections (Sequential RCV, STV) only showed the first winner in the email. The `winner` (singular) key was checked before `winners` (plural); reordered to check multi-winner array first.
+- Fixed: Tie banner overwrote winners banner in partial-win + tie scenarios (used `=` instead of `.=`).
+- Fixed: Partial-win + tie scenarios now show a single combined result line (e.g., "RESULTS: Cherry, Passion Fruit, (Strawberry, Apple tied)") instead of separate green/yellow banners.
+- Fixed: Pure tie results display correctly as "TIE: X, Y, Z".
+
+### Technical Details
+
+Files modified: `class-notifications.php` (`auto_close_votes()` reordered to process before notify; `build_closed_vote_html()` winner display logic rewritten for combined result lines covering single winner, multi-winner, tie, and partial-win+tie scenarios).
+
+---
+
+## Version 3.10.6 (February 2026)
 
 **Entity dropdowns for proposed/seconded/objected fields; global eligibility defaults; withdrawn status; admin notes.**
 

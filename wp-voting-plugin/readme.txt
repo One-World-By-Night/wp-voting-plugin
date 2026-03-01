@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.10.6
+Stable tag: 3.10.7
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,12 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.10.7 =
+* Fix: Vote-closed email now includes winner data — processing runs before notification dispatch (was a race condition)
+* Fix: Multi-winner elections (Sequential RCV, STV) display all winners in the email, not just the first
+* Fix: Partial-win + tie scenarios show a combined result line (e.g., "Winners: A, B, (C, D tied)") instead of separate banners
+* Fix: Pure tie results display correctly as "TIE: X, Y, Z"
 
 = 3.10.6 =
 * New: Entity dropdowns (Select2 AJAX) for Proposed By, Seconded By, and Objected By fields — searches chronicles and coordinators via OWBN-Client; free-text entry still allowed

@@ -1,17 +1,18 @@
-> **Current Version**: 3.10.4 (Production Release - February 2026)
+> **Current Version**: 3.10.7 (Production Release - March 2026)
 > **Multisite Support**: Enabled with per-site data isolation
 > **Previous Version**: 1.x (Archived as `wp-voting-plugin-v1-legacy-20260209.tar.gz`)
 > **Version History**: See [VERSION_HISTORY.md](VERSION_HISTORY.md) for complete changelog and migration guide.
 >
-> ### Recent Changes (3.10.4)
-> - Configurable default sort column and direction on public vote lists (shortcode + Elementor widget)
-> - Per-page selector (10 / 20 / 50) with default of 10; pagination across full dataset
-> - Default sort: Start Date ascending so upcoming votes appear first
+> ### Recent Changes (3.10.7)
+> - Fix: Vote-closed email now includes winner data (race condition fixed — processing before notification)
+> - Fix: Multi-winner elections display all winners in email
+> - Fix: Partial-win + tie scenarios show combined result line
+> - Fix: Pure tie results display correctly
 >
-> ### Recent Changes (3.10.3)
-> - New "Scheduled" vote stage: votes with future opening dates are visible on the dashboard before they open
-> - Fix: votes with future opening dates no longer dropped to Draft (invisible)
-> - Auto-open cron promotes Scheduled → Open at the correct ET-aware time, firing notifications
+> ### Recent Changes (3.10.6)
+> - Entity dropdowns (Select2 AJAX) for Proposed By, Seconded By, Objected By
+> - Global access defaults in Settings → Permissions
+> - Withdrawn vote stage; admin notes on closed votes
 
 <h1>Requirements Specification Document for<br />
 WordPress Voting Plugin</h1>

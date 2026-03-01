@@ -848,24 +848,25 @@ class WPVP_Notifications {
 				} else {
 					$winner_html = '<div style="background:#fce4e4;border:1px solid #d63638;color:#8a1f1f;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>RESULT:</strong> Objected</div>';
 				}
+			} elseif ( ! empty( $winner['tie'] ) && ! empty( $winner['tied_candidates'] ) ) {
+				// Build a combined result line: winners + (tied candidates).
+				$parts      = array();
+				$has_winners = ! empty( $winner['winners'] );
+				if ( $has_winners ) {
+					foreach ( $winner['winners'] as $w ) {
+						$parts[] = esc_html( $w );
+					}
+				}
+				$parts[] = '(' . esc_html( implode( ', ', $winner['tied_candidates'] ) ) . ' tied)';
+				$label   = $has_winners ? 'RESULTS' : 'TIE';
+				$bg      = $has_winners ? '#fff8e5' : '#fff8e5';
+				$border  = $has_winners ? '#dba617' : '#dba617';
+				$color   = $has_winners ? '#654b00' : '#654b00';
+				$winner_html = '<div style="background:' . $bg . ';border:1px solid ' . $border . ';color:' . $color . ';padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>' . $label . ':</strong> ' . implode( ', ', $parts ) . '</div>';
 			} elseif ( ! empty( $winner['winners'] ) && count( $winner['winners'] ) > 1 ) {
 				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNERS:</strong> ' . esc_html( implode( ', ', $winner['winners'] ) ) . '</div>';
 			} elseif ( ! empty( $winner['winner'] ) ) {
 				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNER:</strong> ' . esc_html( $winner['winner'] ) . '</div>';
-			}
-
-			if ( ! empty( $winner['tie'] ) ) {
-				$tie_label = 'TIE';
-				$num_seats = max( 1, intval( $vote->number_of_winners ) );
-				$num_winners = ! empty( $winner['winners'] ) ? count( $winner['winners'] ) : 0;
-				if ( $num_winners > 0 && $num_seats > $num_winners ) {
-					$remaining = $num_seats - $num_winners;
-					$tie_label = sprintf( 'TIE FOR %s %d', $remaining === 1 ? 'SEAT' : 'SEATS', $num_winners + 1 );
-					if ( $remaining > 1 ) {
-						$tie_label = sprintf( 'TIE FOR SEATS %d–%d', $num_winners + 1, $num_seats );
-					}
-				}
-				$winner_html .= '<div style="background:#fff8e5;border:1px solid #dba617;color:#654b00;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>' . esc_html( $tie_label ) . ':</strong> ' . esc_html( implode( ', ', $winner['tied_candidates'] ?? array() ) ) . '</div>';
 			}
 		}
 
