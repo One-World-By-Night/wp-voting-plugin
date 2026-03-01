@@ -848,10 +848,10 @@ class WPVP_Notifications {
 				} else {
 					$winner_html = '<div style="background:#fce4e4;border:1px solid #d63638;color:#8a1f1f;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>RESULT:</strong> Objected</div>';
 				}
+			} elseif ( ! empty( $winner['winners'] ) && count( $winner['winners'] ) > 1 ) {
+				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNERS:</strong> ' . esc_html( implode( ', ', $winner['winners'] ) ) . '</div>';
 			} elseif ( ! empty( $winner['winner'] ) ) {
 				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNER:</strong> ' . esc_html( $winner['winner'] ) . '</div>';
-			} elseif ( ! empty( $winner['winners'] ) ) {
-				$winner_html = '<div style="background:#ecf7ed;border:1px solid #46b450;color:#1e4620;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>WINNERS:</strong> ' . esc_html( implode( ', ', $winner['winners'] ) ) . '</div>';
 			}
 
 			if ( ! empty( $winner['tie'] ) ) {
