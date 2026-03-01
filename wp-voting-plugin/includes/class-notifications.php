@@ -117,10 +117,13 @@ class WPVP_Notifications {
 		foreach ( $vote_ids as $vote_id ) {
 			WPVP_Database::update_vote( (int) $vote_id, array( 'voting_stage' => 'closed' ) );
 
-			do_action( 'wpvp_vote_stage_changed', (int) $vote_id, 'closed', 'open' );
-
-			// Auto-process results on close.
+			// Process results BEFORE sending notification so winner data is available.
 			WPVP_Processor::process( (int) $vote_id );
+
+			// After processing, stage is 'completed' and results exist — notify now.
+			$final_vote  = WPVP_Database::get_vote( (int) $vote_id );
+			$final_stage = $final_vote ? $final_vote->voting_stage : 'completed';
+			do_action( 'wpvp_vote_stage_changed', (int) $vote_id, $final_stage, 'open' );
 		}
 	}
 
