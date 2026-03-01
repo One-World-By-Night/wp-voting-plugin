@@ -1,9 +1,6 @@
 # Composer dependencies (regenerated via composer install)
 vendor/
 
-# Build artifacts
-*.zip
-
 # MacOS
 .DS_Store
 .ds_store
