@@ -855,7 +855,17 @@ class WPVP_Notifications {
 			}
 
 			if ( ! empty( $winner['tie'] ) ) {
-				$winner_html .= '<div style="background:#fff8e5;border:1px solid #dba617;color:#654b00;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>TIE:</strong> ' . esc_html( implode( ', ', $winner['tied_candidates'] ?? array() ) ) . '</div>';
+				$tie_label = 'TIE';
+				$num_seats = max( 1, intval( $vote->number_of_winners ) );
+				$num_winners = ! empty( $winner['winners'] ) ? count( $winner['winners'] ) : 0;
+				if ( $num_winners > 0 && $num_seats > $num_winners ) {
+					$remaining = $num_seats - $num_winners;
+					$tie_label = sprintf( 'TIE FOR %s %d', $remaining === 1 ? 'SEAT' : 'SEATS', $num_winners + 1 );
+					if ( $remaining > 1 ) {
+						$tie_label = sprintf( 'TIE FOR SEATS %d–%d', $num_winners + 1, $num_seats );
+					}
+				}
+				$winner_html .= '<div style="background:#fff8e5;border:1px solid #dba617;color:#654b00;padding:12px 16px;border-radius:6px;margin:16px 0;font-size:16px;"><strong>' . esc_html( $tie_label ) . ':</strong> ' . esc_html( implode( ', ', $winner['tied_candidates'] ?? array() ) ) . '</div>';
 			}
 		}
 
