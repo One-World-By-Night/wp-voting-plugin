@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.10.7
+Stable tag: 3.10.8
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,10 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.10.8 =
+* New: Consent agenda auto-pass — close date auto-syncs to open date; vote passes by silence when cron fires
+* New: Objection converts consent to FPTP with 7-day voting window, renames [AUTOPASS] to [OBJECTION] in title
 
 = 3.10.7 =
 * Fix: Vote-closed email now includes winner data — processing runs before notification dispatch (was a race condition)

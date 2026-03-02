@@ -1,6 +1,17 @@
 # WP Voting Plugin - Version History
 
-## Version 3.10.7 (Current - March 2026)
+## Version 3.10.8 (Current - March 2026)
+
+**Consent agenda auto-pass and objection title swap.**
+
+- Added: Consent agenda close date auto-syncs to open date in the vote editor JS — vote passes by silence when cron fires
+- Added: On objection, title prefix [AUTOPASS] replaced with [OBJECTION] and closing date extended 7 days for FPTP vote
+
+Files modified: `assets/js/admin.js` (consent branch in `updateClosingDate()`), `includes/public/class-ballot.php` (title swap + closing_date extension in consent conversion block).
+
+---
+
+## Version 3.10.7 (March 2026)
 
 **Fix vote-closed email: winner data, multi-winner display, tie handling.**
 

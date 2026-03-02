@@ -225,7 +225,23 @@ class WPVP_Ballot {
 				) );
 			}
 
-			// Conversion succeeded — delete existing ballots for a fresh start.
+			// Swap [AUTOPASS] prefix for [OBJECTION] and extend closing date
+			// so the converted FPTP vote has a 7-day voting window.
+			$update_data = array(
+				'closing_date' => gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) ),
+			);
+			if ( false !== stripos( $vote->proposal_name, '[AUTOPASS]' ) ) {
+				$update_data['proposal_name'] = str_ireplace( '[AUTOPASS]', '[OBJECTION]', $vote->proposal_name );
+			}
+			$wpdb->update(
+				$votes_table,
+				$update_data,
+				array( 'id' => $vote_id ),
+				array_fill( 0, count( $update_data ), '%s' ),
+				array( '%d' )
+			);
+
+			// Delete existing ballots for a fresh start.
 			$wpdb->delete( WPVP_Database::ballots_table(), array( 'vote_id' => $vote_id ), array( '%d' ) );
 
 			wp_send_json_success(
