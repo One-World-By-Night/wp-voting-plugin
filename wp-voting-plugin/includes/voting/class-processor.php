@@ -22,20 +22,10 @@ class WPVP_Processor {
 		self::$algorithms[ $algo->get_type() ] = $algo;
 	}
 
-	/**
-	 * Get an algorithm by type key.
-	 *
-	 * @return WPVP_Voting_Algorithm|null
-	 */
 	public static function get_algorithm( string $type ): ?WPVP_Voting_Algorithm {
 		return self::$algorithms[ $type ] ?? null;
 	}
 
-	/**
-	 * Get all registered algorithms.
-	 *
-	 * @return array<string, WPVP_Voting_Algorithm>
-	 */
 	public static function get_algorithms(): array {
 		return self::$algorithms;
 	}
@@ -78,30 +68,24 @@ class WPVP_Processor {
 			);
 		}
 
-		// Load ballots.
 		$ballots = WPVP_Database::get_ballots( $vote_id );
 
-		// Build the flat list of valid option strings.
 		$raw_options = json_decode( $vote->voting_options, true );
 		if ( ! is_array( $raw_options ) ) {
 			return new WP_Error( 'bad_options', __( 'Could not decode voting options.', 'wp-voting-plugin' ) );
 		}
 		$options = array_column( $raw_options, 'text' );
 
-		// Algorithm config.
 		$config = array(
 			'num_seats' => max( 1, intval( $vote->number_of_winners ) ),
 		);
 
-		// Run the algorithm.
 		$start     = microtime( true );
 		$results   = $algo->process( $ballots, $options, $config );
 		$calc_time = microtime( true ) - $start;
 
-		// Validate.
 		$results['validation'] = WPVP_Validator::validate( $vote->voting_type, $results, $options );
 
-		// Persist.
 		$saved = WPVP_Database::save_results( $vote_id, $results, $calc_time );
 		if ( ! $saved ) {
 			return new WP_Error( 'save_failed', __( 'Failed to save results.', 'wp-voting-plugin' ) );

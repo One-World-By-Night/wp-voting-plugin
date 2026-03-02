@@ -6,7 +6,6 @@
  *   $votes  array  List of vote objects from WPVP_Database::get_votes().
  *   $atts   array  Shortcode attributes.
  *
- * @package WP_Voting_Plugin
  */
 
 defined( 'ABSPATH' ) || exit;

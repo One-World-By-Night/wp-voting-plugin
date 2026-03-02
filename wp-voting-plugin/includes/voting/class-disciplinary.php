@@ -169,7 +169,6 @@ class WPVP_Disciplinary implements WPVP_Voting_Algorithm {
 			}
 		}
 
-		// Re-add Abstain to vote_counts for display (after winner determination).
 		if ( $abstain_count > 0 ) {
 			$raw_counts[ WPVP_ABSTAIN_LABEL ] = $abstain_count;
 		}

@@ -30,10 +30,6 @@ class WPVP_Notifications {
 		add_action( 'wpvp_closing_reminder', array( $this, 'send_closing_reminder' ) );
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Cron scheduling.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Ensure the daily cron event is scheduled.
@@ -53,10 +49,6 @@ class WPVP_Notifications {
 		$this->catch_up_open_notifications();
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Auto-open: scheduled → open when opening_date has passed.
-	 * ----------------------------------------------------------------*/
 
 	private function auto_open_votes(): void {
 		global $wpdb;
@@ -92,10 +84,6 @@ class WPVP_Notifications {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Auto-close: open → closed when closing_date has passed.
-	 * ----------------------------------------------------------------*/
 
 	private function auto_close_votes(): void {
 		global $wpdb;
@@ -127,10 +115,6 @@ class WPVP_Notifications {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Catch-up: send open notifications that were missed due to cron latency.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Find 'open' votes whose opening_date has passed but no open notification was sent.
@@ -175,10 +159,6 @@ class WPVP_Notifications {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Email notifications on stage change.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Send notifications when a vote changes stage.
@@ -220,11 +200,6 @@ class WPVP_Notifications {
 		}
 	}
 
-	/**
-	 * Get the per-vote settings for this vote.
-	 *
-	 * @return array Decoded settings array.
-	 */
 	private function get_vote_settings( object $vote ): array {
 		$settings = json_decode( $vote->settings, true );
 		return $settings ? $settings : array();
@@ -393,10 +368,6 @@ class WPVP_Notifications {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Helpers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Get email addresses of users eligible to vote on a proposal.
@@ -447,11 +418,6 @@ class WPVP_Notifications {
 		return array_unique( array_filter( $emails ) );
 	}
 
-	/**
-	 * Get email addresses of users who voted on a proposal.
-	 *
-	 * @return string[]
-	 */
 	private function get_voters( int $vote_id ): array {
 		global $wpdb;
 
@@ -468,11 +434,6 @@ class WPVP_Notifications {
 		return array_filter( $emails ? $emails : array() );
 	}
 
-	/**
-	 * Get admin email addresses.
-	 *
-	 * @return string[]
-	 */
 	private function get_admin_emails(): array {
 		$admins = get_users(
 			array(
@@ -526,10 +487,6 @@ class WPVP_Notifications {
 		return $email;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Voter confirmation emails (sent when user casts ballot).
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Send confirmation email to voter after they cast their ballot.
@@ -688,10 +645,6 @@ class WPVP_Notifications {
 		return rtrim( $output );
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  9am closing reminder.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Schedule a reminder email for 9am on the day the vote closes.

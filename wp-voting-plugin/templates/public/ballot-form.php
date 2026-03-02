@@ -15,7 +15,6 @@
  *   $user_id         int     Current user ID.
  *   $previous_ballot mixed   User's previous ballot data (string for singleton, array for ranked, null if not voted).
  *
- * @package WP_Voting_Plugin
  */
 
 defined( 'ABSPATH' ) || exit;

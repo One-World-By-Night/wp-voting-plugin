@@ -29,12 +29,10 @@ class WPVP_Vote_Editor {
 
 		$this->vote_id = isset( $_GET['id'] ) ? absint( $_GET['id'] ) : 0;
 
-		// Process form submission first.
 		if ( isset( $_POST['wpvp_save_vote'] ) ) {
 			$this->process_form();
 		}
 
-		// Load vote data (or reload after save).
 		if ( $this->vote_id ) {
 			$this->vote = WPVP_Database::get_vote( $this->vote_id );
 			if ( ! $this->vote ) {
@@ -45,10 +43,6 @@ class WPVP_Vote_Editor {
 		$this->render_page();
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Form processing.
-	 * ----------------------------------------------------------------*/
 
 	private function process_form(): void {
 		// Nonce check.
@@ -66,7 +60,6 @@ class WPVP_Vote_Editor {
 		// Collect and sanitise data.
 		$data = $this->sanitize_form_data();
 
-		// Validate.
 		$validation = $this->validate( $data );
 		if ( ! $validation['valid'] ) {
 			$this->errors = $validation['errors'];
@@ -231,10 +224,6 @@ class WPVP_Vote_Editor {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Page renderer.
-	 * ----------------------------------------------------------------*/
 
 	private function render_page(): void {
 		$is_edit    = (bool) $this->vote;

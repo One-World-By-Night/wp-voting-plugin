@@ -23,13 +23,11 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 	}
 
 	public function process( array $ballots, array $options, array $config = array() ): array {
-		// Initialise counts.
 		$vote_counts   = array_fill_keys( $options, 0 );
 		$invalid_votes = 0;
 		$abstain_count = 0;
 		$event_log     = array();
 
-		// Count votes.
 		foreach ( $ballots as $ballot ) {
 			$ballot_payload = $ballot['ballot_data'];
 
@@ -66,10 +64,8 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 		$total_votes       = count( $ballots );
 		$total_valid_votes = $total_votes - $invalid_votes - $abstain_count;
 
-		// Sort by votes descending.
 		arsort( $vote_counts );
 
-		// Determine winner (Abstain excluded).
 		$max_votes      = ! empty( $vote_counts ) ? max( $vote_counts ) : 0;
 		$top_candidates = array_keys( $vote_counts, $max_votes, true );
 
@@ -86,7 +82,6 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
 		}
 
-		// Percentages (Abstain excluded from denominator).
 		$percentages = array();
 		if ( $total_valid_votes > 0 ) {
 			foreach ( $vote_counts as $option => $count ) {
@@ -94,12 +89,10 @@ class WPVP_Singleton implements WPVP_Voting_Algorithm {
 			}
 		}
 
-		// Re-add Abstain to vote_counts for display (after winner determination).
 		if ( $abstain_count > 0 ) {
 			$vote_counts[ WPVP_ABSTAIN_LABEL ] = $abstain_count;
 		}
 
-		// Rankings (competition / "1224" style) — excludes Abstain.
 		$ranking_counts = $vote_counts;
 		unset( $ranking_counts[ WPVP_ABSTAIN_LABEL ] );
 		$rankings = self::build_rankings( $ranking_counts );

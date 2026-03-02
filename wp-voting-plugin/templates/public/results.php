@@ -8,7 +8,6 @@
  *   $vote_id  int     Vote ID.
  *   $user_id  int     Current user ID.
  *
- * @package WP_Voting_Plugin
  */
 
 defined( 'ABSPATH' ) || exit;

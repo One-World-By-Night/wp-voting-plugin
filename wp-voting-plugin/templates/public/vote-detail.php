@@ -9,7 +9,6 @@
  *   $vote_id  int     Vote ID.
  *   $user_id  int     Current user ID (0 if not logged in).
  *
- * @package WP_Voting_Plugin
  */
 
 defined( 'ABSPATH' ) || exit;

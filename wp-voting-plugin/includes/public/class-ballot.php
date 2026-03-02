@@ -29,16 +29,13 @@ class WPVP_Ballot {
 	 * AJAX: process a ballot submission from an authenticated user.
 	 */
 	public function ajax_cast_ballot(): void {
-		// 1. Nonce check.
 		check_ajax_referer( 'wpvp_public', 'nonce' );
 
-		// 2. User must be logged in.
 		$user_id = get_current_user_id();
 		if ( ! $user_id ) {
 			wp_send_json_error( array( 'message' => __( 'You must be logged in to vote.', 'wp-voting-plugin' ) ) );
 		}
 
-		// 3. Get and validate vote_id.
 		$vote_id = isset( $_POST['vote_id'] ) ? absint( $_POST['vote_id'] ) : 0;
 		if ( ! $vote_id ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid vote.', 'wp-voting-plugin' ) ) );
@@ -49,12 +46,10 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'Vote not found.', 'wp-voting-plugin' ) ) );
 		}
 
-		// 4. Vote must be open.
 		if ( 'open' !== $vote->voting_stage ) {
 			wp_send_json_error( array( 'message' => __( 'This vote is not currently open.', 'wp-voting-plugin' ) ) );
 		}
 
-		// 5. Date window check (consent votes bypass — objections allowed any time while open).
 		if ( 'consent' !== $vote->voting_type ) {
 			$now = current_time( 'mysql' );
 			if ( $vote->opening_date && $now < $vote->opening_date ) {
@@ -65,7 +60,6 @@ class WPVP_Ballot {
 			}
 		}
 
-		// 6. Permission check.
 		if ( ! WPVP_Permissions::can_cast_vote( $user_id, $vote_id ) ) {
 			// Distinguish between "already voted" and "no access".
 			if ( WPVP_Database::user_has_voted( $user_id, $vote_id ) ) {
@@ -115,7 +109,6 @@ class WPVP_Ballot {
 		$display_name = $user ? $user->display_name : '';
 		$username     = $user ? $user->user_login : '';
 
-		// 7. Parse ballot data from POST.
 		$raw_ballot = isset( $_POST['ballot_data'] ) ? wp_unslash( $_POST['ballot_data'] ) : '';
 		if ( ! is_string( $raw_ballot ) || '' === $raw_ballot ) {
 			wp_send_json_error( array( 'message' => __( 'Invalid ballot data.', 'wp-voting-plugin' ) ) );
@@ -125,7 +118,6 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'Invalid ballot format.', 'wp-voting-plugin' ) ) );
 		}
 
-		// 8. Validate ballot data against voting type.
 		$decoded_options = json_decode( $vote->voting_options, true );
 		if ( ! is_array( $decoded_options ) || empty( $decoded_options ) ) {
 			wp_send_json_error( array( 'message' => __( 'This vote has no valid options configured. Please contact an administrator.', 'wp-voting-plugin' ) ) );
@@ -151,7 +143,6 @@ class WPVP_Ballot {
 			'voter_comment' => $voter_comment,
 		);
 
-		// 9. Save or update.
 		$already_voted = WPVP_Database::user_has_voted( $user_id, $vote_id );
 
 		if ( $already_voted ) {
@@ -286,10 +277,6 @@ class WPVP_Ballot {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Ballot validation per voting type.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Validate ballot data against the voting type and available options.
@@ -440,10 +427,6 @@ class WPVP_Ballot {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Render helper (called from templates).
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Render the ballot form for a vote.

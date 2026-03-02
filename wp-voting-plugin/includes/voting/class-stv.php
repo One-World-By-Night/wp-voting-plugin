@@ -251,9 +251,6 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 		return $counts;
 	}
 
-	/**
-	 * Get the first choice from a ranking that is still active.
-	 */
 	private static function first_active_choice( array $ranking, array $active ): ?string {
 		foreach ( $ranking as $opt ) {
 			if ( in_array( $opt, $active, true ) ) {

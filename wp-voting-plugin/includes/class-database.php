@@ -10,10 +10,6 @@ defined( 'ABSPATH' ) || exit;
 
 class WPVP_Database {
 
-	/*
-	------------------------------------------------------------------
-	 *  Table names (prefixed).
-	 * ----------------------------------------------------------------*/
 
 	public static function votes_table(): string {
 		global $wpdb;
@@ -40,10 +36,6 @@ class WPVP_Database {
 		return $wpdb->prefix . 'wpvp_classifications';
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Schema — create / upgrade via dbDelta.
-	 * ----------------------------------------------------------------*/
 
 	public static function create_tables(): void {
 		global $wpdb;
@@ -385,10 +377,6 @@ class WPVP_Database {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Votes — CRUD.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Insert a new vote. Returns the new vote ID or false on failure.
@@ -562,11 +550,6 @@ class WPVP_Database {
 		return false !== $result;
 	}
 
-	/**
-	 * Get a single vote by ID.
-	 *
-	 * @return object|null
-	 */
 	public static function get_vote( int $vote_id ) {
 		global $wpdb;
 
@@ -709,10 +692,6 @@ class WPVP_Database {
 		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Role Templates — CRUD.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Save a new role template. Returns the new template ID or false on failure.
@@ -771,9 +750,6 @@ class WPVP_Database {
 		return false !== $result;
 	}
 
-	/**
-	 * Get a single role template by ID.
-	 */
 	public static function get_role_template( int $template_id ) {
 		global $wpdb;
 		return $wpdb->get_row(
@@ -784,9 +760,6 @@ class WPVP_Database {
 		);
 	}
 
-	/**
-	 * Get all role templates ordered by name.
-	 */
 	public static function get_role_templates(): array {
 		global $wpdb;
 		$results = $wpdb->get_results(
@@ -795,10 +768,6 @@ class WPVP_Database {
 		return $results ? $results : array();
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Classifications — CRUD operations.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Save a new classification. Returns the new classification ID or false on failure.
@@ -851,9 +820,6 @@ class WPVP_Database {
 		return false !== $result;
 	}
 
-	/**
-	 * Get a single classification by ID.
-	 */
 	public static function get_classification( int $classification_id ) {
 		global $wpdb;
 		return $wpdb->get_row(
@@ -864,9 +830,6 @@ class WPVP_Database {
 		);
 	}
 
-	/**
-	 * Get all classifications ordered by display_order.
-	 */
 	public static function get_classifications(): array {
 		global $wpdb;
 		$results = $wpdb->get_results(
@@ -875,10 +838,6 @@ class WPVP_Database {
 		return $results ? $results : array();
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Ballots — cast, update, query.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Cast a ballot. Returns ballot ID or false on failure.
@@ -964,9 +923,6 @@ class WPVP_Database {
 		return $count > 0;
 	}
 
-	/**
-	 * Get ballot count for a vote.
-	 */
 	public static function get_ballot_count( int $vote_id ): int {
 		global $wpdb;
 
@@ -978,9 +934,6 @@ class WPVP_Database {
 		);
 	}
 
-	/**
-	 * Get all ballots for a vote (for processing).
-	 */
 	public static function get_ballots( int $vote_id ): array {
 		global $wpdb;
 
@@ -1009,10 +962,6 @@ class WPVP_Database {
 		return $rows;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Results — save, fetch, export.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Save (upsert) calculated vote results.
@@ -1117,11 +1066,6 @@ class WPVP_Database {
 		return true;
 	}
 
-	/**
-	 * Get saved results for a vote (with object cache).
-	 *
-	 * @return object|null
-	 */
 	public static function get_results( int $vote_id ) {
 		$cache_key = "wpvp_results_{$vote_id}";
 		$cached    = wp_cache_get( $cache_key, 'wpvp' );
@@ -1152,10 +1096,6 @@ class WPVP_Database {
 		return $row;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Cleanup / uninstall.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Drop all plugin tables (used during uninstall).
@@ -1169,10 +1109,6 @@ class WPVP_Database {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Static data helpers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Valid voting types with labels and descriptions.
@@ -1313,10 +1249,6 @@ class WPVP_Database {
 		return ( new \DateTime( $datetime, wp_timezone() ) )->getTimestamp();
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Private helpers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Sanitize a voting stage value against the allowed list.
@@ -1362,9 +1294,6 @@ class WPVP_Database {
 		return $clean;
 	}
 
-	/**
-	 * Get the client IP address (sanitized).
-	 */
 	private static function get_client_ip(): string {
 		$ip = '';
 		if ( ! empty( $_SERVER['REMOTE_ADDR'] ) ) {
@@ -1373,9 +1302,6 @@ class WPVP_Database {
 		return filter_var( $ip, FILTER_VALIDATE_IP ) ? $ip : '';
 	}
 
-	/**
-	 * Get the user agent string (sanitized and truncated).
-	 */
 	private static function get_user_agent(): string {
 		$ua = '';
 		if ( ! empty( $_SERVER['HTTP_USER_AGENT'] ) ) {

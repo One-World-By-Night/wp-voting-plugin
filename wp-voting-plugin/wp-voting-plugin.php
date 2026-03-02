@@ -3,7 +3,7 @@
  * Plugin Name: WP Voting Plugin
  * Plugin URI:  https://github.com/One-World-By-Night/wp-voting-plugin
  * Description: A voting system supporting multiple algorithms (FPTP, RCV, STV, Condorcet, Disciplinary) with AccessSchema role-based permissions and WordPress capability fallback.
- * Version:     3.10.8
+ * Version:     3.11.0
  * Author:      One World By Night
  * Author URI:  https://www.owbn.net
  * License:     GPL-2.0-or-later
@@ -16,15 +16,13 @@
 
 defined( 'ABSPATH' ) || exit;
 
-// Plugin constants.
-define( 'WPVP_VERSION', '3.10.8' );
+define( 'WPVP_VERSION', '3.11.0' );
 define( 'WPVP_PLUGIN_FILE', __FILE__ );
 define( 'WPVP_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WPVP_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'WPVP_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'WPVP_ABSTAIN_LABEL', 'Abstain' );
 
-// PHP version check.
 if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 	add_action(
 		'admin_notices',
@@ -41,12 +39,9 @@ if ( version_compare( PHP_VERSION, '7.4', '<' ) ) {
 	return;
 }
 
-// Load the plugin.
 require_once WPVP_PLUGIN_DIR . 'includes/class-plugin.php';
 
-// Activation and deactivation hooks (must be in main file).
 register_activation_hook( __FILE__, array( 'WPVP_Activator', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'WPVP_Activator', 'deactivate' ) );
 
-// Boot the plugin.
 WPVP_Plugin::instance();

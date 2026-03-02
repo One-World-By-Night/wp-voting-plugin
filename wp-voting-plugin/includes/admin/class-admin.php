@@ -169,10 +169,6 @@ class WPVP_Admin {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Page render callbacks (delegate to dedicated classes).
-	 * ----------------------------------------------------------------*/
 
 	public function render_votes_page(): void {
 		$list = new WPVP_Vote_List();

@@ -11,10 +11,6 @@ class WPVP_Results_Display {
 		add_action( 'wp_ajax_wpvp_export_csv', array( $this, 'ajax_export_csv' ) );
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Static render helpers (called from templates).
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Render results for a vote based on its type.
@@ -99,10 +95,6 @@ class WPVP_Results_Display {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Winner banner.
-	 * ----------------------------------------------------------------*/
 
 	private static function render_winner_banner( array $winner, string $type ): void {
 		if ( ! empty( $winner['tie'] ) ) {
@@ -140,10 +132,6 @@ class WPVP_Results_Display {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Type-specific renderers.
-	 * ----------------------------------------------------------------*/
 
 	private static function render_singleton( array $final, object $results ): void {
 		$counts      = $final['vote_counts'] ?? array();
@@ -579,10 +567,6 @@ class WPVP_Results_Display {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  CSV export.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * AJAX handler for CSV export.
@@ -670,10 +654,6 @@ class WPVP_Results_Display {
 		return $value;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Voter list & comments.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Resolve an ASC voting role to a linked display label.
@@ -865,10 +845,6 @@ class WPVP_Results_Display {
 	private static function render_voter_comments( object $vote ): void {
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Participation tracker accordion.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Sort voter entries: chronicles first, then alphabetically by entity title.

@@ -22,10 +22,6 @@ class WPVP_Settings {
 		add_filter( 'whitelist_options', array( $this, 'whitelist_options' ), 1 ); // Pre-WP 5.5 compatibility.
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Settings registration.
-	 * ----------------------------------------------------------------*/
 
 	public function register_settings(): void {
 		// Register option groups (required for multisite).
@@ -247,10 +243,6 @@ class WPVP_Settings {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Render.
-	 * ----------------------------------------------------------------*/
 
 	public function render(): void {
 		if ( ! current_user_can( 'manage_options' ) ) {
@@ -305,10 +297,6 @@ class WPVP_Settings {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Tab renderers.
-	 * ----------------------------------------------------------------*/
 
 	private function render_general_tab(): void {
 		$vote_types = WPVP_Database::get_vote_types();
@@ -632,10 +620,6 @@ class WPVP_Settings {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  AJAX handlers.
-	 * ----------------------------------------------------------------*/
 
 	public function ajax_test_connection(): void {
 		check_ajax_referer( 'wpvp_admin', 'nonce' );
@@ -882,10 +866,6 @@ class WPVP_Settings {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Sanitisation helpers.
-	 * ----------------------------------------------------------------*/
 
 	public function sanitize_bool( $value ): bool {
 		return (bool) $value;
@@ -944,10 +924,6 @@ class WPVP_Settings {
 		return $clean;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Role Template AJAX handlers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * AJAX: Get roles for a specific template (for populating Select2).

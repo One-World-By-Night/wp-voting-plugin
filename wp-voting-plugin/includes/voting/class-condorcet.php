@@ -47,7 +47,6 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 			return $this->build_result( $options[0], array(), array(), array(), $total_votes, $event_log, $options );
 		}
 
-		// ---- Build pairwise matrix ----
 		// $matrix[$a][$b] = number of voters who prefer $a over $b.
 		$matrix = array();
 		foreach ( $options as $a ) {
@@ -127,7 +126,6 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 			$total_votes -= $abstain_count;
 		}
 
-		// ---- Log pairwise results ----
 		$pairwise_winners = array();
 		for ( $i = 0; $i < $n; $i++ ) {
 			for ( $j = $i + 1; $j < $n; $j++ ) {
@@ -148,7 +146,6 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 			}
 		}
 
-		// ---- Find Condorcet winner ----
 		$condorcet_winner = null;
 		$win_counts       = array_fill_keys( $options, 0 );
 
@@ -175,7 +172,6 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 			$event_log[] = 'No Condorcet winner exists. Using Schulze method.';
 		}
 
-		// ---- Schulze method (beatpath) ----
 		// Strongest path strength from i to j.
 		$strength = array();
 		foreach ( $options as $a ) {
@@ -235,11 +231,9 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 			$event_log[] = 'Schulze method resulted in a tie between: ' . implode( ', ', $schulze_top );
 		}
 
-		// ---- Smith set ----
 		$smith_set   = self::find_smith_set( $options, $matrix );
 		$event_log[] = 'Smith set: ' . implode( ', ', $smith_set );
 
-		// ---- Build percentages from pairwise win counts ----
 		$comparisons = $n - 1;
 		$percentages = array();
 		foreach ( $win_counts as $opt => $wins ) {

@@ -22,10 +22,6 @@ class WPVP_Public {
 		add_action( 'elementor/widgets/register', array( $this, 'register_elementor_widgets' ) );
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Asset registration.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Register (but don't enqueue yet) CSS and JS.
@@ -98,10 +94,6 @@ class WPVP_Public {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Shortcodes.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * [wpvp_votes] — List of votes.
@@ -262,17 +254,14 @@ class WPVP_Public {
 					}
 
 					if ( $algo ) {
-						// Load ballots.
 						$ballots = WPVP_Database::get_ballots( $vote_id );
 
 						// Only calculate if there are ballots.
 						if ( ! empty( $ballots ) ) {
-							// Build the flat list of valid option strings.
 							$raw_options = json_decode( $vote->voting_options, true );
 							if ( is_array( $raw_options ) && ! empty( $raw_options ) ) {
 								$options = array_column( $raw_options, 'text' );
 
-								// Algorithm config.
 								$config = array(
 									'num_seats' => max( 1, intval( $vote->number_of_winners ) ),
 								);
@@ -397,10 +386,6 @@ class WPVP_Public {
 		return ob_get_clean();
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Elementor integration.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Register Elementor widgets (when Elementor is active).

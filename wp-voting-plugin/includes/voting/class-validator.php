@@ -24,8 +24,6 @@ class WPVP_Validator {
 			'warnings' => array(),
 		);
 
-		// ---- Generic checks ----
-
 		$total_votes = $results['total_votes'] ?? 0;
 		$total_valid = $results['total_valid_votes'] ?? $total_votes;
 
@@ -85,10 +83,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Singleton (FPTP).
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_singleton( array $r, array $opts, array $v ): array {
 		// Winner should be in options (or null for tie).
@@ -109,10 +103,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  RCV / IRV.
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_rcv( array $r, array $opts, array $v ): array {
 		$rounds = $r['rounds'] ?? array();
@@ -143,10 +133,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  STV.
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_stv( array $r, array $opts, array $v ): array {
 		$winners   = $r['winners'] ?? array();
@@ -181,10 +167,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Sequential RCV.
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_sequential_rcv( array $r, array $opts, array $v ): array {
 		$winners   = $r['winners'] ?? array();
@@ -219,10 +201,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Condorcet.
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_condorcet( array $r, array $opts, array $v ): array {
 		$matrix = $r['pairwise_matrix'] ?? array();
@@ -261,15 +239,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Disciplinary.
-	 * ----------------------------------------------------------------*/
-
-	/*
-	------------------------------------------------------------------
-	 *  Consent.
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_consent( array $r, array $v ): array {
 		// Winner must be 'Passed' or 'Objected'.
@@ -292,10 +261,6 @@ class WPVP_Validator {
 		return $v;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Disciplinary.
-	 * ----------------------------------------------------------------*/
 
 	private static function validate_disciplinary( array $r, array $opts, array $v ): array {
 		$cascade = $r['cascade_rounds'] ?? array();

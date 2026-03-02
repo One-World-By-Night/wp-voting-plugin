@@ -28,10 +28,6 @@ class WPVP_Migration {
 		add_action( 'wp_ajax_wpvp_check_migration', array( $this, 'ajax_check_migration' ) );
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  AJAX handlers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Check if old tables exist and report how many records are available.
@@ -117,10 +113,6 @@ class WPVP_Migration {
 		);
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Migration logic.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Run the full migration from v1 tables to v2 tables.
@@ -327,10 +319,6 @@ class WPVP_Migration {
 		}
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Helpers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Safely decode data that may be JSON or PHP-serialized.

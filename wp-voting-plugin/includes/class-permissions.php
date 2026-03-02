@@ -19,10 +19,6 @@ defined( 'ABSPATH' ) || exit;
 
 class WPVP_Permissions {
 
-	/*
-	------------------------------------------------------------------
-	 *  Admin-level checks (always WP capabilities).
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Can the user create new votes?
@@ -50,10 +46,6 @@ class WPVP_Permissions {
 			|| user_can( $user_id, 'wpvp_manage_votes' );
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Voter-facing checks (priority chain).
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Can the user cast a vote on a specific proposal?
@@ -213,10 +205,6 @@ class WPVP_Permissions {
 		return $matched;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Internal: priority-chain access checks (view vs vote).
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Can the user VIEW this vote?
@@ -565,10 +553,6 @@ class WPVP_Permissions {
 		return false;
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Wildcard pattern helpers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Expand a wildcard role path pattern against cached AccessSchema roles.

@@ -82,10 +82,6 @@ class WPVP_Guide {
 		return 'none' !== $this->data['asc_mode'];
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Table of Contents sidebar.
-	 * ----------------------------------------------------------------*/
 
 	private function render_toc(): void {
 		$sections = array(
@@ -110,10 +106,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 1: Overview.
-	 * ----------------------------------------------------------------*/
 
 	private function render_overview(): void {
 		$asc_mode = $this->data['asc_mode'];
@@ -173,10 +165,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 2: Creating a Vote.
-	 * ----------------------------------------------------------------*/
 
 	private function render_creating_a_vote(): void {
 		$form_url = esc_url( admin_url( 'admin.php?page=wpvp-vote-edit' ) );
@@ -755,10 +743,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 3: Voting Types.
-	 * ----------------------------------------------------------------*/
 
 	private function render_voting_types(): void {
 		$first = true;
@@ -913,10 +897,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 4: Managing Votes.
-	 * ----------------------------------------------------------------*/
 
 	private function render_managing_votes(): void {
 		?>
@@ -1004,10 +984,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 5: Processing Results.
-	 * ----------------------------------------------------------------*/
 
 	private function render_processing_results(): void {
 		?>
@@ -1052,10 +1028,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 6: Permission System.
-	 * ----------------------------------------------------------------*/
 
 	private function render_permissions(): void {
 		?>
@@ -1291,10 +1263,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 7: Who Can Vote.
-	 * ----------------------------------------------------------------*/
 
 	private function render_who_can_vote(): void {
 		?>
@@ -1397,10 +1365,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Section 8: Notifications & Automation.
-	 * ----------------------------------------------------------------*/
 
 	private function render_notifications(): void {
 		?>
@@ -1489,10 +1453,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Helpers.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Extract role path strings from the cached AccessSchema roles data.
@@ -1597,10 +1557,6 @@ class WPVP_Guide {
 		<?php
 	}
 
-	/*
-	------------------------------------------------------------------
-	 *  Interactive Vote Builder.
-	 * ----------------------------------------------------------------*/
 
 	/**
 	 * Introduction to the interactive vote builder.
