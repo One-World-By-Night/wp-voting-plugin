@@ -27,6 +27,7 @@ class WPVP_Activator {
 	 */
 	public static function deactivate(): void {
 		wp_clear_scheduled_hook( 'wpvp_daily_cron' );
+		wp_clear_scheduled_hook( 'wpvp_midnight_cron' );
 		flush_rewrite_rules();
 	}
 

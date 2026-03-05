@@ -123,11 +123,13 @@ class WPVP_Public {
 		// Map column name → table column index.
 		$col_map        = array(
 			'title'      => 0,
-			'type'       => 1,
-			'votes'      => 2,
+			'proposed_by' => 1,
+			'type'       => 2,
 			'start_date' => 3,
 			'end_date'   => 4,
-			'status'     => 5,
+			'votes'      => 5,
+			'status'     => 6,
+			'result'     => 7,
 		);
 		$sort_col_index = isset( $col_map[ $atts['sort_col'] ] ) ? $col_map[ $atts['sort_col'] ] : 3;
 		$sort_dir       = in_array( $atts['sort_dir'], array( 'asc', 'desc' ), true ) ? $atts['sort_dir'] : 'asc';
@@ -334,7 +336,7 @@ class WPVP_Public {
 
 		// Fetch completed and closed votes.
 		$args = array(
-			'per_page' => 100,
+			'per_page' => 500,
 			'page'     => 1,
 		);
 

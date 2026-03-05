@@ -167,16 +167,114 @@
     background: #fff;
 }
 
-/* Vote search */
-.wpvp-vote-search {
-    margin-bottom: 0;
+/* Filter row in thead */
+.wpvp-filter-row td {
+    padding: 4px 10px 8px;
+    background: #f6f7f7;
+    border-bottom: 1px solid #dcdcde;
 }
 
+.wpvp-dropdown {
+    position: relative;
+}
+
+.wpvp-dropdown__toggle {
+    padding: 7px 28px 7px 10px;
+    font-size: 13px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    background: #fff;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #2c3338;
+    appearance: none;
+}
+
+.wpvp-dropdown__toggle::after {
+    content: '\25BC';
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 10px;
+    color: #646970;
+    pointer-events: none;
+}
+
+.wpvp-dropdown__toggle:hover {
+    border-color: #8c8f94;
+}
+
+.wpvp-dropdown--open .wpvp-dropdown__toggle {
+    border-color: #2271b1;
+    box-shadow: 0 0 0 1px #2271b1;
+}
+
+.wpvp-dropdown__menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 100;
+    min-width: 180px;
+    max-height: 240px;
+    overflow-y: auto;
+    margin-top: 2px;
+    padding: 4px 0;
+    background: #fff;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.wpvp-dropdown--open .wpvp-dropdown__menu {
+    display: block;
+}
+
+.wpvp-dropdown__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    white-space: nowrap;
+    color: #2c3338;
+}
+
+.wpvp-dropdown__item:hover {
+    background: #f0f6fc;
+}
+
+.wpvp-dropdown__item input[type="checkbox"] {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* Clear filters button */
+.wpvp-clear-filters {
+    padding: 5px 10px;
+    font-size: 12px;
+    border: 1px solid #c3c4c7;
+    border-radius: 4px;
+    background: #fff;
+    color: #d63638;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.15s, border-color 0.15s;
+}
+
+.wpvp-clear-filters:hover {
+    background: #fce4e4;
+    border-color: #d63638;
+}
+
+/* Vote search */
 .wpvp-vote-search__input {
     width: 100%;
-    max-width: 320px;
-    padding: 8px 12px;
-    font-size: 14px;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    font-size: 13px;
     border: 1px solid #c3c4c7;
     border-radius: 4px;
     background: #fff;
@@ -196,7 +294,7 @@
     background: #fff;
     border: 1px solid #dcdcde;
     border-radius: 4px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .wpvp-vote-table thead {
@@ -204,14 +302,15 @@
 }
 
 .wpvp-vote-table th {
-    padding: 12px 16px;
+    padding: 8px 10px;
     text-align: left;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.03em;
     color: #50575e;
     border-bottom: 2px solid #dcdcde;
+    white-space: nowrap;
 }
 
 .wpvp-vote-table tbody tr {
@@ -228,8 +327,8 @@
 }
 
 .wpvp-vote-table td {
-    padding: 12px 16px;
-    font-size: 14px;
+    padding: 6px 10px;
+    font-size: 13px;
     vertical-align: middle;
 }
 
@@ -253,6 +352,11 @@
     white-space: nowrap;
 }
 
+.wpvp-vote-table__proposed-by {
+    color: #3c434a;
+    font-size: 13px;
+}
+
 .wpvp-vote-table__type {
     color: #646970;
     font-size: 13px;
@@ -268,7 +372,7 @@
     cursor: pointer;
     user-select: none;
     position: relative;
-    padding-right: 20px !important;
+    padding-right: 18px !important;
 }
 
 .wpvp-sortable__col:hover {
@@ -301,10 +405,19 @@
     white-space: nowrap;
 }
 
-.wpvp-vote-table__action {
-    text-align: right;
+.wpvp-vote-table__result {
+    font-size: 13px;
     white-space: nowrap;
 }
+
+.wpvp-result {
+    font-weight: 600;
+}
+
+.wpvp-result--passed { color: #3c763d; }
+.wpvp-result--failed { color: #d63638; }
+.wpvp-result--tied   { color: #996800; }
+.wpvp-result--winner { color: #2271b1; }
 
 .wpvp-vote-table__new-tab {
     display: inline-block;
@@ -1182,8 +1295,43 @@
         display: block;
     }
 
-    .wpvp-vote-table thead {
+    .wpvp-vote-table thead tr:first-child {
         display: none;
+    }
+
+    .wpvp-filter-row {
+        display: flex !important;
+        flex-direction: column;
+        gap: 6px;
+        padding: 8px 12px 12px;
+        background: #f6f7f7 !important;
+        border-bottom: 1px solid #dcdcde;
+    }
+
+    .wpvp-filter-row td {
+        display: none;
+        background: transparent;
+        padding: 0;
+        border: none;
+    }
+
+    .wpvp-filter-row td:nth-child(1),
+    .wpvp-filter-row td:nth-child(2),
+    .wpvp-filter-row td:nth-child(3),
+    .wpvp-filter-row td:nth-child(7),
+    .wpvp-filter-row td:nth-child(8) {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .wpvp-filter-row td:nth-child(2)::before { content: "Who:"; font-size: 12px; font-weight: 600; color: #50575e; min-width: 50px; }
+    .wpvp-filter-row td:nth-child(3)::before { content: "Type:"; font-size: 12px; font-weight: 600; color: #50575e; min-width: 50px; }
+    .wpvp-filter-row td:nth-child(8)::before { content: "Result:"; font-size: 12px; font-weight: 600; color: #50575e; min-width: 50px; }
+
+    .wpvp-filter-row .wpvp-vote-search__input,
+    .wpvp-filter-row .wpvp-dropdown {
+        flex: 1;
     }
 
     .wpvp-vote-table tbody tr {
@@ -1233,12 +1381,8 @@
         content: "Status:";
     }
 
-    .wpvp-vote-table__action:before {
-        content: "Action:";
-    }
-
-    .wpvp-vote-table__action {
-        text-align: left;
+    .wpvp-vote-table__result:before {
+        content: "Result:";
     }
 
     .wpvp-vote-table__title {

@@ -28,6 +28,9 @@ class WPVP_Notifications {
 
 		// Handle scheduled closing reminders.
 		add_action( 'wpvp_closing_reminder', array( $this, 'send_closing_reminder' ) );
+
+		// Dedicated midnight cron for vote transitions.
+		add_action( 'wpvp_midnight_cron', array( $this, 'run_midnight_cron' ) );
 	}
 
 
@@ -38,6 +41,12 @@ class WPVP_Notifications {
 		if ( ! wp_next_scheduled( 'wpvp_daily_cron' ) ) {
 			wp_schedule_event( time(), 'hourly', 'wpvp_daily_cron' );
 		}
+
+		if ( ! wp_next_scheduled( 'wpvp_midnight_cron' ) ) {
+			$et       = new DateTimeZone( 'America/New_York' );
+			$midnight = new DateTime( 'tomorrow midnight', $et );
+			wp_schedule_event( $midnight->getTimestamp(), 'daily', 'wpvp_midnight_cron' );
+		}
 	}
 
 	/**
@@ -47,6 +56,15 @@ class WPVP_Notifications {
 		$this->auto_open_votes();
 		$this->auto_close_votes();
 		$this->catch_up_open_notifications();
+	}
+
+	/**
+	 * Midnight cron: only vote open/close transitions.
+	 * Runs daily at midnight ET so votes close on time.
+	 */
+	public function run_midnight_cron(): void {
+		$this->auto_open_votes();
+		$this->auto_close_votes();
 	}
 
 
@@ -666,8 +684,7 @@ class WPVP_Notifications {
 		$close_timestamp = strtotime( $vote->closing_date );
 
 		$et       = new DateTimeZone( 'America/New_York' );
-		$close_dt = new DateTime( $vote->closing_date, new DateTimeZone( 'UTC' ) );
-		$close_dt->setTimezone( $et );
+		$close_dt = new DateTime( $vote->closing_date, $et );
 
 		// 9am ET on the closing day.
 		$reminder_dt = clone $close_dt;
@@ -748,9 +765,25 @@ class WPVP_Notifications {
 
 		$message .= sprintf(
 			/* translators: %d: number of ballots */
-			__( "Ballots cast so far: %d\n\n", 'wp-voting-plugin' ),
+			__( "Ballots cast so far: %d\n", 'wp-voting-plugin' ),
 			intval( $ballot_count )
 		);
+
+		$voted_entities     = $this->get_voted_entities( $vote );
+		$not_voted_entities = $this->get_not_voted_entities( $vote, $voted_entities );
+
+		if ( ! empty( $voted_entities ) ) {
+			$message .= "\n" . sprintf( 'Voted (%d):', count( $voted_entities ) ) . "\n";
+			foreach ( $voted_entities as $title ) {
+				$message .= '  - ' . $title . "\n";
+			}
+		}
+		if ( ! empty( $not_voted_entities ) ) {
+			$message .= "\n" . sprintf( 'Not Yet Voted (%d):', count( $not_voted_entities ) ) . "\n";
+			foreach ( $not_voted_entities as $title ) {
+				$message .= '  - ' . $title . "\n";
+			}
+		}
 
 		if ( $vote->closing_date ) {
 			$message .= sprintf(

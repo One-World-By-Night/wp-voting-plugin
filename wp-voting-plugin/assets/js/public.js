@@ -259,23 +259,138 @@
      *  Title search / filter
      * ----------------------------------------------------------------*/
 
-    $(document).on('input', '.wpvp-vote-search__input', function () {
-        var query  = $(this).val().toLowerCase();
-        var $table = $(this).closest('.wpvp-vote-list').find('.wpvp-vote-table');
+    function wpvpGetCheckedValues($dropdown) {
+        var vals = [];
+        $dropdown.find('input:checked').each(function () {
+            vals.push($(this).val());
+        });
+        return vals;
+    }
+
+    function wpvpUpdateToggleLabel($dropdown) {
+        var checked = wpvpGetCheckedValues($dropdown);
+        var $toggle = $dropdown.find('.wpvp-dropdown__toggle');
+        if (checked.length === 0) {
+            $toggle.text('All');
+        } else {
+            $toggle.text(checked.length + ' selected');
+        }
+    }
+
+    function wpvpApplyFilters($list) {
+        var query = $list.find('.wpvp-vote-search__input').val().toLowerCase();
+        var $table = $list.find('.wpvp-vote-table');
+
+        var selectedProposers = wpvpGetCheckedValues($list.find('[data-filter="proposed_by"]'));
+        var selectedClassifications = wpvpGetCheckedValues($list.find('[data-filter="classification"]'));
+        var selectedOutcomes = wpvpGetCheckedValues($list.find('[data-filter="outcome"]'));
+
+        // Lowercase for comparison.
+        var lcProposers = [];
+        for (var p = 0; p < selectedProposers.length; p++) {
+            lcProposers.push(selectedProposers[p].toLowerCase());
+        }
+        var lcClassifications = [];
+        for (var c = 0; c < selectedClassifications.length; c++) {
+            lcClassifications.push(selectedClassifications[c].toLowerCase());
+        }
 
         $table.find('tbody tr').each(function () {
-            var title = $(this).find('.wpvp-vote-table__title').text().trim().toLowerCase();
-            if (title.indexOf(query) !== -1) {
-                $(this).removeClass('wpvp-search-hidden');
+            var $row = $(this);
+
+            // Search only matches title.
+            var titleText = $row.find('.wpvp-vote-table__title').text().toLowerCase();
+            var matchesSearch = !query || titleText.indexOf(query) !== -1;
+
+            // Proposed By filter (exact match on data attribute).
+            var matchesProposer = lcProposers.length === 0;
+            if (!matchesProposer) {
+                var rowProposer = ($row.data('proposed-by') || '').toLowerCase();
+                matchesProposer = lcProposers.indexOf(rowProposer) !== -1;
+            }
+
+            var matchesClassification = lcClassifications.length === 0;
+            if (!matchesClassification) {
+                var rowType = $row.find('.wpvp-vote-table__type').text().toLowerCase();
+                for (var i = 0; i < lcClassifications.length; i++) {
+                    if (rowType.indexOf(lcClassifications[i]) !== -1) {
+                        matchesClassification = true;
+                        break;
+                    }
+                }
+            }
+
+            var matchesOutcome = selectedOutcomes.length === 0;
+            if (!matchesOutcome) {
+                var rowOutcome = $row.data('outcome') || '';
+                matchesOutcome = selectedOutcomes.indexOf(rowOutcome) !== -1;
+            }
+
+            if (matchesSearch && matchesProposer && matchesClassification && matchesOutcome) {
+                $row.removeClass('wpvp-search-hidden');
             } else {
-                $(this).addClass('wpvp-search-hidden');
+                $row.addClass('wpvp-search-hidden');
             }
         });
 
-        // Reset to page 1 after filtering.
         wpvpPageState($table).page = 1;
         wpvpApplyPagination($table);
+    }
+
+    // Toggle dropdown open/close.
+    $(document).on('click', '.wpvp-dropdown__toggle', function (e) {
+        e.stopPropagation();
+        var $dropdown = $(this).closest('.wpvp-dropdown');
+        var wasOpen = $dropdown.hasClass('wpvp-dropdown--open');
+        $('.wpvp-dropdown').removeClass('wpvp-dropdown--open');
+        if (!wasOpen) {
+            $dropdown.addClass('wpvp-dropdown--open');
+        }
     });
+
+    // Checkbox change triggers filter.
+    $(document).on('change', '.wpvp-dropdown__item input', function (e) {
+        e.stopPropagation();
+        var $dropdown = $(this).closest('.wpvp-dropdown');
+        var $list = $(this).closest('.wpvp-vote-list');
+        wpvpUpdateToggleLabel($dropdown);
+        wpvpApplyFilters($list);
+        wpvpToggleClearButton($list);
+    });
+
+    // Close dropdowns on outside click.
+    $(document).on('click', function () {
+        $('.wpvp-dropdown').removeClass('wpvp-dropdown--open');
+    });
+
+    // Prevent clicks inside dropdown menu from closing it.
+    $(document).on('click', '.wpvp-dropdown__menu', function (e) {
+        e.stopPropagation();
+    });
+
+    $(document).on('input', '.wpvp-vote-search__input', function () {
+        var $list = $(this).closest('.wpvp-vote-list');
+        wpvpApplyFilters($list);
+        wpvpToggleClearButton($list);
+    });
+
+    // Clear all filters.
+    $(document).on('click', '.wpvp-clear-filters', function () {
+        var $list = $(this).closest('.wpvp-vote-list');
+        $list.find('.wpvp-vote-search__input').val('');
+        $list.find('.wpvp-dropdown__item input:checked').prop('checked', false);
+        $list.find('.wpvp-dropdown').each(function () {
+            wpvpUpdateToggleLabel($(this));
+        });
+        wpvpApplyFilters($list);
+        wpvpToggleClearButton($list);
+    });
+
+    function wpvpToggleClearButton($list) {
+        var hasQuery = $list.find('.wpvp-vote-search__input').val().length > 0;
+        var hasChecked = $list.find('.wpvp-dropdown__item input:checked').length > 0;
+        $list.find('.wpvp-clear-filters').toggle(hasQuery || hasChecked);
+    }
 
     /* ------------------------------------------------------------------
      *  Sortable table columns

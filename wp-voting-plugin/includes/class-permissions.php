@@ -188,23 +188,70 @@ class WPVP_Permissions {
 		// Restricted: check voting_roles.
 		$voting_roles = json_decode( $vote->voting_roles, true );
 		if ( empty( $voting_roles ) ) {
-			// Admin bypass: admins can always vote even without matching roles.
 			if ( user_can( $user_id, 'manage_options' ) ) {
-				return array( 'Administrator' );
+				return self::get_admin_roles_with_fallback( $user_id );
 			}
-			return array();
+			return [];
 		}
 
 		$matched = self::get_matching_roles( $user_id, $voting_roles );
 
-		// Admin bypass: if admin has no matching roles, give them a fallback.
+		// can_cast_vote() already grants admins permission; the role here is just labeling.
 		if ( empty( $matched ) && user_can( $user_id, 'manage_options' ) ) {
-			return array( 'Administrator' );
+			return self::get_admin_roles_with_fallback( $user_id, $voting_roles );
 		}
 
 		return $matched;
 	}
 
+
+	/**
+	 * Return an admin's real AccessSchema roles (plus 'Administrator' fallback).
+	 *
+	 * When $vote_roles is provided, filters to user roles sharing a root segment
+	 * with the vote's allowed patterns (e.g. exec, coordinator, chronicle) to
+	 * avoid offering irrelevant roles like player/approved.
+	 *
+	 * @param int   $user_id    Admin user ID.
+	 * @param array $vote_roles Vote's voting_roles patterns (optional).
+	 * @return array
+	 */
+	private static function get_admin_roles_with_fallback( int $user_id, array $vote_roles = [] ): array {
+		$mode = get_option( 'wpvp_accessschema_mode', 'none' );
+		if ( 'none' !== $mode ) {
+			$cached = get_user_meta( $user_id, 'accessschema_cached_roles', true );
+			if ( is_array( $cached ) && ! empty( $cached ) ) {
+				$all_roles = self::extract_cached_paths( $cached );
+				if ( ! empty( $all_roles ) && ! empty( $vote_roles ) ) {
+					// Collect root segments from the vote's allowed patterns.
+					$roots = [];
+					foreach ( $vote_roles as $vr ) {
+						$parts = explode( '/', trim( $vr ) );
+						if ( ! empty( $parts[0] ) ) {
+							$roots[ strtolower( $parts[0] ) ] = true;
+						}
+					}
+					// Keep only user roles whose root matches.
+					$filtered = [];
+					foreach ( $all_roles as $role ) {
+						$parts = explode( '/', $role );
+						if ( isset( $roots[ strtolower( $parts[0] ) ] ) ) {
+							$filtered[] = $role;
+						}
+					}
+					if ( ! empty( $filtered ) ) {
+						$filtered[] = 'Administrator';
+						return $filtered;
+					}
+				}
+				if ( ! empty( $all_roles ) ) {
+					$all_roles[] = 'Administrator';
+					return $all_roles;
+				}
+			}
+		}
+		return [ 'Administrator' ];
+	}
 
 	/**
 	 * Can the user VIEW this vote?
