@@ -507,6 +507,7 @@
 /* === Vote Detail === */
 .wpvp-vote-detail {
     max-width: 800px;
+    margin: 0 auto;
 }
 
 .wpvp-vote-detail__header {

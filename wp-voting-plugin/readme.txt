@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.10.8
+Stable tag: 3.11.2
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -77,6 +77,11 @@ A consent agenda proposal passes automatically when the vote closes unless someo
 * Fix: Multi-winner elections (Sequential RCV, STV) display all winners in the email, not just the first
 * Fix: Partial-win + tie scenarios show a combined result line (e.g., "Winners: A, B, (C, D tied)") instead of separate banners
 * Fix: Pure tie results display correctly as "TIE: X, Y, Z"
+
+= 3.11.2 =
+* Fix: Participation tracker now follows vote visibility setting — public votes show tracker to non-logged-in visitors
+* Fix: Exec-type entity detail links now resolve correctly in voter lists and results
+* Fix: Vote detail page centered at max-width instead of left-aligned
 
 = 3.10.6 =
 * New: Entity dropdowns (Select2 AJAX) for Proposed By, Seconded By, and Objected By fields — searches chronicles and coordinators via OWBN-Client; free-text entry still allowed

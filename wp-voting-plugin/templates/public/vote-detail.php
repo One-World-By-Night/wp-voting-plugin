@@ -188,9 +188,8 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 	?>
 
 	<?php
-	// Participation tracker: show who has/hasn't voted (separate from results).
-	// Visible to any logged-in user who can see the vote.
-	if ( $user_id ) :
+	// Participation tracker: follows same visibility as results.
+	if ( WPVP_Permissions::can_view_results( $user_id, $vote_id ) ) :
 		WPVP_Results_Display::render_participation_tracker( $vote );
 	endif;
 	?>

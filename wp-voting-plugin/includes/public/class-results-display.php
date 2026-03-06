@@ -686,7 +686,7 @@ class WPVP_Results_Display {
 		// Build a detail page link if owbn-client page settings are available.
 		if ( $slug && function_exists( 'owc_option_name' ) ) {
 			$page_option = '';
-			if ( 'coordinator' === $type ) {
+			if ( 'coordinator' === $type || 'exec' === $type ) {
 				$page_option = 'coordinators_detail_page';
 			} elseif ( 'chronicle' === $type ) {
 				$page_option = 'chronicles_detail_page';
@@ -1017,7 +1017,7 @@ class WPVP_Results_Display {
 		// Build a detail page link when possible.
 		if ( function_exists( 'owc_option_name' ) ) {
 			$page_option = '';
-			if ( 'coordinator' === $type ) {
+			if ( 'coordinator' === $type || 'exec' === $type ) {
 				$page_option = 'coordinators_detail_page';
 			} elseif ( 'chronicle' === $type ) {
 				$page_option = 'chronicles_detail_page';
