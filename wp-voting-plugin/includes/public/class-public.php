@@ -118,32 +118,14 @@ class WPVP_Public {
 			'wpvp_votes'
 		);
 
-		$per_page = max( 1, intval( $atts['limit'] ) );
-
-		// Map column name → table column index.
-		$col_map        = array(
-			'title'      => 0,
-			'proposed_by' => 1,
-			'type'       => 2,
-			'start_date' => 3,
-			'end_date'   => 4,
-			'votes'      => 5,
-			'status'     => 6,
-			'result'     => 7,
-		);
-		$sort_col_index = isset( $col_map[ $atts['sort_col'] ] ) ? $col_map[ $atts['sort_col'] ] : 3;
-		$sort_dir       = in_array( $atts['sort_dir'], array( 'asc', 'desc' ), true ) ? $atts['sort_dir'] : 'asc';
-
 		$args = array(
-			'per_page' => 500, // Fetch all; JS handles pagination.
+			'per_page' => 10000,
 			'page'     => 1,
 		);
 
 		if ( 'all' !== $atts['status'] ) {
-			// Support comma-separated status values (e.g., "closed,completed,archived").
 			if ( strpos( $atts['status'], ',' ) !== false ) {
 				$statuses = array_filter( array_map( 'sanitize_key', explode( ',', $atts['status'] ) ) );
-				// Auto-include 'withdrawn' alongside 'closed' — it's a terminal state like closed/completed.
 				if ( in_array( 'closed', $statuses, true ) && ! in_array( 'withdrawn', $statuses, true ) ) {
 					$statuses[] = 'withdrawn';
 				}
@@ -163,6 +145,160 @@ class WPVP_Public {
 				$votes[] = $vote;
 			}
 		}
+
+		// Pre-compute data needed for sorting and filtering.
+		$vote_ids    = wp_list_pluck( $votes, 'id' );
+		$ballot_counts = ! empty( $vote_ids ) ? WPVP_Database::get_ballot_counts( $vote_ids ) : array();
+		$results_cache = array();
+
+		foreach ( $votes as $vote ) {
+			$vote->_ballot_count = isset( $ballot_counts[ $vote->id ] ) ? (int) $ballot_counts[ $vote->id ] : 0;
+			$vote->_result_text  = '';
+			$vote->_outcome      = '';
+
+			if ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'withdrawn' ), true ) ) {
+				$vote_results = WPVP_Database::get_results( (int) $vote->id );
+				if ( $vote_results ) {
+					$wd = $vote_results->winner_data ? $vote_results->winner_data : array();
+					$fr = $vote_results->final_results ? $vote_results->final_results : array();
+					if ( ! empty( $wd['tie'] ) ) {
+						$vote->_outcome     = 'tied';
+						$vote->_result_text = __( 'Tied', 'wp-voting-plugin' );
+					} elseif ( isset( $fr['passed'] ) ) {
+						$vote->_outcome     = $fr['passed'] ? 'passed' : 'failed';
+						$vote->_result_text = $fr['passed'] ? __( 'Passed', 'wp-voting-plugin' ) : __( 'Objected', 'wp-voting-plugin' );
+					} elseif ( ! empty( $wd['winners'] ) ) {
+						$vote->_outcome     = 'winner';
+						$vote->_result_text = implode( ', ', $wd['winners'] );
+					} elseif ( ! empty( $wd['winner'] ) ) {
+						$vote->_outcome     = 'winner';
+						$vote->_result_text = $wd['winner'];
+					}
+				}
+			}
+
+			$type_list             = json_decode( $vote->classification, true );
+			$vote->_type_display   = is_array( $type_list ) && ! empty( $type_list ) ? implode( ', ', $type_list ) : '';
+		}
+
+		// Read URL parameters for server-side sort, filter, pagination.
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
+		$sort_col = isset( $_GET['wpvp_sort'] ) ? sanitize_key( $_GET['wpvp_sort'] ) : $atts['sort_col'];
+		$sort_dir = isset( $_GET['wpvp_dir'] ) ? sanitize_key( $_GET['wpvp_dir'] ) : $atts['sort_dir'];
+		$sort_dir = in_array( $sort_dir, array( 'asc', 'desc' ), true ) ? $sort_dir : 'asc';
+
+		$current_page = isset( $_GET['wpvp_page'] ) ? max( 1, intval( $_GET['wpvp_page'] ) ) : 1;
+		$per_page     = isset( $_GET['wpvp_pp'] ) ? max( 1, intval( $_GET['wpvp_pp'] ) ) : max( 1, intval( $atts['limit'] ) );
+
+		$search_query    = isset( $_GET['wpvp_s'] ) ? sanitize_text_field( $_GET['wpvp_s'] ) : '';
+		$filter_proposer = isset( $_GET['wpvp_proposer'] ) ? sanitize_text_field( $_GET['wpvp_proposer'] ) : '';
+
+		// Type and outcome support multi-select (arrays from checkboxes).
+		$filter_type = array();
+		if ( isset( $_GET['wpvp_type'] ) ) {
+			$raw = is_array( $_GET['wpvp_type'] ) ? $_GET['wpvp_type'] : array( $_GET['wpvp_type'] );
+			$filter_type = array_filter( array_map( 'sanitize_text_field', $raw ) );
+		}
+
+		$filter_outcome = array();
+		if ( isset( $_GET['wpvp_outcome'] ) ) {
+			$raw = is_array( $_GET['wpvp_outcome'] ) ? $_GET['wpvp_outcome'] : array( $_GET['wpvp_outcome'] );
+			$filter_outcome = array_filter( array_map( 'sanitize_key', $raw ) );
+		}
+		// phpcs:enable WordPress.Security.NonceVerification.Recommended
+
+		// Build unique sorted lists for filter dropdowns (before filtering).
+		$proposers = array();
+		$type_list_all = array();
+		foreach ( $votes as $v ) {
+			if ( ! empty( $v->proposed_by ) && ! in_array( $v->proposed_by, $proposers, true ) ) {
+				$proposers[] = $v->proposed_by;
+			}
+			if ( ! empty( $v->_type_display ) && ! in_array( $v->_type_display, $type_list_all, true ) ) {
+				$type_list_all[] = $v->_type_display;
+			}
+		}
+		sort( $proposers );
+		sort( $type_list_all );
+
+		// Apply search + filters.
+		if ( $search_query || $filter_proposer || ! empty( $filter_type ) || ! empty( $filter_outcome ) ) {
+			$votes = array_filter( $votes, function ( $v ) use ( $search_query, $filter_proposer, $filter_type, $filter_outcome ) {
+				if ( $search_query && stripos( $v->proposal_name, $search_query ) === false ) {
+					return false;
+				}
+				if ( $filter_proposer && strcasecmp( $v->proposed_by ?? '', $filter_proposer ) !== 0 ) {
+					return false;
+				}
+				if ( ! empty( $filter_type ) ) {
+					$match = false;
+					foreach ( $filter_type as $ft ) {
+						if ( strcasecmp( $v->_type_display, $ft ) === 0 ) {
+							$match = true;
+							break;
+						}
+					}
+					if ( ! $match ) return false;
+				}
+				if ( ! empty( $filter_outcome ) && ! in_array( $v->_outcome, $filter_outcome, true ) ) {
+					return false;
+				}
+				return true;
+			} );
+			$votes = array_values( $votes );
+		}
+
+		// Sort.
+		$sort_field_map = array(
+			'title'       => 'proposal_name',
+			'proposed_by' => 'proposed_by',
+			'type'        => '_type_display',
+			'start_date'  => 'opening_date',
+			'end_date'    => 'closing_date',
+			'votes'       => '_ballot_count',
+			'status'      => 'voting_stage',
+			'result'      => '_result_text',
+		);
+		$sort_field = isset( $sort_field_map[ $sort_col ] ) ? $sort_field_map[ $sort_col ] : 'opening_date';
+		$sort_asc   = ( 'asc' === $sort_dir );
+
+		usort( $votes, function ( $a, $b ) use ( $sort_field, $sort_asc ) {
+			$va = $a->{$sort_field} ?? '';
+			$vb = $b->{$sort_field} ?? '';
+
+			if ( is_numeric( $va ) && is_numeric( $vb ) ) {
+				$cmp = (float) $va - (float) $vb;
+			} else {
+				$cmp = strnatcasecmp( (string) $va, (string) $vb );
+			}
+
+			return $sort_asc ? $cmp : -$cmp;
+		} );
+
+		// Paginate.
+		$total_votes = count( $votes );
+		$total_pages = max( 1, (int) ceil( $total_votes / $per_page ) );
+		$current_page = min( $current_page, $total_pages );
+		$offset       = ( $current_page - 1 ) * $per_page;
+		$paged_votes  = array_slice( $votes, $offset, $per_page );
+
+		// Pass data to template.
+		$pagination = array(
+			'current_page' => $current_page,
+			'total_pages'  => $total_pages,
+			'total_votes'  => $total_votes,
+			'per_page'     => $per_page,
+			'sort_col'     => $sort_col,
+			'sort_dir'     => $sort_dir,
+			'search'       => $search_query,
+			'proposer'     => $filter_proposer,
+			'type'         => $filter_type,
+			'outcome'      => $filter_outcome,
+			'proposers'    => $proposers,
+			'types'        => $type_list_all,
+		);
+
+		$votes = $paged_votes;
 
 		ob_start();
 		include WPVP_PLUGIN_DIR . 'templates/public/vote-list.php';
@@ -336,7 +472,7 @@ class WPVP_Public {
 
 		// Fetch completed and closed votes.
 		$args = array(
-			'per_page' => 500,
+			'per_page' => 10000,
 			'page'     => 1,
 		);
 

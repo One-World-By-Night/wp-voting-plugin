@@ -681,7 +681,12 @@ class WPVP_Results_Display {
 			$title = owc_resolve_asc_path( $voting_role, 'title', false );
 		}
 
-		$label = $title ? $title : $voting_role;
+		// If unresolved, show slug as plain text (no link — entity no longer exists).
+		if ( ! $title ) {
+			return esc_html( $slug ?: $voting_role );
+		}
+
+		$label = $title;
 
 		// Build a detail page link if owbn-client page settings are available.
 		if ( $slug && function_exists( 'owc_option_name' ) ) {

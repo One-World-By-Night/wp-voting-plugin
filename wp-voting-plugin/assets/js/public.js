@@ -354,6 +354,16 @@
         var $dropdown = $(this).closest('.wpvp-dropdown');
         var $list = $(this).closest('.wpvp-vote-list');
         wpvpUpdateToggleLabel($dropdown);
+
+        // Server-side mode: submit the form.
+        if ($list.find('.wpvp-server-paged').length) {
+            var $form = $('#wpvp-filter-form');
+            if ($form.length) {
+                $form.submit();
+                return;
+            }
+        }
+
         wpvpApplyFilters($list);
         wpvpToggleClearButton($list);
     });
@@ -370,6 +380,10 @@
 
     $(document).on('input', '.wpvp-vote-search__input', function () {
         var $list = $(this).closest('.wpvp-vote-list');
+        // Server-side: no live filtering, Enter submits via form attribute.
+        if ($list.find('.wpvp-server-paged').length) {
+            return;
+        }
         wpvpApplyFilters($list);
         wpvpToggleClearButton($list);
     });
@@ -377,6 +391,16 @@
     // Clear all filters.
     $(document).on('click', '.wpvp-clear-filters', function () {
         var $list = $(this).closest('.wpvp-vote-list');
+
+        // Server-side: use the Clear All link instead.
+        if ($list.find('.wpvp-server-paged').length) {
+            var $clearLink = $list.find('.wpvp-filter-clear');
+            if ($clearLink.length) {
+                window.location.href = $clearLink.attr('href');
+                return;
+            }
+        }
+
         $list.find('.wpvp-vote-search__input').val('');
         $list.find('.wpvp-dropdown__item input:checked').prop('checked', false);
         $list.find('.wpvp-dropdown').each(function () {
@@ -541,9 +565,9 @@
         wpvpApplyPagination($table);
     });
 
-    // Initialize: apply default sort then paginate.
+    // Initialize: apply default sort then paginate (JS mode only — skip server-paged tables).
     $(document).ready(function () {
-        $('.wpvp-vote-table').each(function () {
+        $('.wpvp-vote-table.wpvp-sortable').each(function () {
             var $table     = $(this);
             var defaultCol = parseInt($table.data('default-sort-col'), 10);
             var defaultDir = $table.data('default-sort-dir');
@@ -551,6 +575,7 @@
                 wpvpSortTable($table, defaultCol, defaultDir !== 'desc');
             }
             wpvpApplyPagination($table);
+            $table.addClass('wpvp-initialized');
         });
     });
 

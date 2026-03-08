@@ -63,6 +63,7 @@ class WPVP_Notifications {
 	 * Runs daily at midnight ET so votes close on time.
 	 */
 	public function run_midnight_cron(): void {
+		update_option( '_wpvp_midnight_cron_last_run', current_time( 'mysql' ), false );
 		$this->auto_open_votes();
 		$this->auto_close_votes();
 	}
@@ -266,11 +267,9 @@ class WPVP_Notifications {
 			return;
 		}
 
-		$site_name = get_bloginfo( 'name' );
-		$subject   = sprintf(
-			/* translators: 1: site name, 2: vote title */
-			__( '[%1$s] Vote Now Open: %2$s', 'wp-voting-plugin' ),
-			$site_name,
+		$subject = sprintf(
+			/* translators: %s: vote title */
+			__( 'Vote Now Open: %s', 'wp-voting-plugin' ),
 			$vote->proposal_name
 		);
 
@@ -350,6 +349,11 @@ class WPVP_Notifications {
 	 * Send "vote has closed" email to voters who participated.
 	 */
 	private function send_vote_closed_notification( object $vote, array $vote_settings ): void {
+		// Prevent duplicate close notifications.
+		if ( get_option( '_wpvp_close_notification_sent_' . $vote->id ) ) {
+			return;
+		}
+
 		// Check per-vote setting.
 		if ( isset( $vote_settings['notify_on_close'] ) && ! $vote_settings['notify_on_close'] ) {
 			return;
@@ -370,11 +374,9 @@ class WPVP_Notifications {
 			$recipients = array_unique( $recipients );
 		}
 
-		$site_name = get_bloginfo( 'name' );
-		$subject   = sprintf(
-			/* translators: 1: site name, 2: vote title */
-			__( '[%1$s] Vote Completed: %2$s', 'wp-voting-plugin' ),
-			$site_name,
+		$subject = sprintf(
+			/* translators: %s: vote title */
+			__( 'Vote Completed: %s', 'wp-voting-plugin' ),
 			$vote->proposal_name
 		);
 
@@ -384,6 +386,8 @@ class WPVP_Notifications {
 		if ( ! empty( $recipients ) ) {
 			$this->send_bulk_email( $recipients, $subject, $message, true );
 		}
+
+		update_option( '_wpvp_close_notification_sent_' . $vote->id, time(), false );
 	}
 
 
@@ -539,11 +543,9 @@ class WPVP_Notifications {
 			return;
 		}
 
-		$site_name = get_bloginfo( 'name' );
-		$subject   = sprintf(
-			/* translators: 1: site name, 2: vote title */
-			__( '[%1$s] Vote Confirmation: %2$s', 'wp-voting-plugin' ),
-			$site_name,
+		$subject = sprintf(
+			/* translators: %s: vote title */
+			__( 'Vote Confirmation: %s', 'wp-voting-plugin' ),
 			$vote->proposal_name
 		);
 
@@ -739,11 +741,9 @@ class WPVP_Notifications {
 			return;
 		}
 
-		$site_name = get_bloginfo( 'name' );
-		$subject   = sprintf(
-			/* translators: 1: site name, 2: vote title */
-			__( '[%1$s] Vote Closing Today: %2$s', 'wp-voting-plugin' ),
-			$site_name,
+		$subject = sprintf(
+			/* translators: %s: vote title */
+			__( 'Vote Closing Today: %s', 'wp-voting-plugin' ),
 			$vote->proposal_name
 		);
 

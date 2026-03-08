@@ -194,6 +194,7 @@ class WPVP_Database {
 				'Disciplinary',
 				'Genre Packet',
 				'Global/Meta Plot',
+				'Legacy',
 				'Membership',
 				'Opinion Poll',
 				'Other Private',
@@ -932,6 +933,34 @@ class WPVP_Database {
 				$vote_id
 			)
 		);
+	}
+
+	/**
+	 * Get ballot counts for multiple votes in a single query.
+	 *
+	 * @param array $vote_ids Array of vote IDs.
+	 * @return array Associative array of vote_id => count.
+	 */
+	public static function get_ballot_counts( array $vote_ids ): array {
+		global $wpdb;
+
+		if ( empty( $vote_ids ) ) {
+			return array();
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $vote_ids ), '%d' ) );
+		$sql          = $wpdb->prepare(
+			'SELECT vote_id, COUNT(*) as cnt FROM ' . self::ballots_table() . " WHERE vote_id IN ($placeholders) GROUP BY vote_id",
+			$vote_ids
+		);
+
+		$rows   = $wpdb->get_results( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+		$counts = array();
+		foreach ( $rows as $row ) {
+			$counts[ (int) $row->vote_id ] = (int) $row->cnt;
+		}
+
+		return $counts;
 	}
 
 	public static function get_ballots( int $vote_id ): array {
