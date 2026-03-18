@@ -139,12 +139,15 @@ class WPVP_Permissions {
 			return true;
 		}
 
-		// Completed or archived → anyone who voted OR is an eligible voter can see.
+		// Completed or archived → anyone who voted, is an eligible voter, or is in allowed_roles can see.
 		if ( in_array( $vote->voting_stage, array( 'completed', 'archived' ), true ) ) {
 			if ( WPVP_Database::user_has_voted( $user_id, $vote_id ) ) {
 				return true;
 			}
-			return self::user_can_vote_on( $user_id, $vote );
+			if ( self::user_can_vote_on( $user_id, $vote ) ) {
+				return true;
+			}
+			return self::can_view_vote( $user_id, $vote );
 		}
 
 		// Open vote with "show results before close" — eligible voters only.
