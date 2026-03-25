@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.11.2
+Stable tag: 3.12.1
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,15 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.12.1 =
+* Fix: Multiple users with the same entity role (e.g. two CMs for one chronicle) could each cast a ballot — now the latest vote replaces the previous one
+
+= 3.12.0 =
+* New: Server-side pagination, notification dedup, action buttons
+
+= 3.11.3 =
+* Fix: can_view_results checks allowed_roles for completed/archived restricted votes
 
 = 3.10.8 =
 * New: Consent agenda auto-pass — close date auto-syncs to open date; vote passes by silence when cron fires
