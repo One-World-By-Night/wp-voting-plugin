@@ -149,8 +149,18 @@ class WPVP_Ballot {
 			$result  = WPVP_Database::update_ballot( $vote_id, $user_id, $ballot_payload );
 			$message = __( 'Your vote has been updated.', 'wp-voting-plugin' );
 		} else {
-			$result  = WPVP_Database::cast_ballot( $vote_id, $user_id, $ballot_payload );
-			$message = __( 'Your vote has been recorded.', 'wp-voting-plugin' );
+			// Check if another user already voted for this entity (e.g. same chronicle).
+			// If so, replace their ballot — the latest voter for an entity wins.
+			$entity          = WPVP_Database::parse_entity_from_role( $selected_role );
+			$existing_ballot = WPVP_Database::get_entity_ballot( $vote_id, (string) $entity['type'], (string) $entity['slug'], $user_id );
+
+			if ( $existing_ballot ) {
+				$result  = WPVP_Database::replace_entity_ballot( (int) $existing_ballot->id, $vote_id, $user_id, $ballot_payload );
+				$message = __( 'Your vote has been recorded, replacing the previous vote for your chronicle/office.', 'wp-voting-plugin' );
+			} else {
+				$result  = WPVP_Database::cast_ballot( $vote_id, $user_id, $ballot_payload );
+				$message = __( 'Your vote has been recorded.', 'wp-voting-plugin' );
+			}
 		}
 
 		if ( ! $result ) {

@@ -908,6 +908,47 @@ class WPVP_Database {
 	}
 
 	/**
+	 * Find an existing ballot for a given entity on a vote (cast by any user).
+	 * Returns the ballot row or null. Skips empty entity slugs (exec roles).
+	 */
+	public static function get_entity_ballot( int $vote_id, string $entity_type, string $entity_slug, int $exclude_user_id = 0 ) {
+		global $wpdb;
+
+		if ( empty( $entity_type ) || empty( $entity_slug ) ) {
+			return null;
+		}
+
+		$sql = $wpdb->prepare(
+			'SELECT * FROM ' . self::ballots_table() . ' WHERE vote_id = %d AND entity_type = %s AND entity_slug = %s',
+			$vote_id,
+			$entity_type,
+			$entity_slug
+		);
+
+		if ( $exclude_user_id ) {
+			$sql .= $wpdb->prepare( ' AND user_id != %d', $exclude_user_id );
+		}
+
+		return $wpdb->get_row( $sql );
+	}
+
+	/**
+	 * Replace an existing entity ballot with a new user's vote.
+	 * Deletes the old ballot and inserts the new one.
+	 */
+	public static function replace_entity_ballot( int $old_ballot_id, int $vote_id, int $user_id, $ballot_data ) {
+		global $wpdb;
+
+		$wpdb->delete(
+			self::ballots_table(),
+			array( 'id' => $old_ballot_id ),
+			array( '%d' )
+		);
+
+		return self::cast_ballot( $vote_id, $user_id, $ballot_data );
+	}
+
+	/**
 	 * Check whether a user has already voted.
 	 */
 	public static function user_has_voted( int $user_id, int $vote_id ): bool {
