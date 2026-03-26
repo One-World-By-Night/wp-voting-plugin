@@ -71,6 +71,18 @@ class WPVP_Vote_Editor {
 			$old_vote  = WPVP_Database::get_vote( $this->vote_id );
 			$old_stage = $old_vote ? $old_vote->voting_stage : '';
 
+			// Admin objection conversion: consent → singleton when objection_by is set.
+			$old_objection = $old_vote ? ( $old_vote->objection_by ?? '' ) : '';
+			$new_objection = $data['objection_by'] ?? '';
+			if (
+				$old_vote
+				&& 'consent' === $old_vote->voting_type
+				&& '' === $old_objection
+				&& '' !== $new_objection
+			) {
+				$data = $this->convert_consent_to_vote( $data, $old_vote, $new_objection );
+			}
+
 			$result = WPVP_Database::update_vote( $this->vote_id, $data );
 			if ( $result ) {
 				$this->success = __( 'Vote updated.', 'wp-voting-plugin' );
@@ -224,6 +236,47 @@ class WPVP_Vote_Editor {
 		);
 	}
 
+
+	/**
+	 * Convert a consent vote to a singleton (Approve/Deny/Abstain) when admin sets objection_by.
+	 *
+	 * Mirrors the public ballot conversion logic but triggered by admin action.
+	 *
+	 * @param array  $data          Form data being saved.
+	 * @param object $old_vote      The vote record before update.
+	 * @param string $objection_by  The name/entity that objected.
+	 * @return array Modified form data with converted type, options, and settings.
+	 */
+	private function convert_consent_to_vote( array $data, $old_vote, string $objection_by ): array {
+		$fptp_options = array(
+			array( 'text' => __( 'Approve', 'wp-voting-plugin' ), 'description' => '' ),
+			array( 'text' => __( 'Deny', 'wp-voting-plugin' ),    'description' => '' ),
+			array( 'text' => WPVP_ABSTAIN_LABEL,                  'description' => '' ),
+		);
+
+		$decoded_settings = json_decode( $old_vote->settings ?? '{}', true );
+		$converted        = is_array( $decoded_settings ) ? $decoded_settings : array();
+
+		$current_user = wp_get_current_user();
+		$converted['consent_objection'] = array(
+			'objection_by'  => $objection_by,
+			'admin_action'  => true,
+			'converted_by'  => $current_user ? $current_user->display_name : '',
+			'converted_at'  => current_time( 'mysql' ),
+		);
+		$converted['allow_revote'] = true;
+
+		$data['voting_type']    = 'singleton';
+		$data['voting_options'] = $fptp_options;
+		$data['settings']       = array_merge(
+			isset( $data['settings'] ) && is_array( $data['settings'] ) ? $data['settings'] : array(),
+			$converted
+		);
+
+		$this->success = __( 'Consent vote converted to full vote (Approve/Deny/Abstain) due to objection.', 'wp-voting-plugin' );
+
+		return $data;
+	}
 
 	private function render_page(): void {
 		$is_edit    = (bool) $this->vote;
