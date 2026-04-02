@@ -271,7 +271,7 @@
         var checked = wpvpGetCheckedValues($dropdown);
         var $toggle = $dropdown.find('.wpvp-dropdown__toggle');
         if (checked.length === 0) {
-            $toggle.text('All');
+            $toggle.text(wpvp_public.i18n.all || 'All');
         } else {
             $toggle.text(checked.length + ' selected');
         }

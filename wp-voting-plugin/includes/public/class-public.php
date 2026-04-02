@@ -63,6 +63,7 @@ class WPVP_Public {
 					/* translators: %1$s: option name, %2$d: rank number */
 					'rank_aria'         => __( '%1$s — Rank %2$d', 'wp-voting-plugin' ),
 					'close'             => __( 'Close', 'wp-voting-plugin' ),
+					'all'               => __( 'All', 'wp-voting-plugin' ),
 					'loading'           => __( 'Loading...', 'wp-voting-plugin' ),
 					'content_not_loaded' => __( 'Content could not be loaded.', 'wp-voting-plugin' ),
 					'error_loading'     => __( 'Error loading content. Please try again.', 'wp-voting-plugin' ),
