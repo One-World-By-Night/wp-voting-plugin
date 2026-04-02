@@ -150,6 +150,10 @@ class WPVP_Admin {
 					'censure_desc'         => __( 'Formal censure on record', 'wp-voting-plugin' ),
 					'condemnation'         => __( 'Condemnation', 'wp-voting-plugin' ),
 					'condemnation_desc'    => __( 'Formal condemnation statement', 'wp-voting-plugin' ),
+					'approve'              => __( 'Approve', 'wp-voting-plugin' ),
+					'deny'                 => __( 'Deny', 'wp-voting-plugin' ),
+					'abstain'              => __( 'Abstain', 'wp-voting-plugin' ),
+					'replace_standard'     => __( 'Replace existing options with Approve / Deny / Abstain?', 'wp-voting-plugin' ),
 				),
 			)
 		);

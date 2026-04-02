@@ -171,9 +171,9 @@
      */
     function fillFPTP() {
         var defaults = [
-            { text: 'Approve', description: '' },
-            { text: 'Deny', description: '' },
-            { text: 'Abstain', description: '' }
+            { text: wpvp.i18n.approve || 'Approve', description: '' },
+            { text: wpvp.i18n.deny || 'Deny', description: '' },
+            { text: wpvp.i18n.abstain || 'Abstain', description: '' }
         ];
 
         var hasCustom = false;
@@ -184,7 +184,7 @@
             }
         });
 
-        if (hasCustom && !confirm('Replace existing options with Approve / Deny / Abstain?')) {
+        if (hasCustom && !confirm(wpvp.i18n.replace_standard || 'Replace existing options?')) {
             return;
         }
 
@@ -677,7 +677,7 @@
                     return false;
                 }
             });
-            if (hasCustom && !confirm('Replace existing options with Approve / Deny / Abstain?')) {
+            if (hasCustom && !confirm(wpvp.i18n.replace_standard || 'Replace existing options?')) {
                 return;
             }
             $list.empty();
