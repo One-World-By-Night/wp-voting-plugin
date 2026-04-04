@@ -57,7 +57,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 
 	<?php if ( ! empty( $vote->proposal_description ) ) : ?>
 		<div class="wpvp-vote-detail__description">
-			<?php echo wp_kses_post( wpautop( $vote->proposal_description ) ); ?>
+			<?php echo wp_kses_post( do_shortcode( wpautop( $vote->proposal_description ) ) ); ?>
 		</div>
 	<?php endif; ?>
 

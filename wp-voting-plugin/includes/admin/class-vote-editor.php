@@ -120,6 +120,18 @@ class WPVP_Vote_Editor {
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitized below per-field.
 		$raw_options = isset( $_POST['voting_options'] ) ? (array) wp_unslash( $_POST['voting_options'] ) : array();
 		$options     = array();
+
+		// Build lookup of existing post_id values so we can preserve them across saves.
+		$existing_post_ids = array();
+		if ( $this->vote_id ) {
+			$existing_options = WPVP_Database::get_voting_options( $this->vote_id );
+			foreach ( $existing_options as $existing ) {
+				if ( ! empty( $existing['post_id'] ) && ! empty( $existing['text'] ) ) {
+					$existing_post_ids[ $existing['text'] ] = absint( $existing['post_id'] );
+				}
+			}
+		}
+
 		foreach ( $raw_options as $opt ) {
 			if ( ! is_array( $opt ) ) {
 				continue;
@@ -128,10 +140,15 @@ class WPVP_Vote_Editor {
 			if ( '' === $text ) {
 				continue;
 			}
-			$options[] = array(
+			$option = array(
 				'text'        => $text,
 				'description' => sanitize_textarea_field( $opt['description'] ?? '' ),
 			);
+			// Preserve post_id linkage from election bridge if it exists.
+			if ( isset( $existing_post_ids[ $text ] ) ) {
+				$option['post_id'] = $existing_post_ids[ $text ];
+			}
+			$options[] = $option;
 		}
 
 		// Sanitise settings.

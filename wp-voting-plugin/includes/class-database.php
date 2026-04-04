@@ -551,6 +551,130 @@ class WPVP_Database {
 		return false !== $result;
 	}
 
+	/**
+	 * Get decoded voting options for a vote.
+	 */
+	public static function get_voting_options( int $vote_id ): array {
+		$vote = self::get_vote( $vote_id );
+		if ( ! $vote || empty( $vote->voting_options ) ) {
+			return array();
+		}
+		$decoded = json_decode( $vote->voting_options, true );
+		return is_array( $decoded ) ? $decoded : array();
+	}
+
+	/**
+	 * Atomically add a voting option to a vote.
+	 *
+	 * Uses row-level locking to prevent race conditions during bulk publish.
+	 *
+	 * @param int   $vote_id Vote ID.
+	 * @param array $option  Option array with 'text', 'description', and optionally 'post_id'.
+	 * @return bool True on success.
+	 */
+	public static function add_voting_option( int $vote_id, array $option ): bool {
+		global $wpdb;
+
+		$table = self::votes_table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( 'START TRANSACTION' );
+
+		// Lock the row for update.
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT voting_options FROM {$table} WHERE id = %d FOR UPDATE", $vote_id )
+		);
+
+		if ( ! $row ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+
+		$options = json_decode( $row->voting_options, true );
+		if ( ! is_array( $options ) ) {
+			$options = array();
+		}
+
+		$new_post_id = isset( $option['post_id'] ) ? absint( $option['post_id'] ) : 0;
+
+		// Skip if this post_id is already in the options (prevents double-fire).
+		if ( $new_post_id ) {
+			foreach ( $options as $existing ) {
+				if ( isset( $existing['post_id'] ) && absint( $existing['post_id'] ) === $new_post_id ) {
+					$wpdb->query( 'COMMIT' );
+					return true;
+				}
+			}
+		}
+
+		$options[] = array(
+			'text'        => sanitize_text_field( $option['text'] ?? '' ),
+			'description' => sanitize_textarea_field( $option['description'] ?? '' ),
+			'post_id'     => $new_post_id,
+		);
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$result = $wpdb->update(
+			$table,
+			array( 'voting_options' => wp_json_encode( $options ) ),
+			array( 'id' => $vote_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		$wpdb->query( 'COMMIT' );
+		return false !== $result;
+	}
+
+	/**
+	 * Atomically remove a voting option by post_id.
+	 *
+	 * @param int $vote_id Vote ID.
+	 * @param int $post_id Post ID to remove.
+	 * @return bool True on success.
+	 */
+	public static function remove_voting_option( int $vote_id, int $post_id ): bool {
+		global $wpdb;
+
+		$table = self::votes_table();
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$wpdb->query( 'START TRANSACTION' );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$row = $wpdb->get_row(
+			$wpdb->prepare( "SELECT voting_options FROM {$table} WHERE id = %d FOR UPDATE", $vote_id )
+		);
+
+		if ( ! $row ) {
+			$wpdb->query( 'ROLLBACK' );
+			return false;
+		}
+
+		$options = json_decode( $row->voting_options, true );
+		if ( ! is_array( $options ) ) {
+			$wpdb->query( 'COMMIT' );
+			return true;
+		}
+
+		$options = array_values( array_filter( $options, function ( $opt ) use ( $post_id ) {
+			return ! isset( $opt['post_id'] ) || absint( $opt['post_id'] ) !== $post_id;
+		} ) );
+
+		// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$result = $wpdb->update(
+			$table,
+			array( 'voting_options' => wp_json_encode( $options ) ),
+			array( 'id' => $vote_id ),
+			array( '%s' ),
+			array( '%d' )
+		);
+
+		$wpdb->query( 'COMMIT' );
+		return false !== $result;
+	}
+
 	public static function get_vote( int $vote_id ) {
 		global $wpdb;
 

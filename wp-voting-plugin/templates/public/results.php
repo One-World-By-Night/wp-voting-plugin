@@ -73,7 +73,7 @@ $type_info = $types[ $vote->voting_type ] ?? array();
 
 	<?php if ( ! empty( $vote->proposal_description ) ) : ?>
 		<div class="wpvp-results-wrap__description">
-			<?php echo wp_kses_post( wpautop( $vote->proposal_description ) ); ?>
+			<?php echo wp_kses_post( do_shortcode( wpautop( $vote->proposal_description ) ) ); ?>
 		</div>
 	<?php endif; ?>
 
