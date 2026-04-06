@@ -227,11 +227,11 @@ class WPVP_Vote_Editor {
 			$errors[] = __( 'Invalid visibility.', 'wp-voting-plugin' );
 		}
 
-		if ( count( $data['voting_options'] ) < 2 && ! in_array( $data['voting_type'], array( 'disciplinary', 'consent' ), true ) ) {
+		if ( count( $data['voting_options'] ) < 2 && ! in_array( $data['voting_type'], array( 'disciplinary', 'consent' ), true ) && ! in_array( $data['voting_stage'], array( 'withdrawn', 'archived' ), true ) ) {
 			$errors[] = __( 'At least two options are required.', 'wp-voting-plugin' );
 		}
 
-		if ( ! empty( $data['opening_date'] ) && ! empty( $data['closing_date'] ) ) {
+		if ( ! empty( $data['opening_date'] ) && ! empty( $data['closing_date'] ) && ! in_array( $data['voting_stage'], array( 'withdrawn', 'archived' ), true ) ) {
 			$opening_time = strtotime( $data['opening_date'] );
 			$closing_time = strtotime( $data['closing_date'] );
 
