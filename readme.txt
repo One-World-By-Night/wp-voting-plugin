@@ -1,9 +1,9 @@
 # WP Voting Plugin
 
-The voting engine for One World by Night. Runs all organizational votes — coordinator elections, bylaw proposals, disciplinary actions.
+The voting engine for One World by Night. Runs all organizational votes -- coordinator elections, bylaw proposals, disciplinary actions.
 
-**Version:** 3.13.0
-**Deployed to:** council.owbn.net
+Version: 3.13.0
+Deployed to: council.owbn.net
 
 ## What It Does
 
@@ -11,13 +11,13 @@ A full-featured voting system supporting seven algorithms, role-based voter elig
 
 ### Voting Types
 
-- **FPTP** — First Past the Post, single-winner plurality
-- **RCV / IRV** — Ranked choice with instant runoff elimination
-- **Sequential RCV** — Fill multiple seats via sequential IRV rounds
-- **STV** — Multi-winner proportional representation (Droop quota)
-- **Condorcet** — Pairwise comparison with Schulze/Smith-set fallback
-- **Consent Agenda** — Auto-pass by silence, objection converts to FPTP
-- **Disciplinary** — Majority threshold with configurable punishments
+- FPTP -- First Past the Post, single-winner plurality
+- RCV / IRV -- Ranked choice with instant runoff elimination
+- Sequential RCV -- Fill multiple seats via sequential IRV rounds
+- STV -- Multi-winner proportional representation (Droop quota)
+- Condorcet -- Pairwise comparison with Schulze/Smith-set fallback
+- Consent Agenda -- Auto-pass by silence, objection converts to FPTP
+- Disciplinary -- Majority threshold with configurable punishments
 
 ### Key Features
 
