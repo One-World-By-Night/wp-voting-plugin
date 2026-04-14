@@ -234,48 +234,66 @@ defined( 'ABSPATH' ) || exit;
 	</form>
 
 	<script>
+	// Defer until DOMContentLoaded so wpvp_public (localized onto the footer-enqueued
+	// wpvp-public script) is defined before this IIFE runs. Without the wrap the inline
+	// script executes during body parsing, before the footer <script> block declares
+	// wpvp_public — the fetch would throw ReferenceError and the role picker never
+	// populates for users with multiple eligible roles.
 	(function() {
-		const voteId = <?php echo absint( $vote->id ); ?>;
-		const form = document.getElementById('wpvp-ballot-form-' + voteId);
-		if (!form) return;
+		function init() {
+			const voteId = <?php echo absint( $vote->id ); ?>;
+			const form = document.getElementById('wpvp-ballot-form-' + voteId);
+			if (!form) return;
 
-		const roleSelection = form.querySelector('.wpvp-ballot__role-selection');
-		const roleSelect = form.querySelector('.wpvp-ballot__role-select');
-
-		// Fetch eligible roles on page load
-		const formData = new FormData();
-		formData.append('action', 'wpvp_get_eligible_roles');
-		formData.append('vote_id', voteId);
-		formData.append('nonce', '<?php echo esc_js( wp_create_nonce( 'wpvp_public' ) ); ?>');
-
-		fetch(wpvp_public.ajax_url, {
-			method: 'POST',
-			body: formData
-		})
-		.then(response => response.json())
-		.then(data => {
-			if (data.success && data.data.requires_selection) {
-				// User has multiple roles - show selection and make required
-				roleSelection.style.display = 'block';
-				roleSelect.setAttribute('required', 'required');
-
-				// Populate dropdown
-				data.data.eligible_roles.forEach(role => {
-					const option = document.createElement('option');
-					option.value = role;
-					option.textContent = role;
-					roleSelect.appendChild(option);
-				});
-			} else if (data.success && data.data.eligible_roles && data.data.eligible_roles.length === 1) {
-				// Single role - add it as hidden input
-				const hiddenRole = document.createElement('input');
-				hiddenRole.type = 'hidden';
-				hiddenRole.name = 'voting_role';
-				hiddenRole.value = data.data.eligible_roles[0];
-				form.appendChild(hiddenRole);
+			if (typeof wpvp_public === 'undefined') {
+				console.error('wpvp_public not defined — ballot form cannot fetch eligible roles.');
+				return;
 			}
-		})
-		.catch(err => console.error('Failed to fetch eligible roles:', err));
+
+			const roleSelection = form.querySelector('.wpvp-ballot__role-selection');
+			const roleSelect = form.querySelector('.wpvp-ballot__role-select');
+
+			// Fetch eligible roles on page load
+			const formData = new FormData();
+			formData.append('action', 'wpvp_get_eligible_roles');
+			formData.append('vote_id', voteId);
+			formData.append('nonce', '<?php echo esc_js( wp_create_nonce( 'wpvp_public' ) ); ?>');
+
+			fetch(wpvp_public.ajax_url, {
+				method: 'POST',
+				body: formData
+			})
+			.then(response => response.json())
+			.then(data => {
+				if (data.success && data.data.requires_selection) {
+					// User has multiple roles - show selection and make required
+					roleSelection.style.display = 'block';
+					roleSelect.setAttribute('required', 'required');
+
+					// Populate dropdown
+					data.data.eligible_roles.forEach(role => {
+						const option = document.createElement('option');
+						option.value = role;
+						option.textContent = role;
+						roleSelect.appendChild(option);
+					});
+				} else if (data.success && data.data.eligible_roles && data.data.eligible_roles.length === 1) {
+					// Single role - add it as hidden input
+					const hiddenRole = document.createElement('input');
+					hiddenRole.type = 'hidden';
+					hiddenRole.name = 'voting_role';
+					hiddenRole.value = data.data.eligible_roles[0];
+					form.appendChild(hiddenRole);
+				}
+			})
+			.catch(err => console.error('Failed to fetch eligible roles:', err));
+		}
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', init);
+		} else {
+			init();
+		}
 	})();
 	</script>
 </div>
