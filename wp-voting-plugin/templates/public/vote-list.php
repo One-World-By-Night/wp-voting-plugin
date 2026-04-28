@@ -323,10 +323,10 @@ $server_side = isset( $pagination ) && is_array( $pagination );
 							<?php echo $type_display ? esc_html( $type_display ) : '—'; ?>
 						</td>
 						<td class="wpvp-vote-table__date" data-label="<?php esc_attr_e( 'Start', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( $open_ts ); ?>">
-							<?php echo $vote->opening_date ? esc_html( wp_date( $short_fmt, $open_ts ) ) : '—'; ?>
+							<?php echo $vote->opening_date ? esc_html( wp_date( $short_fmt, $open_ts, WPVP_Database::viewer_timezone() ) ) : '—'; ?>
 						</td>
 						<td class="wpvp-vote-table__date" data-label="<?php esc_attr_e( 'End', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( $close_ts ); ?>">
-							<?php echo $vote->closing_date ? esc_html( wp_date( $short_fmt, $close_ts ) ) : '—'; ?>
+							<?php echo $vote->closing_date ? esc_html( wp_date( $short_fmt, $close_ts, WPVP_Database::viewer_timezone() ) ) : '—'; ?>
 						</td>
 						<td class="wpvp-vote-table__votes" data-label="<?php esc_attr_e( 'Votes', 'wp-voting-plugin' ); ?>" data-sort-value="<?php echo esc_attr( $ballot_count ); ?>">
 							<?php echo esc_html( $ballot_count ); ?>

@@ -1443,6 +1443,28 @@ class WPVP_Database {
 		return ( new \DateTime( $datetime, wp_timezone() ) )->getTimestamp();
 	}
 
+	/**
+	 * The timezone to use when displaying dates/times to the current viewer.
+	 * Defers to owbn-tz-plugin if active (per-user TZ), else site TZ.
+	 */
+	public static function viewer_timezone(): \DateTimeZone {
+		if ( function_exists( 'owbn_tz_get_timezone' ) ) {
+			return owbn_tz_get_timezone();
+		}
+		return wp_timezone();
+	}
+
+	/**
+	 * Format a stored local-time datetime for display in the viewer's TZ.
+	 * Empty / zero datetimes return ''.
+	 */
+	public static function format_local( string $datetime, string $format ): string {
+		if ( empty( $datetime ) || '0000-00-00 00:00:00' === $datetime ) {
+			return '';
+		}
+		return wp_date( $format, self::local_timestamp( $datetime ), self::viewer_timezone() );
+	}
+
 
 	/**
 	 * Sanitize a voting stage value against the allowed list.

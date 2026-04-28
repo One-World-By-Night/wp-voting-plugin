@@ -66,7 +66,7 @@ class WPVP_Results_Display {
 					printf(
 						esc_html__( 'Total votes: %1$d | Calculated: %2$s', 'wp-voting-plugin' ),
 						intval( $results->total_votes ),
-						esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $results->calculated_at ) ) )
+						esc_html( WPVP_Database::format_local( $results->calculated_at, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 					);
 					?>
 				</p>

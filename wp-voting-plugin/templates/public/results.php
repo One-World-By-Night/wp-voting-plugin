@@ -43,7 +43,7 @@ $type_info = $types[ $vote->voting_type ] ?? array();
 				<?php
 				printf(
 					esc_html__( 'Opens: %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->opening_date ) ) )
+					esc_html( WPVP_Database::format_local( $vote->opening_date, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 				);
 				?>
 			</span>
@@ -53,7 +53,7 @@ $type_info = $types[ $vote->voting_type ] ?? array();
 				<?php
 				printf(
 					esc_html__( 'Closes: %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $vote->closing_date ) ) )
+					esc_html( WPVP_Database::format_local( $vote->closing_date, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 				);
 				?>
 			</span>

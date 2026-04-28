@@ -38,7 +38,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php
 				printf(
 					esc_html__( 'Opens: %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->opening_date ) ) )
+					esc_html( WPVP_Database::format_local( $vote->opening_date, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 				);
 				?>
 			</span>
@@ -48,7 +48,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php
 				printf(
 					esc_html__( 'Closes: %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->closing_date ) ) )
+					esc_html( WPVP_Database::format_local( $vote->closing_date, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 				);
 				?>
 			</span>
@@ -95,7 +95,7 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 				<?php
 				printf(
 					esc_html__( 'Voting opens on %s', 'wp-voting-plugin' ),
-					esc_html( wp_date( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), WPVP_Database::local_timestamp( $vote->opening_date ) ) )
+					esc_html( WPVP_Database::format_local( $vote->opening_date, get_option( 'date_format' ) . ' ' . get_option( 'time_format' ) ) )
 				);
 				?>
 			</p>
