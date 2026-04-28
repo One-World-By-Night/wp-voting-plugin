@@ -107,30 +107,58 @@ class WPVP_Notifications {
 	private function auto_close_votes(): void {
 		global $wpdb;
 
-		$now   = current_time( 'mysql' );
-		$table = WPVP_Database::votes_table();
+		$now           = current_time( 'mysql' );
+		$table         = WPVP_Database::votes_table();
+		$results_table = WPVP_Database::results_table();
 
-		// Find open votes whose closing_date has passed.
+		// Two-branch query:
+		//   (a) 'open' votes whose closing_date has passed — normal close.
+		//   (b) 'closed' votes with no results row — recovery for previous
+		//       runs where stage was flipped but process() failed/crashed.
 		$vote_ids = $wpdb->get_col(
 			$wpdb->prepare(
-				"SELECT id FROM {$table}
-             WHERE voting_stage = 'open'
-               AND closing_date IS NOT NULL
-               AND closing_date <= %s",
+				"SELECT v.id FROM {$table} v
+                 LEFT JOIN {$results_table} r ON r.vote_id = v.id
+                 WHERE r.id IS NULL
+                   AND (
+                        ( v.voting_stage = 'open'
+                          AND v.closing_date IS NOT NULL
+                          AND v.closing_date <= %s )
+                     OR ( v.voting_stage = 'closed' )
+                   )",
 				$now
 			)
 		);
 
 		foreach ( $vote_ids as $vote_id ) {
-			WPVP_Database::update_vote( (int) $vote_id, array( 'voting_stage' => 'closed' ) );
+			$vote_id = (int) $vote_id;
+			$before  = WPVP_Database::get_vote( $vote_id );
+			if ( ! $before ) {
+				continue;
+			}
+			$old_stage = $before->voting_stage;
 
-			// Process results BEFORE sending notification so winner data is available.
-			WPVP_Processor::process( (int) $vote_id );
+			if ( 'open' === $old_stage ) {
+				WPVP_Database::update_vote( $vote_id, array( 'voting_stage' => 'closed' ) );
+			}
 
-			// After processing, stage is 'completed' and results exist — notify now.
-			$final_vote  = WPVP_Database::get_vote( (int) $vote_id );
+			$result = WPVP_Processor::process( $vote_id );
+			if ( is_wp_error( $result ) ) {
+				// Leave stage 'closed' so the next cron run picks it up via the
+				// recovery branch above. Skip stage_changed so the close email
+				// doesn't go out for a vote whose results aren't computed yet.
+				error_log( sprintf(
+					'[wp-voting-plugin] auto_close_votes: process() failed for vote %d: %s — %s',
+					$vote_id,
+					$result->get_error_code(),
+					$result->get_error_message()
+				) );
+				continue;
+			}
+
+			$final_vote  = WPVP_Database::get_vote( $vote_id );
 			$final_stage = $final_vote ? $final_vote->voting_stage : 'completed';
-			do_action( 'wpvp_vote_stage_changed', (int) $vote_id, $final_stage, 'open' );
+			do_action( 'wpvp_vote_stage_changed', $vote_id, $final_stage, $old_stage );
 		}
 	}
 
