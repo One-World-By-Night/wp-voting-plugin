@@ -1211,6 +1211,14 @@ class WPVP_Database {
 					'passed'          => $results['passed'] ?? null,
 					'objectors'       => $results['objectors'] ?? null,
 					'objection_count' => $results['objection_count'] ?? null,
+						'threshold_key'       => $results['threshold_key'] ?? null,
+						'threshold_label'     => $results['threshold_label'] ?? null,
+						'threshold_required'  => $results['threshold_required'] ?? null,
+						'affirmative_option'  => $results['affirmative_option'] ?? null,
+						'target_option'       => $results['target_option'] ?? null,
+						'affirmative_votes'   => $results['affirmative_votes'] ?? null,
+						'affirmative_percent' => $results['affirmative_percent'] ?? null,
+						'total_valid_votes'   => $results['total_valid_votes'] ?? null,
 				)
 			),
 			wp_json_encode(

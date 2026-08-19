@@ -29,7 +29,11 @@ class WPVP_Results_Display {
 
 			<?php
 		// Sequential RCV renders its own banner (handles partial fills + ties).
-		if ( 'sequential_rcv' !== $type ) {
+		// Singleton propositions carrying a majority_threshold verdict render a
+		// Passed / Did-Not-Pass banner inside render_singleton instead of the
+		// plain "Winner:" banner (which is misleading for a threshold vote).
+		$singleton_verdict = ( 'singleton' === $type && array_key_exists( 'passed', $final ) && null !== $final['passed'] );
+		if ( 'sequential_rcv' !== $type && ! $singleton_verdict ) {
 			self::render_winner_banner( $winner, $type );
 		}
 		?>
@@ -137,13 +141,56 @@ class WPVP_Results_Display {
 		$counts      = $final['vote_counts'] ?? array();
 		$percentages = $final['percentages'] ?? array();
 		$is_tie      = ! empty( $final['tie'] );
+		$passed      = $final['passed'] ?? null;
+		$is_prop     = ( null !== $passed );
 
 		if ( empty( $counts ) ) {
 			return;
 		}
 
-		arsort( $counts );
-		$max_count = max( $counts );
+		// Abstain is never a winner and must not set the max/bar scale.
+		$abstain = array_key_exists( WPVP_ABSTAIN_LABEL, $counts ) ? $counts[ WPVP_ABSTAIN_LABEL ] : null;
+		$ranked  = $counts;
+		unset( $ranked[ WPVP_ABSTAIN_LABEL ] );
+		arsort( $ranked );
+		$max_count = ! empty( $ranked ) ? max( $ranked ) : 0;
+
+		// majority_threshold verdict banner (Passed / Did Not Pass).
+		if ( $is_prop ) {
+			$target   = $final['target_option'] ?? ( $final['affirmative_option'] ?? '' );
+			$tvotes   = intval( $final['affirmative_votes'] ?? 0 );
+			$valid    = intval( $final['total_valid_votes'] ?? 0 );
+			$required = intval( $final['threshold_required'] ?? 0 );
+			$tlabel   = (string) ( $final['threshold_label'] ?? '' );
+			$tpct     = (float) ( $final['affirmative_percent'] ?? 0 );
+			$verdict  = $passed ? __( 'Passed', 'wp-voting-plugin' ) : __( 'Did Not Pass', 'wp-voting-plugin' );
+			$cls      = $passed ? 'passed' : 'failed';
+			?>
+			<div class="wpvp-results__banner wpvp-results__banner--<?php echo esc_attr( $cls ); ?>">
+				<strong><?php echo esc_html( $verdict ); ?></strong>
+				<span>
+				<?php
+				printf(
+					/* translators: 1: option, 2: its votes, 3: valid total, 4: percent, 5: threshold label, 6: votes required */
+					esc_html__( '%1$s: %2$d of %3$d valid (%4$s%%) — %5$s needs %6$d', 'wp-voting-plugin' ),
+					esc_html( (string) $target ),
+					$tvotes,
+					$valid,
+					esc_html( number_format( $tpct, 1 ) ),
+					esc_html( $tlabel ),
+					$required
+				);
+				?>
+				</span>
+			</div>
+			<?php
+		}
+
+		// Display order: ranked options first, Abstain last (informational).
+		$display = $ranked;
+		if ( null !== $abstain ) {
+			$display[ WPVP_ABSTAIN_LABEL ] = $abstain;
+		}
 		?>
 		<table class="wpvp-results__table">
 			<thead>
@@ -155,16 +202,19 @@ class WPVP_Results_Display {
 				</tr>
 			</thead>
 			<tbody>
-				<?php foreach ( $counts as $option => $count ) : ?>
+				<?php foreach ( $display as $option => $count ) : ?>
 					<?php
-					// Highlight winner (option with max count).
-					$is_winner = ( $count === $max_count && $max_count > 0 );
-					$badge_label = $is_tie && $is_winner ? __( 'Tied', 'wp-voting-plugin' ) : __( 'Winner', 'wp-voting-plugin' );
+					$is_abstain  = ( WPVP_ABSTAIN_LABEL === $option );
+					// "Winner" = leading non-abstain option. In a proposition the
+					// verdict banner carries the outcome, so no per-row badge.
+					$is_winner   = ( ! $is_abstain && $count === $max_count && $max_count > 0 );
+					$show_badge  = ( $is_winner && ! $is_prop );
+					$badge_label = $is_tie ? __( 'Tied', 'wp-voting-plugin' ) : __( 'Winner', 'wp-voting-plugin' );
 					?>
 					<tr<?php echo $is_winner ? ' class="wpvp-results__row--winner"' : ''; ?>>
 						<td>
 							<?php echo esc_html( $option ); ?>
-							<?php if ( $is_winner ) : ?>
+							<?php if ( $show_badge ) : ?>
 								<span class="wpvp-results__winner-badge"><?php echo esc_html( $badge_label ); ?></span>
 							<?php endif; ?>
 						</td>

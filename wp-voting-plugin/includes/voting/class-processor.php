@@ -77,7 +77,8 @@ class WPVP_Processor {
 		$options = array_column( $raw_options, 'text' );
 
 		$config = array(
-			'num_seats' => max( 1, intval( $vote->number_of_winners ) ),
+			'num_seats'          => max( 1, intval( $vote->number_of_winners ) ),
+			'majority_threshold' => isset( $vote->majority_threshold ) ? (string) $vote->majority_threshold : 'simple',
 		);
 
 		$start     = microtime( true );

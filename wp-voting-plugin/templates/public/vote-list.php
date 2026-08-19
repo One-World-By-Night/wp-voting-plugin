@@ -280,7 +280,8 @@ $server_side = isset( $pagination ) && is_array( $pagination );
 									$result_text  = __( 'Tied', 'wp-voting-plugin' );
 								} elseif ( isset( $fr['passed'] ) ) {
 									$vote_outcome = $fr['passed'] ? 'passed' : 'failed';
-									$result_text  = $fr['passed'] ? __( 'Passed', 'wp-voting-plugin' ) : __( 'Objected', 'wp-voting-plugin' );
+									$fail_text    = ( 'consent' === $vote->voting_type ) ? __( 'Objected', 'wp-voting-plugin' ) : __( 'Did Not Pass', 'wp-voting-plugin' );
+									$result_text  = $fr['passed'] ? __( 'Passed', 'wp-voting-plugin' ) : $fail_text;
 								} elseif ( ! empty( $wd['winners'] ) ) {
 									$vote_outcome = 'winner';
 									$result_text  = esc_html( implode( ', ', $wd['winners'] ) );
