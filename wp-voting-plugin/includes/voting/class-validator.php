@@ -31,24 +31,33 @@ class WPVP_Validator {
 			$v['errors'][] = 'total_votes is negative.';
 		}
 
-		// vote_counts keys should be a subset of options.
-		$counts       = $results['vote_counts'] ?? array();
-		$unknown_keys = array_diff( array_keys( $counts ), $options );
-		if ( ! empty( $unknown_keys ) ) {
-			$v['warnings'][] = 'vote_counts contains unknown options: ' . implode( ', ', $unknown_keys );
-		}
+		// Generic tally checks apply only to methods whose vote_counts is a
+		// per-option ballot tally. Ranked/pairwise/consent methods store
+		// transformed values (pairwise-win counts, also-rans, last-seat counts,
+		// Passed/Objected), so these checks would false-fire on nearly every such
+		// vote and are skipped for them.
+		$counts = $results['vote_counts'] ?? array();
+		if ( in_array( $type, array( 'singleton', 'disciplinary' ), true ) ) {
+			$unknown_keys = array_diff( array_keys( $counts ), $options );
+			if ( ! empty( $unknown_keys ) ) {
+				$v['warnings'][] = 'vote_counts contains unknown options: ' . implode( ', ', $unknown_keys );
+			}
 
-		// Sum of recognised vote_counts should equal total_valid_votes.
-		$counted_sum = 0;
-		foreach ( $options as $opt ) {
-			$counted_sum += $counts[ $opt ] ?? 0;
-		}
-		if ( $counted_sum !== $total_valid ) {
-			$v['warnings'][] = sprintf(
-				'Sum of vote_counts (%d) does not match total_valid_votes (%d).',
-				$counted_sum,
-				$total_valid
-			);
+			// Sum of recognised, non-abstain vote_counts should equal total_valid.
+			$counted_sum = 0;
+			foreach ( $options as $opt ) {
+				if ( defined( 'WPVP_ABSTAIN_LABEL' ) && WPVP_ABSTAIN_LABEL === $opt ) {
+					continue;
+				}
+				$counted_sum += $counts[ $opt ] ?? 0;
+			}
+			if ( (int) $counted_sum !== (int) $total_valid ) {
+				$v['warnings'][] = sprintf(
+					'Sum of vote_counts (%d) does not match total_valid_votes (%d).',
+					$counted_sum,
+					$total_valid
+				);
+			}
 		}
 
 		// ---- Type-specific checks ----

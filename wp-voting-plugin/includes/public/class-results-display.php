@@ -112,6 +112,15 @@ class WPVP_Results_Display {
 				<?php endif; ?>
 			</div>
 			<?php
+		} elseif ( ! empty( $winner['winners'] ) && count( (array) $winner['winners'] ) > 1 ) {
+			// Multi-winner (STV / sequential RCV): list every elected candidate,
+			// not just winners[0] — which the singular branch below would show.
+			?>
+			<div class="wpvp-results__banner wpvp-results__banner--winner">
+				<strong><?php esc_html_e( 'Winners:', 'wp-voting-plugin' ); ?></strong>
+				<span><?php echo esc_html( implode( ', ', (array) $winner['winners'] ) ); ?></span>
+			</div>
+			<?php
 		} elseif ( ! empty( $winner['winner'] ) ) {
 			if ( 'consent' === $type ) {
 				$label = __( 'Result:', 'wp-voting-plugin' );
@@ -248,7 +257,7 @@ class WPVP_Results_Display {
 					<?php printf( esc_html__( 'Round %d', 'wp-voting-plugin' ), intval( $i ) + 1 ); ?>
 					<?php if ( ! empty( $round['eliminated'] ) ) : ?>
 						<span class="wpvp-round__eliminated">
-							<?php printf( esc_html__( '(Eliminated: %s)', 'wp-voting-plugin' ), esc_html( $round['eliminated'] ) ); ?>
+							<?php $elim = $round['eliminated']; printf( esc_html__( '(Eliminated: %s)', 'wp-voting-plugin' ), esc_html( is_array( $elim ) ? implode( ', ', $elim ) : $elim ) ); ?>
 						</span>
 					<?php endif; ?>
 				</h5>
@@ -496,13 +505,13 @@ class WPVP_Results_Display {
 		if ( ! empty( $counts ) ) {
 			arsort( $counts );
 			?>
-			<h4><?php esc_html_e( 'First-Choice Votes', 'wp-voting-plugin' ); ?></h4>
+			<h4><?php esc_html_e( 'Head-to-Head Wins', 'wp-voting-plugin' ); ?></h4>
 			<table class="wpvp-results__table">
 				<thead>
 					<tr>
 						<th><?php esc_html_e( 'Candidate', 'wp-voting-plugin' ); ?></th>
-						<th><?php esc_html_e( 'First-Choice', 'wp-voting-plugin' ); ?></th>
-						<th><?php esc_html_e( '%', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Pairwise Wins', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( '% of matchups', 'wp-voting-plugin' ); ?></th>
 					</tr>
 				</thead>
 				<tbody>
@@ -515,6 +524,47 @@ class WPVP_Results_Display {
 					<?php endforeach; ?>
 				</tbody>
 			</table>
+			<?php
+		}
+
+		// Head-to-head matrix — the pairwise grid that justifies the winner.
+		$matrix = $stats['pairwise_matrix'] ?? array();
+		if ( ! empty( $matrix ) ) {
+			$cands = array_keys( $matrix );
+			?>
+			<h4><?php esc_html_e( 'Head-to-Head Matrix', 'wp-voting-plugin' ); ?></h4>
+			<div class="wpvp-table-scroll" style="overflow-x:auto;">
+				<table class="wpvp-results__table wpvp-results__matrix">
+					<thead>
+						<tr>
+							<th><?php esc_html_e( 'vs →', 'wp-voting-plugin' ); ?></th>
+							<?php foreach ( $cands as $c ) : ?>
+								<th><?php echo esc_html( $c ); ?></th>
+							<?php endforeach; ?>
+						</tr>
+					</thead>
+					<tbody>
+						<?php foreach ( $cands as $row ) : ?>
+							<tr>
+								<td><strong><?php echo esc_html( $row ); ?></strong></td>
+								<?php
+								foreach ( $cands as $col ) :
+									if ( $row === $col ) {
+										echo '<td>—</td>';
+										continue;
+									}
+									$rc  = intval( $matrix[ $row ][ $col ] ?? 0 );
+									$cr  = intval( $matrix[ $col ][ $row ] ?? 0 );
+									$win = $rc > $cr;
+									?>
+									<td<?php echo $win ? ' class="wpvp-results__row--winner"' : ''; ?>><?php echo esc_html( $rc . '–' . $cr ); ?></td>
+								<?php endforeach; ?>
+							</tr>
+						<?php endforeach; ?>
+					</tbody>
+				</table>
+			</div>
+			<p class="description"><?php esc_html_e( 'Each cell shows the row candidate\'s votes vs the column candidate head-to-head; a highlighted cell means the row candidate wins that matchup.', 'wp-voting-plugin' ); ?></p>
 			<?php
 		}
 

@@ -415,18 +415,46 @@ class WPVP_Public {
 
 								if ( $calculated && is_array( $calculated ) ) {
 									// Ensure all expected keys exist and are arrays.
-									$final_results = isset( $calculated['final'] ) && is_array( $calculated['final'] )
-										? $calculated['final']
-										: array();
-									$winner_data   = isset( $calculated['winner'] ) && is_array( $calculated['winner'] )
-										? $calculated['winner']
-										: array();
-									$rounds_data   = isset( $calculated['rounds'] ) && is_array( $calculated['rounds'] )
-										? $calculated['rounds']
-										: array();
-									$statistics    = isset( $calculated['stats'] ) && is_array( $calculated['stats'] )
-										? $calculated['stats']
-										: array();
+									// Map the algorithm's flat return to the same shape get_results()
+									// produces from the DB columns, so the live renderer sees real data.
+									$final_results = array(
+										'vote_counts'         => $calculated['vote_counts'] ?? array(),
+										'percentages'         => $calculated['percentages'] ?? array(),
+										'rankings'            => $calculated['rankings'] ?? array(),
+										'passed'              => $calculated['passed'] ?? null,
+										'objectors'           => $calculated['objectors'] ?? null,
+										'objection_count'     => $calculated['objection_count'] ?? null,
+										'threshold_label'     => $calculated['threshold_label'] ?? null,
+										'threshold_required'  => $calculated['threshold_required'] ?? null,
+										'target_option'       => $calculated['target_option'] ?? null,
+										'affirmative_option'  => $calculated['affirmative_option'] ?? null,
+										'affirmative_votes'   => $calculated['affirmative_votes'] ?? null,
+										'affirmative_percent' => $calculated['affirmative_percent'] ?? null,
+										'total_valid_votes'   => $calculated['total_valid_votes'] ?? null,
+									);
+									$winner_data = array(
+										'winner'          => $calculated['winner'] ?? null,
+										'winners'         => $calculated['winners'] ?? array(),
+										'winner_votes'    => $calculated['winner_votes'] ?? 0,
+										'tie'             => $calculated['tie'] ?? false,
+										'tied_candidates' => $calculated['tied_candidates'] ?? array(),
+									);
+									$rounds_data = $calculated['rounds'] ?? array();
+									$statistics  = array(
+										'vote_distribution' => $calculated['vote_counts'] ?? array(),
+										'percentages'       => $calculated['percentages'] ?? array(),
+										'eliminated_order'  => $calculated['eliminated_candidates'] ?? array(),
+										'event_log'         => $calculated['event_log'] ?? array(),
+										'seats'             => $calculated['seats'] ?? array(),
+										'num_seats'         => $calculated['num_seats'] ?? 0,
+										'cascade_rounds'    => $calculated['cascade_rounds'] ?? array(),
+										'pairwise_matrix'   => $calculated['pairwise_matrix'] ?? array(),
+										'schulze_scores'    => $calculated['schulze_scores'] ?? array(),
+										'smith_set'         => $calculated['smith_set'] ?? array(),
+										'condorcet_winner'  => $calculated['condorcet_winner'] ?? null,
+										'quota'             => $calculated['quota'] ?? null,
+										'total_valid_votes' => $calculated['total_valid_votes'] ?? null,
+									);
 
 									$results = (object) array(
 										'vote_id'       => $vote_id,

@@ -1241,6 +1241,12 @@ class WPVP_Database {
 						'seats'             => $results['seats'] ?? array(),
 						'num_seats'         => $results['num_seats'] ?? 0,
 						'cascade_rounds'    => $results['cascade_rounds'] ?? array(),
+						'pairwise_matrix'   => $results['pairwise_matrix'] ?? array(),
+						'schulze_scores'    => $results['schulze_scores'] ?? array(),
+						'smith_set'         => $results['smith_set'] ?? array(),
+						'condorcet_winner'  => $results['condorcet_winner'] ?? null,
+						'quota'             => $results['quota'] ?? null,
+						'total_valid_votes' => $results['total_valid_votes'] ?? null,
 					),
 					function ( $v ) {
 						return ! empty( $v );
