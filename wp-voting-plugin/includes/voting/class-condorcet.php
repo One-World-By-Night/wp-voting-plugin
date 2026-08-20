@@ -218,15 +218,31 @@ class WPVP_Condorcet implements WPVP_Voting_Algorithm {
 		}
 
 		arsort( $schulze_scores );
-		$max_score      = max( $schulze_scores );
-		$schulze_top    = array_keys( $schulze_scores, $max_score, true );
+		// Schulze winner set = candidates UNDOMINATED in the beatpaths: d
+		// qualifies unless some other c has a strictly stronger path against d
+		// than d has against c. Always non-empty; may be a genuine tie. The old
+		// "most beatpath wins" argmax was wrong — a candidate can be undominated
+		// yet beat fewer others, so real co-winners were silently dropped.
+		$schulze_top = array();
+		foreach ( $options as $d ) {
+			$dominated = false;
+			foreach ( $options as $c ) {
+				if ( $c !== $d && $strength[ $c ][ $d ] > $strength[ $d ][ $c ] ) {
+					$dominated = true;
+					break;
+				}
+			}
+			if ( ! $dominated ) {
+				$schulze_top[] = $d;
+			}
+		}
 		$schulze_winner = count( $schulze_top ) === 1 ? $schulze_top[0] : null;
 
 		$winner = $condorcet_winner ? $condorcet_winner : $schulze_winner;
 		$tie    = ! $condorcet_winner && count( $schulze_top ) > 1;
 
 		if ( $schulze_winner && ! $condorcet_winner ) {
-			$event_log[] = sprintf( 'Schulze winner: %s (score %d).', $schulze_winner, $max_score );
+			$event_log[] = sprintf( 'Schulze winner: %s (undominated in beatpaths).', $schulze_winner );
 		} elseif ( $tie ) {
 			$event_log[] = 'Schulze method resulted in a tie between: ' . implode( ', ', $schulze_top );
 		}
