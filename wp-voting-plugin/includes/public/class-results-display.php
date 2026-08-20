@@ -534,14 +534,61 @@ class WPVP_Results_Display {
 	}
 
 	private static function render_disciplinary( array $final, array $stats, object $results ): void {
-		$counts = $final['vote_counts'] ?? array();
+		$counts  = $final['vote_counts'] ?? array();
+		$cascade = $stats['cascade_rounds'] ?? array();
+		$winner  = ( isset( $results->winner_data ) && ! empty( $results->winner_data['winner'] ) )
+			? (string) $results->winner_data['winner']
+			: '';
 
-		if ( empty( $counts ) ) {
+		if ( empty( $counts ) && empty( $cascade ) ) {
 			return;
 		}
 
-		// Show cascade breakdown.
-		$cascade = $stats['event_log'] ?? array();
+		// Preferred: the full cascade, which explains WHY the outcome won — each
+		// level's direct votes, the votes that cascaded down into it, and whether
+		// the accumulated total cleared that level's bylaw threshold.
+		if ( ! empty( $cascade ) ) {
+			?>
+			<h4><?php esc_html_e( 'Cascade (most → least severe)', 'wp-voting-plugin' ); ?></h4>
+			<table class="wpvp-results__table">
+				<thead>
+					<tr>
+						<th><?php esc_html_e( 'Punishment Level', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Direct', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Accumulated', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Needed', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Result', 'wp-voting-plugin' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php
+					foreach ( $cascade as $row ) :
+						$lvl    = (string) ( $row['punishment'] ?? '' );
+						$is_win = ( '' !== $winner && $lvl === $winner );
+						$met    = ! empty( $row['met'] );
+						?>
+						<tr<?php echo $is_win ? ' class="wpvp-results__row--winner"' : ''; ?>>
+							<td>
+								<?php echo esc_html( $lvl ); ?>
+								<?php if ( $is_win ) : ?>
+									<span class="wpvp-results__winner-badge"><?php esc_html_e( 'Outcome', 'wp-voting-plugin' ); ?></span>
+								<?php endif; ?>
+							</td>
+							<td><?php echo esc_html( (string) intval( $row['raw_votes'] ?? 0 ) ); ?></td>
+							<td><strong><?php echo esc_html( (string) intval( $row['accumulated'] ?? 0 ) ); ?></strong>
+								<?php echo esc_html( '(' . number_format( (float) ( $row['percentage'] ?? 0 ), 1 ) . '%)' ); ?></td>
+							<td><?php echo esc_html( intval( $row['threshold'] ?? 0 ) . ' (' . ( $row['threshold_label'] ?? '' ) . ')' ); ?></td>
+							<td><?php echo $met ? esc_html__( 'met', 'wp-voting-plugin' ) : esc_html__( 'not met', 'wp-voting-plugin' ); ?></td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description"><?php esc_html_e( 'Votes cascade from the most severe level downward; the most severe level to reach its threshold is the outcome.', 'wp-voting-plugin' ); ?></p>
+			<?php
+			return;
+		}
+
+		// Fallback for older results saved without cascade data: raw distribution.
 		?>
 		<h4><?php esc_html_e( 'Vote Distribution', 'wp-voting-plugin' ); ?></h4>
 		<table class="wpvp-results__table">

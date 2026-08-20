@@ -1240,6 +1240,7 @@ class WPVP_Database {
 						'event_log'         => $results['event_log'] ?? array(),
 						'seats'             => $results['seats'] ?? array(),
 						'num_seats'         => $results['num_seats'] ?? 0,
+						'cascade_rounds'    => $results['cascade_rounds'] ?? array(),
 					),
 					function ( $v ) {
 						return ! empty( $v );

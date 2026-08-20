@@ -100,8 +100,10 @@
             $optList.find('input[name$="[text]"]').prop('required', true);
         }
 
-        // Hide majority threshold for ranked/algorithmic voting types that determine winners internally.
-        if (type === 'rcv' || type === 'stv' || type === 'sequential_rcv' || type === 'condorcet' || type === 'consent') {
+        // Hide majority threshold for voting types that determine winners internally.
+        // Disciplinary uses a fixed bylaw cascade (2/3 for a ban, 50%+1 for lesser
+        // sanctions), so the generic threshold selector does not apply to it either.
+        if (type === 'rcv' || type === 'stv' || type === 'sequential_rcv' || type === 'condorcet' || type === 'consent' || type === 'disciplinary') {
             $('#wpvp-majority-threshold-section').hide();
         } else {
             $('#wpvp-majority-threshold-section').show();
