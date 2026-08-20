@@ -39,6 +39,7 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 
 		// Exclude Abstain from candidate pool — track separately.
 		$abstain_count = 0;
+		$invalid_count = 0;
 		$options       = array_values( array_filter( $options, function ( $o ) { return WPVP_ABSTAIN_LABEL !== $o; } ) );
 
 		if ( 0 === $total_votes || empty( $options ) ) {
@@ -85,17 +86,34 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 				);
 			} elseif ( $has_abstain ) {
 				++$abstain_count;
+			} else {
+				// Blank/invalid ballot (no recognised preference, no Abstain):
+				// must NOT inflate the Droop-quota denominator.
+				++$invalid_count;
 			}
 		}
 
 		// Abstain ballots are tracked but excluded from the election.
 		if ( $abstain_count > 0 ) {
 			$event_log[] = sprintf( '%d abstention(s) recorded but not counted toward the result.', $abstain_count );
-			$total_votes -= $abstain_count;
+		}
+		if ( $invalid_count > 0 ) {
+			$event_log[] = sprintf( '%d blank/invalid ballot(s) excluded.', $invalid_count );
 		}
 
-		$quota       = floor( $total_votes / ( $num_seats + 1 ) ) + 1;
-		$event_log[] = sprintf( 'Droop quota: %d (votes=%d, seats=%d).', $quota, $total_votes, $num_seats );
+		// The Droop-quota denominator is the number of ballots that express a
+		// valid preference — NOT the raw ballot count. Abstain and blank/invalid
+		// ballots are excluded; otherwise the quota inflates and can deny a
+		// candidate a seat they legitimately earned.
+		$valid_votes = count( $working );
+		if ( 0 === $valid_votes ) {
+			$event_log[] = 'No valid ballots cast; no candidates elected.';
+			return $this->build_result( array(), array(), $rounds, $eliminated, 0, 0, $num_seats, $event_log, $options, $abstain_count, $invalid_count );
+		}
+		$total_votes = $valid_votes;
+
+		$quota       = floor( $valid_votes / ( $num_seats + 1 ) ) + 1;
+		$event_log[] = sprintf( 'Droop quota: %d (valid votes=%d, seats=%d).', $quota, $valid_votes, $num_seats );
 
 		// Snapshot first-round counts for tiebreaking.
 		$initial_counts = self::count_weighted( $working, $options );
@@ -126,7 +144,7 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 			}
 
 			if ( ! empty( $elected_this_round ) ) {
-				// Sort by votes desc so we process the highest surplus first.
+				// Elect ONLY the highest candidate this round (break after), then recount next round — electing several off one pre-transfer snapshot misroutes the later ones' surplus.
 				usort(
 					$elected_this_round,
 					function ( $a, $b ) use ( $counts ) {
@@ -173,12 +191,10 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 						unset( $wb );
 					}
 
-					if ( count( $winners ) >= $num_seats ) {
-						break;
-					}
+					break; // one election per round — recount before processing the next
 				}
 
-				$round_data['elected'] = $elected_this_round;
+				$round_data['elected'] = array( $elected );
 				$rounds[]              = $round_data;
 				continue;
 			}
@@ -234,7 +250,7 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 			$rounds[]                 = $round_data;
 		}
 
-		return $this->build_result( $winners, self::count_weighted( $working, $active ), $rounds, $eliminated, $quota, $total_votes, $num_seats, $event_log, $options );
+		return $this->build_result( $winners, self::count_weighted( $working, $active ), $rounds, $eliminated, $quota, $total_votes, $num_seats, $event_log, $options, $abstain_count, $invalid_count );
 	}
 
 	/**
@@ -269,7 +285,9 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 		int $total_votes,
 		int $num_seats,
 		array $event_log,
-		array $options
+		array $options,
+		int $abstain_count = 0,
+		int $invalid_count = 0
 	): array {
 		return array(
 			'winner'                => ! empty( $winners ) ? $winners[0] : null,
@@ -284,6 +302,8 @@ class WPVP_STV implements WPVP_Voting_Algorithm {
 			'total_votes'           => $total_votes,
 			'total_valid_votes'     => $total_votes,
 			'quota'                 => $quota,
+			'invalid_votes'         => $invalid_count,
+			'abstain_count'         => $abstain_count,
 			'num_seats'             => $num_seats,
 			'event_log'             => $event_log,
 			'validation'            => array(
