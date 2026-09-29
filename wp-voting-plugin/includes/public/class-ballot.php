@@ -46,7 +46,9 @@ class WPVP_Ballot {
 			wp_send_json_error( array( 'message' => __( 'Vote not found.', 'wp-voting-plugin' ) ) );
 		}
 
-		if ( 'open' !== $vote->voting_stage ) {
+		// A consent item takes objections while scheduled as well as while open.
+		$is_consent_review = 'consent' === $vote->voting_type && 'scheduled' === $vote->voting_stage;
+		if ( 'open' !== $vote->voting_stage && ! $is_consent_review ) {
 			wp_send_json_error( array( 'message' => __( 'This vote is not currently open.', 'wp-voting-plugin' ) ) );
 		}
 
@@ -226,10 +228,12 @@ class WPVP_Ballot {
 				) );
 			}
 
-			// Swap [AUTOPASS] prefix for [OBJECTION] and extend closing date
-			// so the converted FPTP vote has a 7-day voting window.
+			// Swap [AUTOPASS] prefix for [OBJECTION]; the converted FPTP vote closes 7 days
+			// after it opens: now for an open item, its opening date for a scheduled one.
+			$now_local   = strtotime( current_time( 'mysql' ) );
+			$opens_local = $vote->opening_date ? strtotime( $vote->opening_date ) : 0;
 			$update_data = array(
-				'closing_date' => gmdate( 'Y-m-d H:i:s', strtotime( '+7 days' ) ),
+				'closing_date' => gmdate( 'Y-m-d H:i:s', max( $now_local, (int) $opens_local ) + 7 * DAY_IN_SECONDS ),
 			);
 			if ( false !== stripos( $vote->proposal_name, '[AUTOPASS]' ) ) {
 				$update_data['proposal_name'] = str_ireplace( '[AUTOPASS]', '[OBJECTION]', $vote->proposal_name );

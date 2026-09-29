@@ -350,8 +350,15 @@ $server_side = isset( $pagination ) && is_array( $pagination );
 								<?php else : ?>
 									<a href="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small"><?php esc_html_e( 'View', 'wp-voting-plugin' ); ?></a>
 								<?php endif; ?>
-							<?php elseif ( 'scheduled' === $vote->voting_stage ) : ?>
-								<a href="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small"><?php esc_html_e( 'View', 'wp-voting-plugin' ); ?></a>
+							<?php elseif ( 'scheduled' === $vote->voting_stage ) :
+								$current_user_id = get_current_user_id();
+								$can_object      = 'consent' === $vote->voting_type && $current_user_id && WPVP_Permissions::can_cast_vote( $current_user_id, (int) $vote->id );
+							?>
+								<?php if ( $can_object ) : ?>
+									<a href="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--danger wpvp-btn--small"><?php esc_html_e( 'Object', 'wp-voting-plugin' ); ?></a>
+								<?php else : ?>
+									<a href="<?php echo esc_url( $url ); ?>" class="wpvp-btn wpvp-btn--secondary wpvp-btn--small"><?php esc_html_e( 'View', 'wp-voting-plugin' ); ?></a>
+								<?php endif; ?>
 							<?php elseif ( $result_text ) : ?>
 								<span class="wpvp-result wpvp-result--<?php echo esc_attr( $vote_outcome ); ?>">
 									<?php echo esc_html( $result_text ); ?>

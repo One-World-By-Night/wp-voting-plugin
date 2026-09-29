@@ -489,38 +489,33 @@ class WPVP_Vote_Editor {
 								?>
 									<p>
 										<label for="voting_stage"><?php esc_html_e( 'Status:', 'wp-voting-plugin' ); ?></label>
+										<select name="voting_stage" id="voting_stage" style="width:100%;">
+											<?php foreach ( $stages as $key => $label ) : ?>
+												<?php
+												// 'scheduled' is set automatically for future-dated votes; shown only on a vote that is already scheduled.
+												// 'completed' is set by processing, but show it when the vote is already completed.
+												if ( 'scheduled' === $key && ! $is_scheduled ) {
+													continue;
+												}
+												if ( 'completed' === $key && 'completed' !== $current_stage ) {
+													continue;
+												}
+												?>
+												<option value="<?php echo esc_attr( $key ); ?>"
+													<?php selected( $current_stage, $key ); ?>>
+													<?php echo esc_html( $label ); ?>
+												</option>
+											<?php endforeach; ?>
+										</select>
 										<?php if ( $is_scheduled ) : ?>
-											<input type="hidden" name="voting_stage" value="open">
-											<select disabled style="width:100%;">
-												<option selected><?php esc_html_e( 'Scheduled', 'wp-voting-plugin' ); ?></option>
-											</select>
 											<p class="description" style="margin-top:6px;">
 												<?php
 												printf(
-													esc_html__( 'This vote will open automatically on %s. To change, update the opening date or set status to Draft.', 'wp-voting-plugin' ),
+													esc_html__( 'This vote will open automatically on %s. To change, update the opening date or choose another status (e.g. Draft or Withdrawn).', 'wp-voting-plugin' ),
 													esc_html( date_i18n( get_option( 'date_format' ) . ' ' . get_option( 'time_format' ), strtotime( $this->vote->opening_date ) ) )
 												);
 												?>
 											</p>
-										<?php else : ?>
-											<select name="voting_stage" id="voting_stage" style="width:100%;">
-												<?php foreach ( $stages as $key => $label ) : ?>
-													<?php
-													// 'scheduled' is set automatically for future-dated votes; never show in dropdown.
-													// 'completed' is set by processing, but show it when the vote is already completed.
-													if ( 'scheduled' === $key ) {
-														continue;
-													}
-													if ( 'completed' === $key && 'completed' !== $current_stage ) {
-														continue;
-													}
-													?>
-													<option value="<?php echo esc_attr( $key ); ?>"
-														<?php selected( $current_stage, $key ); ?>>
-														<?php echo esc_html( $label ); ?>
-													</option>
-												<?php endforeach; ?>
-											</select>
 										<?php endif; ?>
 									</p>
 									<p>

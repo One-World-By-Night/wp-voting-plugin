@@ -74,8 +74,12 @@ $settings         = $decoded_settings ? $decoded_settings : array();
 	if ( $is_voting_open && ! empty( $vote->opening_date ) && $vote->opening_date > current_time( 'mysql' ) ) {
 		$is_voting_open = false;
 	}
+	// A scheduled consent item takes objections until its closing date.
+	$is_consent_review = 'consent' === $vote->voting_type
+		&& 'scheduled' === $vote->voting_stage
+		&& ( empty( $vote->closing_date ) || $vote->closing_date >= current_time( 'mysql' ) );
 
-	if ( $is_voting_open ) :
+	if ( $is_voting_open || $is_consent_review ) :
 		if ( ! $user_id ) :
 			?>
 			<div class="wpvp-notice wpvp-notice--info">

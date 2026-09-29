@@ -52,8 +52,9 @@ class WPVP_Permissions {
 	 *
 	 * Checks:
 	 *  1. User must be logged in.
-	 *  2. Vote must be in 'open' stage.
-	 *  3. Current time must be within open/close window (if set).
+	 *  2. Vote must be in 'open' stage, or be a consent item in 'scheduled' stage.
+	 *  3. Current time must be within open/close window (if set); a scheduled
+	 *     consent item only needs to be before its closing date.
 	 *  4. User must not have already voted (unless revoting is allowed).
 	 *  5. User must pass the permission check (AccessSchema → WP fallback).
 	 */
@@ -72,14 +73,15 @@ class WPVP_Permissions {
 			return false;
 		}
 
-		// Must be open.
-		if ( 'open' !== $vote->voting_stage ) {
+		// Must be open; a consent item also takes objections while scheduled.
+		$is_consent_review = 'consent' === $vote->voting_type && 'scheduled' === $vote->voting_stage;
+		if ( 'open' !== $vote->voting_stage && ! $is_consent_review ) {
 			return false;
 		}
 
-		// Date window check.
+		// Date window check; a scheduled consent item takes objections up to its closing date.
 		$now = current_time( 'mysql' );
-		if ( $vote->opening_date && $now < $vote->opening_date ) {
+		if ( ! $is_consent_review && $vote->opening_date && $now < $vote->opening_date ) {
 			return false;
 		}
 		if ( $vote->closing_date && $now > $vote->closing_date ) {
