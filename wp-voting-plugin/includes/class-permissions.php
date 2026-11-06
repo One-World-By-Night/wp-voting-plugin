@@ -107,7 +107,7 @@ class WPVP_Permissions {
 	 * Logic:
 	 *  - Admins: always yes.
 	 *  - Completed/archived votes: anyone who was an eligible voter or who voted.
-	 *  - Open votes with "show results before close": eligible voters.
+	 *  - Open votes with "show results before close": eligible voters, and exec and genre coordinators who can view the vote.
 	 *  - Otherwise: no.
 	 */
 	public static function can_view_results( int $user_id, int $vote_id ): bool {
@@ -152,16 +152,28 @@ class WPVP_Permissions {
 			return self::can_view_vote( $user_id, $vote );
 		}
 
-		// Open vote with "show results before close" — eligible voters only.
+		// Open vote with "show results before close" — eligible voters, and exec and genre coordinators who can view the vote.
 		if ( 'open' === $vote->voting_stage ) {
 			$settings = json_decode( $vote->settings, true );
 			$settings = $settings ? $settings : array();
 			if ( ! empty( $settings['show_results_before_closing'] ) ) {
-				return self::user_can_vote_on( $user_id, $vote );
+				if ( self::user_can_vote_on( $user_id, $vote ) ) {
+					return true;
+				}
+				return self::can_view_vote( $user_id, $vote ) && self::check_roles( $user_id, self::live_results_viewer_roles() );
 			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * Role patterns, besides eligible voters, that see live results and participation on an open vote they can view.
+	 *
+	 * @return string[]
+	 */
+	private static function live_results_viewer_roles(): array {
+		return (array) apply_filters( 'wpvp_live_results_viewer_roles', array( 'exec/*/coordinator', 'coordinator/*/coordinator' ) );
 	}
 
 	/**
@@ -372,6 +384,11 @@ class WPVP_Permissions {
 		$mode = get_option( 'wpvp_accessschema_mode', 'none' );
 		if ( 'none' === $mode ) {
 			return null; // Not configured.
+		}
+
+		// Visitors who are not logged in hold no roles.
+		if ( ! $user_id ) {
+			return false;
 		}
 
 		$user = get_userdata( $user_id );

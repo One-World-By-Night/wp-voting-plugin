@@ -335,6 +335,18 @@ class WPVP_Public {
 
 		$user_id = get_current_user_id();
 
+		// Only someone who can see the vote in the list sees its page.
+		if ( ! WPVP_Permissions::can_view_vote( $user_id, $vote ) ) {
+			if ( ! $user_id ) {
+				return '<div class="wpvp-vote-detail"><div class="wpvp-notice wpvp-notice--info"><p>'
+					. esc_html__( 'You must be logged in to view this vote.', 'wp-voting-plugin' )
+					. '</p><a href="' . esc_url( wp_login_url( add_query_arg( 'wpvp_vote', $vote_id, get_permalink() ) ) ) . '" class="wpvp-btn wpvp-btn--primary">'
+					. esc_html__( 'Log In', 'wp-voting-plugin' )
+					. '</a></div></div>';
+			}
+			return '<div class="wpvp-vote-detail"><p class="wpvp-error">' . esc_html__( 'You do not have permission to view this vote.', 'wp-voting-plugin' ) . '</p></div>';
+		}
+
 		ob_start();
 		include WPVP_PLUGIN_DIR . 'templates/public/vote-detail.php';
 		return ob_get_clean();
