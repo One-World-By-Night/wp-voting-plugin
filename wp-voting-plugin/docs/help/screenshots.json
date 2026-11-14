@@ -55,7 +55,7 @@
 				}
 			},
 			{
-				"heading": "The screen",
+				"heading": "Vote",
 				"path": "/?page_id=12&wpvp_vote=10",
 				"account": "priya",
 				"crop": ".wpvp-vote-detail",
@@ -88,7 +88,7 @@
 				}
 			},
 			{
-				"heading": "The screen",
+				"heading": "Check the AccessSchema connection",
 				"path": "/wp-admin/admin.php?page=wpvp-settings&tab=permissions",
 				"account": "archie",
 				"height": 1300,
