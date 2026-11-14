@@ -1,0 +1,22 @@
+{
+	"id": "wpvp",
+	"site": "https://support.owbn.net",
+	"category": { "slug": "wpvp", "name": "WP Voting Plugin" },
+	"slugPrefix": "wpvp-",
+	"guides": {
+		"overview": "what-is-the-voting-plugin"
+	},
+	"redirects": {
+		"creating-a-vote": "wpvp-vote-editor",
+		"managing-votes": "wpvp-votes",
+		"viewing-results": "wpvp-results",
+		"how-voting-works": "wpvp-casting-a-ballot",
+		"troubleshooting-wpvp": "wpvp-troubleshooting"
+	},
+	"screens": {
+		"page:wpvp-votes": "votes",
+		"page:wpvp-vote-edit": "vote-editor",
+		"page:wpvp-settings": "settings",
+		"page:wpvp-role-templates": "templates"
+	}
+}

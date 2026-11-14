@@ -114,7 +114,7 @@ class WPVP_Role_Templates {
 								<td>
 									<?php
 									if ( ! empty( $roles ) ) {
-										echo '<code>' . esc_html( implode( '</code>, <code>', $roles ) ) . '</code>';
+										echo implode( ', ', array_map( function ( $role ) { return '<code>' . esc_html( (string) $role ) . '</code>'; }, (array) $roles ) );
 									} else {
 										esc_html_e( 'None', 'wp-voting-plugin' );
 									}

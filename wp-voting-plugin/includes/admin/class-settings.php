@@ -428,7 +428,7 @@ class WPVP_Settings {
 		?>
 		<h2><?php esc_html_e( 'AccessSchema Connection', 'wp-voting-plugin' ); ?></h2>
 		<p class="description">
-			<?php esc_html_e( 'When AccessSchema is configured, it takes priority for voter eligibility checks. If unavailable, WordPress capabilities are used as a fallback.', 'wp-voting-plugin' ); ?>
+			<?php esc_html_e( 'When AccessSchema is configured, it alone decides who matches a vote\'s roles, from each member\'s cached roles. A member with no cached roles matches none.', 'wp-voting-plugin' ); ?>
 		</p>
 		<table class="form-table">
 			<tr>
@@ -482,7 +482,7 @@ class WPVP_Settings {
 
 		<h2><?php esc_html_e( 'WordPress Capability Fallback', 'wp-voting-plugin' ); ?></h2>
 		<p class="description">
-			<?php esc_html_e( 'These WordPress capabilities are used when AccessSchema is disabled or unreachable.', 'wp-voting-plugin' ); ?>
+			<?php esc_html_e( 'These WordPress capabilities are used when AccessSchema is not configured.', 'wp-voting-plugin' ); ?>
 		</p>
 		<table class="form-table">
 			<?php

@@ -1,6 +1,42 @@
 # WP Voting Plugin - Version History
 
-## Version 3.10.8 (Current - March 2026)
+## Version 3.14.7 (Current - November 2026)
+
+**Help pages, and the fixes found while writing them.**
+
+- Added: help pages in English and Portuguese (`docs/`), opened from the ? on each WP Voting screen through OWBN Core.
+- Fixed: the hourly job opened a draft whose opening date had passed; only scheduled votes open on their own.
+- Fixed: a vote set to Open with a future opening date became Scheduled only while emails were switched on.
+- Fixed: the "vote opened" email's default recipients went by visibility and missed everyone holding an AccessSchema role; they are now everyone whose roles can vote, plus the admin address.
+- Fixed: result pages showed the classification as raw JSON.
+- Fixed: the Templates list and the Guide showed literal code tags between roles.
+- Fixed: the Guide and the Permissions tab described a WordPress-role fallback that doesn't exist, and the Guide said the vote check went by visibility.
+
+---
+
+## Versions 3.11.1 to 3.14.6
+
+- 3.14.6: Coordinators see live results on restricted votes; the vote page follows the list's visibility.
+- 3.14.5: Scheduled votes can be withdrawn; consent items take objections while scheduled.
+- 3.14.4: Condorcet grid and STV quota saved and shown; fixed "Eliminated: Array", the multi-winner banner, the blank sequential live preview and stray validator warnings.
+- 3.14.3: Condorcet: the Schulze winner is the undominated set, so co-winners and ties are kept.
+- 3.14.2: STV: Droop quota over valid ballots only, one election per round, a guard for no valid ballots.
+- 3.14.1: Disciplinary: the threshold selector is hidden where it doesn't apply; the cascade reasoning is saved and shown.
+- 3.14.0: Single choice: the majority threshold (2/3, simple) decides pass or fail.
+- 3.13.3: Voting dashboard times shown in the viewer's time zone.
+- 3.13.2: Stuck closed votes are recovered by the hourly job.
+- 3.13.1: The ballot's role picker waits for the page to load.
+- 3.13.0: Voting options saved in one step; shortcodes run in proposal descriptions.
+- 3.12.2: An admin can turn a consent item into a full vote by filling in Objection By.
+- 3.12.1: A new holder of a chronicle or office role replaces that entity's earlier ballot.
+- 3.12.0: Server-side paging, no duplicate notifications, action buttons in the list.
+- 3.11.3: Results of closed restricted votes check the allowed roles.
+- 3.11.2: Public participation tracker, links to exec details, centred vote pages.
+- 3.11.1: Midnight job, time zone fix, list filters, admin voting role fix.
+
+---
+
+## Version 3.10.8 (March 2026)
 
 **Consent agenda auto-pass and objection title swap.**
 

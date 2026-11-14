@@ -1,0 +1,113 @@
+{
+	"site": "http://localhost:8923",
+	"viewport": {
+		"width": 1280,
+		"height": 900
+	},
+	"accounts": {
+		"archie": "Dana Whitfield, site admin",
+		"priya": "Priya Natarajan, CM of Tides of Ash"
+	},
+	"notes": "Captured from the help sandbox (~/owbn/_localwp-oat/help) after seed-cc-shots.php and seed-wpvp-shots.php: made-up people and votes. The plugin's screens are English-only, so the Portuguese pages reuse these images with Portuguese alt text.",
+	"pages": {
+		"votes": [
+			{
+				"heading": "The screen",
+				"path": "/wp-admin/admin.php?page=wpvp-votes",
+				"account": "archie",
+				"alt": {
+					"en": "All Votes: Add New, the status and type filters, Search Votes, and the votes with their Type, Status, Responses, Created By and Date.",
+					"pt_BR": "All Votes: Add New, os filtros de status e de tipo, Search Votes e as votações com Type, Status, Responses, Created By e Date."
+				}
+			}
+		],
+		"vote-editor": [
+			{
+				"heading": "The screen",
+				"path": "/wp-admin/admin.php?page=wpvp-vote-edit&id=10",
+				"account": "archie",
+				"height": 1300,
+				"alt": {
+					"en": "Editing a vote: the title, Description, Proposal Metadata, Voting Type, Voting Options and the Status & Schedule box.",
+					"pt_BR": "Editando uma votação: o título, Description, Proposal Metadata, Voting Type, Voting Options e a caixa Status & Schedule."
+				}
+			},
+			{
+				"heading": "Role lists",
+				"path": "/wp-admin/admin.php?page=wpvp-vote-edit&id=10",
+				"account": "archie",
+				"crop": ".postbox:has(.postbox-header h2:text-is(\"Access Control\"))",
+				"alt": {
+					"en": "The Access Control box: Visibility set to Restricted, Load from template with Apply, and the Allowed Roles / Groups list with chronicle/*/cm and the coordinator patterns.",
+					"pt_BR": "A caixa Access Control: Visibility em Restricted, Load from template com Apply e a lista Allowed Roles / Groups com chronicle/*/cm e os padrões de coordenador."
+				}
+			}
+		],
+		"casting-a-ballot": [
+			{
+				"heading": "The screen",
+				"path": "/?page_id=10",
+				"account": "priya",
+				"crop": ".wpvp-vote-list",
+				"alt": {
+					"en": "The Voting Dashboard: votes with their proposer, type, dates, ballot count, status and result, and a Vote button on the open one.",
+					"pt_BR": "O Voting Dashboard: votações com quem propôs, tipo, datas, número de votos, status e resultado, e um botão Vote na que está aberta."
+				}
+			},
+			{
+				"heading": "The screen",
+				"path": "/?page_id=12&wpvp_vote=10",
+				"account": "priya",
+				"crop": ".wpvp-vote-detail",
+				"alt": {
+					"en": "An open Approve / Deny / Abstain ballot with its dates, the live results, the comment box, the email confirmation option and Submit Vote.",
+					"pt_BR": "Uma cédula aberta de Approve / Deny / Abstain com as datas, os resultados ao vivo, a caixa de comentário, a opção de confirmação por email e Submit Vote."
+				}
+			}
+		],
+		"results": [
+			{
+				"heading": "The screen",
+				"path": "/?page_id=13&wpvp_vote=9",
+				"account": "archie",
+				"crop": ".wpvp-results-wrap",
+				"alt": {
+					"en": "The result of a ranked election: the winner, Export CSV, the vote table and the Round-by-Round Results.",
+					"pt_BR": "O resultado de uma eleição ranqueada: quem venceu, Export CSV, a tabela de votos e o Round-by-Round Results."
+				}
+			}
+		],
+		"settings": [
+			{
+				"heading": "The screen",
+				"path": "/wp-admin/admin.php?page=wpvp-settings&tab=general",
+				"account": "archie",
+				"alt": {
+					"en": "Voting Settings, General: Default Voting Type, Require Login to Vote, Show Results Before Close, Email Notifications and the recipient defaults.",
+					"pt_BR": "Voting Settings, General: Default Voting Type, Require Login to Vote, Show Results Before Close, Email Notifications e os destinatários padrão."
+				}
+			},
+			{
+				"heading": "The screen",
+				"path": "/wp-admin/admin.php?page=wpvp-settings&tab=permissions",
+				"account": "archie",
+				"height": 1300,
+				"alt": {
+					"en": "Voting Settings, Permissions: the AccessSchema Connection with Test Connection, the WordPress capability fallback, and the defaults for new votes.",
+					"pt_BR": "Voting Settings, Permissions: a AccessSchema Connection com Test Connection, os recursos do WordPress de reserva e os padrões das votações novas."
+				}
+			}
+		],
+		"templates": [
+			{
+				"heading": "The screen",
+				"path": "/wp-admin/admin.php?page=wpvp-role-templates",
+				"account": "archie",
+				"alt": {
+					"en": "Role & Classification Templates: the Role Templates and Classifications tabs, Add New Role Template, and two templates with their roles.",
+					"pt_BR": "Role & Classification Templates: as abas Role Templates e Classifications, Add New Role Template e dois modelos com os cargos deles."
+				}
+			}
+		]
+	}
+}

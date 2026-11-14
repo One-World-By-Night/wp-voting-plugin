@@ -1062,18 +1062,17 @@ class WPVP_Guide {
 			</table>
 
 			<h3><?php esc_html_e( 'Voter Eligibility — Priority Chain', 'wp-voting-plugin' ); ?></h3>
-			<p><?php esc_html_e( 'For restricted votes, the system checks voter eligibility using a priority chain:', 'wp-voting-plugin' ); ?></p>
+			<p><?php esc_html_e( 'For restricted votes, one of these decides whether a user matches the vote\'s roles:', 'wp-voting-plugin' ); ?></p>
 
 			<div class="wpvp-guide-callout wpvp-guide-callout--info">
 				<ol>
 					<li><?php esc_html_e( 'Is AccessSchema configured (mode is not "none")?', 'wp-voting-plugin' ); ?>
 						<ul>
-							<li><strong><?php esc_html_e( 'Yes:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Check the user\'s email against each allowed role path via AccessSchema API.', 'wp-voting-plugin' ); ?></li>
-							<li><?php esc_html_e( 'If AccessSchema returns true/false, use that answer.', 'wp-voting-plugin' ); ?></li>
-							<li><?php esc_html_e( 'If AccessSchema is unreachable or the function is missing, fall through to step 2.', 'wp-voting-plugin' ); ?></li>
+							<li><strong><?php esc_html_e( 'Yes:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Match the user\'s cached AccessSchema roles against each allowed role path.', 'wp-voting-plugin' ); ?></li>
+							<li><?php esc_html_e( 'That answer is final. A user with no cached roles matches nothing.', 'wp-voting-plugin' ); ?></li>
 						</ul>
 					</li>
-					<li><strong><?php esc_html_e( 'WordPress Fallback:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Check if the user has any of the allowed roles as a WordPress role slug or capability.', 'wp-voting-plugin' ); ?></li>
+					<li><strong><?php esc_html_e( 'No AccessSchema:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Check if the user has any of the allowed roles as a WordPress role slug or capability.', 'wp-voting-plugin' ); ?></li>
 				</ol>
 			</div>
 
@@ -1273,18 +1272,18 @@ class WPVP_Guide {
 
 			<ol>
 				<li><strong><?php esc_html_e( 'Is the user logged in?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'Anonymous voting is not supported.', 'wp-voting-plugin' ); ?></li>
-				<li><strong><?php esc_html_e( 'Is the vote in "Open" stage?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'Ballots can only be cast on open votes.', 'wp-voting-plugin' ); ?></li>
+				<li><strong><?php esc_html_e( 'Is the vote in "Open" stage?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'Ballots can only be cast on open votes. A scheduled consent agenda item also takes objections until it closes.', 'wp-voting-plugin' ); ?></li>
 				<li><strong><?php esc_html_e( 'Is the current time within the date window?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'If opening/closing dates are set, the current time must fall between them.', 'wp-voting-plugin' ); ?></li>
 				<li><strong><?php esc_html_e( 'Has the user already voted?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'If yes and revoting is not allowed, the user is blocked.', 'wp-voting-plugin' ); ?></li>
-				<li><strong><?php esc_html_e( 'Does the user pass the access check?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'This depends on the vote\'s visibility setting (see below).', 'wp-voting-plugin' ); ?></li>
+				<li><strong><?php esc_html_e( 'Does the user pass the access check?', 'wp-voting-plugin' ); ?></strong> &mdash; <?php esc_html_e( 'This depends on the vote\'s voting eligibility setting (see below).', 'wp-voting-plugin' ); ?></li>
 			</ol>
 
-			<h3><?php esc_html_e( 'Access Check by Visibility', 'wp-voting-plugin' ); ?></h3>
+			<h3><?php esc_html_e( 'Access Check by Voting Eligibility', 'wp-voting-plugin' ); ?></h3>
 
 			<table class="wpvp-guide-table">
 				<thead>
 					<tr>
-						<th><?php esc_html_e( 'Visibility', 'wp-voting-plugin' ); ?></th>
+						<th><?php esc_html_e( 'Voting Eligibility', 'wp-voting-plugin' ); ?></th>
 						<th><?php esc_html_e( 'Access Logic', 'wp-voting-plugin' ); ?></th>
 					</tr>
 				</thead>
@@ -1301,7 +1300,7 @@ class WPVP_Guide {
 						<td><strong><?php esc_html_e( 'Restricted to Roles', 'wp-voting-plugin' ); ?></strong></td>
 						<td>
 							<?php if ( $this->asc_configured() ) : ?>
-								<?php esc_html_e( 'First checks the user\'s email against each allowed role path via AccessSchema. If AccessSchema is unreachable, falls back to WordPress role/capability matching.', 'wp-voting-plugin' ); ?>
+								<?php esc_html_e( 'Matches the user\'s cached AccessSchema roles against each allowed role path. A user with no cached roles is denied.', 'wp-voting-plugin' ); ?>
 							<?php else : ?>
 								<?php esc_html_e( 'Checks if the user has any of the allowed roles as a WordPress role slug or capability.', 'wp-voting-plugin' ); ?>
 							<?php endif; ?>
@@ -1314,11 +1313,11 @@ class WPVP_Guide {
 			<?php if ( $this->asc_configured() ) : ?>
 				<div class="wpvp-guide-callout wpvp-guide-callout--info">
 					<p><strong><?php esc_html_e( 'Scenario:', 'wp-voting-plugin' ); ?></strong>
-					<?php esc_html_e( 'A vote has Visibility set to "Restricted to Roles" with allowed roles:', 'wp-voting-plugin' ); ?>
+					<?php esc_html_e( 'A vote has Voting Eligibility set to "Specific roles/groups" with these roles:', 'wp-voting-plugin' ); ?>
 					<?php
 					$example_roles = $this->get_example_role_paths();
 					if ( ! empty( $example_roles ) ) {
-						echo '<code>' . esc_html( implode( '</code>, <code>', $example_roles ) ) . '</code>';
+						echo implode( ', ', array_map( function ( $role ) { return '<code>' . esc_html( (string) $role ) . '</code>'; }, (array) $example_roles ) );
 					} else {
 						echo '<code>Council/Member</code>';
 					}
@@ -1338,13 +1337,12 @@ class WPVP_Guide {
 						</li>
 						<li><?php esc_html_e( 'If AccessSchema returns true for any of the allowed paths, the user can vote.', 'wp-voting-plugin' ); ?></li>
 						<li><?php esc_html_e( 'If AccessSchema returns false for all paths, the user is denied.', 'wp-voting-plugin' ); ?></li>
-						<li><?php esc_html_e( 'If AccessSchema is unreachable, the system checks WordPress roles as a fallback.', 'wp-voting-plugin' ); ?></li>
 					</ol>
 				</div>
 			<?php else : ?>
 				<div class="wpvp-guide-callout wpvp-guide-callout--info">
 					<p><strong><?php esc_html_e( 'Scenario:', 'wp-voting-plugin' ); ?></strong>
-					<?php esc_html_e( 'A vote has Visibility set to "Restricted to Roles" with allowed roles:', 'wp-voting-plugin' ); ?>
+					<?php esc_html_e( 'A vote has Voting Eligibility set to "Specific roles/groups" with these roles:', 'wp-voting-plugin' ); ?>
 					<code>editor</code>, <code>administrator</code>
 					</p>
 					<p><strong><?php esc_html_e( 'What happens when a user tries to vote:', 'wp-voting-plugin' ); ?></strong></p>
@@ -1374,7 +1372,7 @@ class WPVP_Guide {
 			<h3><?php esc_html_e( 'Hourly Cron Schedule', 'wp-voting-plugin' ); ?></h3>
 			<p><?php esc_html_e( 'The plugin registers a WordPress cron event that runs every hour. It performs the following:', 'wp-voting-plugin' ); ?></p>
 			<ol>
-				<li><strong><?php esc_html_e( 'Auto-open:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Draft votes with an opening date in the past are moved to Open.', 'wp-voting-plugin' ); ?></li>
+				<li><strong><?php esc_html_e( 'Auto-open:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Scheduled votes whose opening date has passed are moved to Open. Drafts never open on their own.', 'wp-voting-plugin' ); ?></li>
 				<li><strong><?php esc_html_e( 'Auto-close:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Open votes with a closing date in the past are moved to Closed.', 'wp-voting-plugin' ); ?></li>
 				<li><strong><?php esc_html_e( 'Auto-process:', 'wp-voting-plugin' ); ?></strong> <?php esc_html_e( 'Immediately after a vote is auto-closed, its results are calculated and the vote moves to Completed.', 'wp-voting-plugin' ); ?></li>
 			</ol>
@@ -1445,8 +1443,8 @@ class WPVP_Guide {
 
 			<?php if ( $this->asc_configured() ) : ?>
 				<div class="wpvp-guide-callout wpvp-guide-callout--warning">
-					<strong><?php esc_html_e( 'AccessSchema Limitation', 'wp-voting-plugin' ); ?></strong>
-					<p><?php esc_html_e( 'For restricted votes using AccessSchema role paths, the system cannot enumerate all eligible users (AccessSchema checks one user at a time). "Vote Opened" notifications for restricted votes will only go to WordPress administrators. "Vote Closed" notifications go to all users who actually voted, which works regardless of the permission system.', 'wp-voting-plugin' ); ?></p>
+					<strong><?php esc_html_e( 'Who Gets Them', 'wp-voting-plugin' ); ?></strong>
+					<p><?php esc_html_e( 'Each email goes to the recipients set on the vote, or else the defaults under Settings, General. With neither, "Vote Opened" goes to every user whose roles can vote on it, as this site last read their roles, plus the admin address, and "Vote Closed" goes to everyone who voted.', 'wp-voting-plugin' ); ?></p>
 				</div>
 			<?php endif; ?>
 		</section>

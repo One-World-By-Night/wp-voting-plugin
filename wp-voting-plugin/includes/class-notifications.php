@@ -75,11 +75,11 @@ class WPVP_Notifications {
 		$now   = current_time( 'mysql' );
 		$table = WPVP_Database::votes_table();
 
-		// Find scheduled (or legacy draft) votes whose opening_date has passed.
+		// Find scheduled votes whose opening_date has passed. A draft never opens on its own.
 		$vote_ids = $wpdb->get_col(
 			$wpdb->prepare(
 				"SELECT id FROM {$table}
-             WHERE voting_stage IN ('scheduled', 'draft')
+             WHERE voting_stage = 'scheduled'
                AND opening_date IS NOT NULL
                AND opening_date <= %s",
 				$now
@@ -215,10 +215,6 @@ class WPVP_Notifications {
 	 * @param string $old_stage The previous stage.
 	 */
 	public function on_stage_change( int $vote_id, string $new_stage, string $old_stage ): void {
-		if ( ! get_option( 'wpvp_enable_email_notifications', false ) ) {
-			return;
-		}
-
 		$vote = WPVP_Database::get_vote( $vote_id );
 		if ( ! $vote ) {
 			return;
@@ -231,6 +227,10 @@ class WPVP_Notifications {
 				WPVP_Database::update_vote( $vote_id, array( 'voting_stage' => 'scheduled' ) );
 				return;
 			}
+		}
+
+		if ( ! get_option( 'wpvp_enable_email_notifications', false ) ) {
+			return;
 		}
 
 		$vote_settings = json_decode( $vote->settings, true );
@@ -426,16 +426,15 @@ class WPVP_Notifications {
 	 * @return string[] Array of email addresses.
 	 */
 	private function get_notification_recipients( object $vote ): array {
-		$visibility = $vote->visibility ?? 'private';
+		$eligibility = $vote->voting_eligibility ?? 'private';
 
-		// Public votes: don't spam everyone on the site.
-		// Only notify admins for public votes.
-		if ( 'public' === $visibility ) {
+		// Anyone may vote: only the admins, so the whole site isn't emailed.
+		if ( 'public' === $eligibility ) {
 			return $this->get_admin_emails();
 		}
 
-		// Private: all logged-in users (capped at 500).
-		if ( 'private' === $visibility ) {
+		// Any logged-in user may vote (capped at 500).
+		if ( 'private' === $eligibility ) {
 			$users = get_users(
 				array(
 					'fields' => 'user_email',
@@ -445,27 +444,14 @@ class WPVP_Notifications {
 			return array_filter( $users );
 		}
 
-		// Restricted: users matching allowed_roles.
-		$allowed_roles = json_decode( $vote->allowed_roles, true );
-		if ( empty( $allowed_roles ) ) {
-			return $this->get_admin_emails();
-		}
-
-		// Get users by WP roles (AccessSchema users can't be enumerated).
+		// Specific roles: every user whose roles can vote on it, as this site last read them.
 		$emails = array();
-		foreach ( $allowed_roles as $role ) {
-			$role   = sanitize_text_field( $role );
-			$users  = get_users(
-				array(
-					'role'   => $role,
-					'fields' => 'user_email',
-					'number' => 200,
-				)
-			);
-			$emails = array_merge( $emails, $users );
+		foreach ( get_users( array( 'fields' => array( 'ID', 'user_email' ) ) ) as $user ) {
+			if ( ! empty( WPVP_Permissions::get_eligible_voting_roles( (int) $user->ID, $vote ) ) ) {
+				$emails[] = $user->user_email;
+			}
 		}
-
-		return array_unique( array_filter( $emails ) );
+		return array_values( array_unique( array_filter( $emails ) ) );
 	}
 
 	private function get_voters( int $vote_id ): array {

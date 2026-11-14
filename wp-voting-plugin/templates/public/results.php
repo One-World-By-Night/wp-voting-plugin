@@ -33,9 +33,13 @@ $type_info = $types[ $vote->voting_type ] ?? array();
 		<span class="wpvp-results-wrap__type">
 			<?php echo esc_html( $type_info['label'] ?? $vote->voting_type ); ?>
 		</span>
-		<?php if ( ! empty( $vote->classification ) ) : ?>
+		<?php
+		$wpvp_classes = json_decode( (string) $vote->classification, true );
+		$wpvp_classes = is_array( $wpvp_classes ) ? implode( ', ', array_filter( array_map( 'strval', $wpvp_classes ) ) ) : (string) $vote->classification;
+		?>
+		<?php if ( '' !== $wpvp_classes ) : ?>
 			<span class="wpvp-results-wrap__classification">
-				<?php echo esc_html( $vote->classification ); ?>
+				<?php echo esc_html( $wpvp_classes ); ?>
 			</span>
 		<?php endif; ?>
 		<?php if ( $vote->opening_date ) : ?>
