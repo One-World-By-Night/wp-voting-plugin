@@ -16,8 +16,8 @@
 				"path": "/wp-admin/admin.php?page=wpvp-votes",
 				"account": "archie",
 				"alt": {
-					"en": "All Votes: Add New, the status and type filters, Search Votes, and the votes with their Type, Status, Responses, Created By and Date.",
-					"pt_BR": "All Votes: Add New, os filtros de status e de tipo, Search Votes e as votações com Type, Status, Responses, Created By e Date."
+					"en": "All Votes: Add New, the status, type and classification filters, Search Votes, and the votes with their Type, Status, Responses, Created By and Date.",
+					"pt_BR": "All Votes: Add New, os filtros de status, de tipo e de classificação, Search Votes e as votações com Type, Status, Responses, Created By e Date."
 				}
 			}
 		],

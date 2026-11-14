@@ -104,6 +104,16 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 			)
 		);
 
+		$this->add_control(
+			'classification',
+			array(
+				'label'       => __( 'Classification', 'wp-voting-plugin' ),
+				'type'        => \Elementor\Controls_Manager::TEXT,
+				'default'     => '',
+				'description' => __( 'Only votes with this classification. Separate several with commas; leave empty for every vote.', 'wp-voting-plugin' ),
+			)
+		);
+
 		$this->end_controls_section();
 	}
 
@@ -111,11 +121,12 @@ class WPVP_Elementor_Vote_List_Widget extends \Elementor\Widget_Base {
 		$settings = $this->get_settings_for_display();
 		echo do_shortcode(
 			sprintf(
-				'[wpvp_votes status="%s" limit="%d" sort_col="%s" sort_dir="%s"]',
+				'[wpvp_votes status="%s" limit="%d" sort_col="%s" sort_dir="%s" classification="%s"]',
 				esc_attr( $settings['status'] ),
 				intval( $settings['limit'] ),
 				esc_attr( $settings['sort_col'] ),
-				esc_attr( $settings['sort_dir'] )
+				esc_attr( $settings['sort_dir'] ),
+				esc_attr( $settings['classification'] ?? '' )
 			)
 		);
 	}

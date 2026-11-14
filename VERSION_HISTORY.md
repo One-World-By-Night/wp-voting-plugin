@@ -1,6 +1,16 @@
 # WP Voting Plugin - Version History
 
-## Version 3.14.7 (Current - November 2026)
+## Version 3.14.8 (Current - November 2026)
+
+**Votes by classification.**
+
+- Added: a Classification filter on All Votes, beside status and type.
+- Added: `[wpvp_votes classification="..."]` lists only votes carrying one of the named classifications (comma-separated); the Vote List Elementor widget has a matching Classification box.
+- Added: "Vote of No Confidence" to the default classifications a new install starts with.
+
+---
+
+## Version 3.14.7 (November 2026)
 
 **Help pages, and the fixes found while writing them.**
 

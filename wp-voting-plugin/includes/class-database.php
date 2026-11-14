@@ -201,6 +201,7 @@ class WPVP_Database {
 				'Other Public',
 				'R&U Submission',
 				'Territory',
+				'Vote of No Confidence',
 			);
 
 			$now = current_time( 'mysql' );
@@ -695,6 +696,7 @@ class WPVP_Database {
 	 *     @type string $search    Search term.
 	 *     @type string $status    Filter by voting_stage.
 	 *     @type string $type      Filter by voting_type.
+	 *     @type string|string[] $classification Filter to votes carrying any of these classifications.
 	 *     @type string $orderby   Column to sort by (whitelisted).
 	 *     @type string $order     ASC or DESC.
 	 * }
@@ -709,6 +711,7 @@ class WPVP_Database {
 			'search'   => '',
 			'status'   => '',
 			'type'     => '',
+			'classification' => '',
 			'orderby'  => 'created_at',
 			'order'    => 'DESC',
 		);
@@ -743,6 +746,11 @@ class WPVP_Database {
 		if ( ! empty( $args['type'] ) ) {
 			$where[]  = 'v.voting_type = %s';
 			$values[] = sanitize_key( $args['type'] );
+		}
+
+		$classification_clause = self::classification_clause( $args['classification'], 'v.classification', $values );
+		if ( '' !== $classification_clause ) {
+			$where[] = $classification_clause;
 		}
 
 		$where_sql = implode( ' AND ', $where );
@@ -807,6 +815,11 @@ class WPVP_Database {
 			$values[] = sanitize_key( $args['type'] );
 		}
 
+		$classification_clause = self::classification_clause( $args['classification'] ?? '', 'classification', $values );
+		if ( '' !== $classification_clause ) {
+			$where[] = $classification_clause;
+		}
+
 		$where_sql = implode( ' AND ', $where );
 		$sql       = 'SELECT COUNT(*) FROM ' . self::votes_table() . " WHERE {$where_sql}";
 
@@ -815,6 +828,31 @@ class WPVP_Database {
 		}
 
 		return (int) $wpdb->get_var( $sql ); // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+	}
+
+	/**
+	 * The WHERE clause matching votes that carry any of the given classifications, or '' when none is given. Its
+	 * values are appended to $values.
+	 *
+	 * @param string|string[] $classification One classification name, or several.
+	 * @param string          $column         The classification column, with its table alias if it has one.
+	 * @param array           $values         Prepared-statement values.
+	 * @return string
+	 */
+	private static function classification_clause( $classification, string $column, array &$values ): string {
+		global $wpdb;
+
+		$parts = array();
+		foreach ( (array) $classification as $name ) {
+			$name = sanitize_text_field( (string) $name );
+			if ( '' === $name ) {
+				continue;
+			}
+			$parts[]  = $column . ' LIKE %s';
+			$values[] = '%' . $wpdb->esc_like( wp_json_encode( $name ) ) . '%';
+		}
+
+		return $parts ? '(' . implode( ' OR ', $parts ) . ')' : '';
 	}
 
 

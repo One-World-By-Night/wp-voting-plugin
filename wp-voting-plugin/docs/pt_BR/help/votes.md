@@ -14,7 +14,7 @@ wp-admin em council.owbn.net → **WP Voting** → **All Votes**.
 
 - **Add New**, ao lado do título, começa uma votação, veja [Criar e editar uma votação](vote-editor.md).
 - **All**, **Draft**, **Scheduled** e os outros estágios acima da lista mostram as votações naquele estágio.
-- **All Statuses** e **All Types**, e depois **Filter**, filtram a lista; **Clear Filters** desfaz. **Search Votes** procura nos títulos e descrições.
+- **All Statuses**, **All Types** e **All Classifications**, e depois **Filter**, filtram a lista; **Clear Filters** desfaz. **Search Votes** procura nos títulos e descrições.
 - Uma linha por votação: **Title**, **Type**, **Status**, **Responses** (cédulas dadas), **Created By** e **Date**.
 - Sob cada título:
   - **Edit** - abre a votação.
@@ -37,8 +37,15 @@ wp-admin em council.owbn.net → **WP Voting** → **All Votes**.
 
 ### Achar uma votação
 
-1. Escolha um estágio em **All Statuses** ou um tipo em **All Types**, ou digite parte do título em **Search Votes**.
+1. Escolha um estágio em **All Statuses**, um tipo em **All Types** ou uma classificação em **All Classifications**, ou digite parte do título em **Search Votes**.
 2. Clique em **Filter** ou **Search Votes**.
+
+### Listar os votos de desconfiança
+
+1. Em **All Classifications**, escolha **Vote of No Confidence**.
+2. Clique em **Filter**.
+
+Para listá-los numa página, dê ao shortcode `[wpvp_votes]` o atributo `classification`, ou preencha **Classification** no widget Vote List do Elementor. Várias classificações vão separadas por vírgulas.
 
 ### Retirar uma votação
 
@@ -50,6 +57,7 @@ wp-admin em council.owbn.net → **WP Voting** → **All Votes**.
 - As votações abrem, fecham e são apuradas sozinhas: uma rotina confere a cada hora, e de novo à meia-noite.
 - **Delete** não tem volta, e a votação some do histórico de votos de todas as crônicas e coordenadores. Para tirar uma votação do ar, retire-a ou arquive-a.
 - **Set Open** numa votação cuja data de abertura ainda não chegou a deixa **Scheduled** até essa data.
+- Uma votação pode ter várias classificações. Filtrar por uma mostra toda votação que a tem, junto com as outras.
 
 ## Solução de problemas
 

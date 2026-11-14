@@ -14,7 +14,7 @@ wp-admin on council.owbn.net → **WP Voting** → **All Votes**.
 
 - **Add New** next to the title starts a vote, see [Creating and Editing a Vote](vote-editor.md).
 - **All**, **Draft**, **Scheduled** and the other stages above the list show the votes in that stage.
-- **All Statuses** and **All Types**, then **Filter**, narrow the list; **Clear Filters** undoes them. **Search Votes** looks in titles and descriptions.
+- **All Statuses**, **All Types** and **All Classifications**, then **Filter**, narrow the list; **Clear Filters** undoes them. **Search Votes** looks in titles and descriptions.
 - One row per vote: **Title**, **Type**, **Status**, **Responses** (ballots cast), **Created By** and **Date**.
 - Under each title:
   - **Edit** - opens the vote.
@@ -37,8 +37,15 @@ wp-admin on council.owbn.net → **WP Voting** → **All Votes**.
 
 ### Find a vote
 
-1. Pick a stage under **All Statuses** or a type under **All Types**, or type part of its title in **Search Votes**.
+1. Pick a stage under **All Statuses**, a type under **All Types** or a classification under **All Classifications**, or type part of its title in **Search Votes**.
 2. Click **Filter** or **Search Votes**.
+
+### List the votes of no confidence
+
+1. Under **All Classifications**, pick **Vote of No Confidence**.
+2. Click **Filter**.
+
+To list them on a page, give the `[wpvp_votes]` shortcode a `classification` attribute, or fill in **Classification** on Elementor's Vote List widget. Several classifications go in separated by commas.
 
 ### Pull a vote
 
@@ -50,6 +57,7 @@ wp-admin on council.owbn.net → **WP Voting** → **All Votes**.
 - Votes open, close and get counted on their own: a job checks every hour, and again at midnight.
 - **Delete** can't be undone, and the vote disappears from every chronicle's and coordinator's vote history. To take a vote down, withdraw or archive it instead.
 - **Set Open** on a vote whose opening date is still ahead leaves it **Scheduled** until that date.
+- A vote can carry several classifications. Filtering by one shows every vote that has it among the others.
 
 ## Troubleshooting
 

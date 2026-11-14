@@ -104,6 +104,7 @@ class WPVP_Public {
 	 *  - limit:    number of votes per page (default: 10)
 	 *  - sort_col: title|type|votes|start_date|end_date|status (default: start_date)
 	 *  - sort_dir: asc|desc (default: asc)
+	 *  - classification: classification names, comma-separated; only votes carrying one of them (default: any)
 	 */
 	public function shortcode_votes( $atts ): string {
 		$this->flag_enqueue();
@@ -114,6 +115,7 @@ class WPVP_Public {
 				'limit'    => 10,
 				'sort_col' => 'start_date',
 				'sort_dir' => 'asc',
+				'classification' => '',
 			),
 			$atts,
 			'wpvp_votes'
@@ -134,6 +136,11 @@ class WPVP_Public {
 			} else {
 				$args['status'] = sanitize_key( $atts['status'] );
 			}
+		}
+
+		$classifications = array_filter( array_map( static fn( $name ) => trim( html_entity_decode( $name, ENT_QUOTES ) ), explode( ',', (string) $atts['classification'] ) ) );
+		if ( $classifications ) {
+			$args['classification'] = $classifications;
 		}
 
 		$all_votes = WPVP_Database::get_votes( $args );

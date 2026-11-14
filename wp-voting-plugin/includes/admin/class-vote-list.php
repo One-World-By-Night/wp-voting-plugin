@@ -90,6 +90,7 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 			'search'   => isset( $_REQUEST['s'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['s'] ) ) : '',
 			'status'   => isset( $_REQUEST['status'] ) ? sanitize_key( $_REQUEST['status'] ) : '',
 			'type'     => isset( $_REQUEST['type'] ) ? sanitize_key( $_REQUEST['type'] ) : '',
+			'classification' => isset( $_REQUEST['classification'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['classification'] ) ) : '',
 			'orderby'  => isset( $_REQUEST['orderby'] ) ? sanitize_key( $_REQUEST['orderby'] ) : 'created_at',
 			'order'    => isset( $_REQUEST['order'] ) ? sanitize_key( $_REQUEST['order'] ) : 'DESC',
 		);
@@ -218,6 +219,9 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 		$current_status = isset( $_REQUEST['status'] ) ? sanitize_key( $_REQUEST['status'] ) : '';
 		$current_type   = isset( $_REQUEST['type'] ) ? sanitize_key( $_REQUEST['type'] ) : '';
 
+		$classifications        = WPVP_Database::get_classifications();
+		$current_classification = isset( $_REQUEST['classification'] ) ? sanitize_text_field( wp_unslash( $_REQUEST['classification'] ) ) : '';
+
 		echo '<div class="alignleft actions">';
 
 		echo '<select name="status">';
@@ -244,9 +248,23 @@ class WPVP_Vote_List_Table extends WP_List_Table {
 		}
 		echo '</select>';
 
+		if ( $classifications ) {
+			echo '<select name="classification">';
+			echo '<option value="">' . esc_html__( 'All Classifications', 'wp-voting-plugin' ) . '</option>';
+			foreach ( $classifications as $classification ) {
+				printf(
+					'<option value="%s" %s>%s</option>',
+					esc_attr( $classification->classification_name ),
+					selected( $current_classification, $classification->classification_name, false ),
+					esc_html( $classification->classification_name )
+				);
+			}
+			echo '</select>';
+		}
+
 		submit_button( __( 'Filter', 'wp-voting-plugin' ), '', 'filter_action', false );
 
-		if ( ! empty( $current_status ) || ! empty( $current_type ) ) {
+		if ( ! empty( $current_status ) || ! empty( $current_type ) || '' !== $current_classification ) {
 			printf(
 				' <a href="%s" class="button">%s</a>',
 				esc_url( admin_url( 'admin.php?page=wpvp-votes' ) ),
@@ -293,6 +311,9 @@ class WPVP_Vote_List {
 				}
 				if ( ! empty( $_GET['type'] ) ) {
 					echo '<input type="hidden" name="type" value="' . esc_attr( sanitize_key( $_GET['type'] ) ) . '">';
+				}
+				if ( ! empty( $_GET['classification'] ) ) {
+					echo '<input type="hidden" name="classification" value="' . esc_attr( sanitize_text_field( wp_unslash( $_GET['classification'] ) ) ) . '">';
 				}
 				if ( ! empty( $_GET['s'] ) ) {
 					echo '<input type="hidden" name="s" value="' . esc_attr( sanitize_text_field( $_GET['s'] ) ) . '">';

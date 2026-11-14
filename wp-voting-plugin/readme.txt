@@ -3,7 +3,7 @@ Contributors: oneworldbynight
 Tags: voting, elections, ballot, poll, ranked-choice
 Requires at least: 5.0
 Tested up to: 6.7
-Stable tag: 3.14.7
+Stable tag: 3.14.8
 Requires PHP: 7.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -67,6 +67,10 @@ When using AccessSchema, you can use `*` to match a single path segment (e.g., `
 A consent agenda proposal passes automatically when the vote closes unless someone files an objection. Any ballot submitted is treated as an objection. The vote auto-processes on close via the hourly cron.
 
 == Changelog ==
+
+= 3.14.8 =
+* Filter All Votes by classification, and list one classification's votes on a page: the [wpvp_votes] shortcode's classification attribute, or Classification on the Vote List widget
+* "Vote of No Confidence" in the default classifications of a new install
 
 = 3.14.7 =
 * Help pages in English and Portuguese, opened from the ? on each screen
