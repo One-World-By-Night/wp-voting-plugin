@@ -12,6 +12,7 @@ defined( 'ABSPATH' ) || exit;
 
 // Use $pagination if set (server-side mode), otherwise fall back to legacy JS mode.
 $server_side = isset( $pagination ) && is_array( $pagination );
+$pagination  = $server_side ? $pagination : array();
 ?>
 
 <div class="wpvp-vote-list">

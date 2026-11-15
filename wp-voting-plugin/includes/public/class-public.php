@@ -154,49 +154,82 @@ class WPVP_Public {
 			}
 		}
 
-		// Pre-compute data needed for sorting and filtering.
-		$vote_ids    = wp_list_pluck( $votes, 'id' );
+		list( $votes, $pagination ) = $this->paginate_votes(
+			$votes,
+			array(
+				'sort_col' => $atts['sort_col'],
+				'sort_dir' => $atts['sort_dir'],
+				'limit'    => $atts['limit'],
+			)
+		);
+
+		ob_start();
+		include WPVP_PLUGIN_DIR . 'templates/public/vote-list.php';
+		return ob_get_clean();
+	}
+
+	/**
+	 * Adds the columns the vote list shows (ballot count, outcome, result text, type), then filters, sorts and pages
+	 * the votes from the request's wpvp_* parameters.
+	 *
+	 * @param object[]   $votes    Votes the viewer may see.
+	 * @param array      $defaults sort_col, sort_dir and limit, used when the request names none.
+	 * @param array|null $outcomes vote_id => saved result outcome, as WPVP_Database::get_result_outcomes() returns it;
+	 *                             null to look them up.
+	 * @return array{0: object[], 1: array} The current page of votes, and the list template's pagination state.
+	 */
+	private function paginate_votes( array $votes, array $defaults, ?array $outcomes = null ): array {
+		$finished      = array( 'closed', 'completed', 'withdrawn' );
+		$vote_ids      = array_map( 'intval', wp_list_pluck( $votes, 'id' ) );
 		$ballot_counts = ! empty( $vote_ids ) ? WPVP_Database::get_ballot_counts( $vote_ids ) : array();
-		$results_cache = array();
+
+		if ( null === $outcomes ) {
+			$finished_ids = array();
+			foreach ( $votes as $vote ) {
+				if ( in_array( $vote->voting_stage, $finished, true ) ) {
+					$finished_ids[] = (int) $vote->id;
+				}
+			}
+			$outcomes = WPVP_Database::get_result_outcomes( $finished_ids );
+		}
 
 		foreach ( $votes as $vote ) {
 			$vote->_ballot_count = isset( $ballot_counts[ $vote->id ] ) ? (int) $ballot_counts[ $vote->id ] : 0;
 			$vote->_result_text  = '';
 			$vote->_outcome      = '';
 
-			if ( in_array( $vote->voting_stage, array( 'closed', 'completed', 'withdrawn' ), true ) ) {
-				$vote_results = WPVP_Database::get_results( (int) $vote->id );
-				if ( $vote_results ) {
-					$wd = $vote_results->winner_data ? $vote_results->winner_data : array();
-					$fr = $vote_results->final_results ? $vote_results->final_results : array();
-					if ( ! empty( $wd['tie'] ) ) {
-						$vote->_outcome     = 'tied';
-						$vote->_result_text = __( 'Tied', 'wp-voting-plugin' );
-					} elseif ( isset( $fr['passed'] ) ) {
-						$vote->_outcome     = $fr['passed'] ? 'passed' : 'failed';
-						$vote->_result_text = $fr['passed'] ? __( 'Passed', 'wp-voting-plugin' ) : __( 'Objected', 'wp-voting-plugin' );
-					} elseif ( ! empty( $wd['winners'] ) ) {
-						$vote->_outcome     = 'winner';
-						$vote->_result_text = implode( ', ', $wd['winners'] );
-					} elseif ( ! empty( $wd['winner'] ) ) {
-						$vote->_outcome     = 'winner';
-						$vote->_result_text = $wd['winner'];
-					}
+			$vote_results = in_array( $vote->voting_stage, $finished, true ) ? ( $outcomes[ (int) $vote->id ] ?? null ) : null;
+			if ( $vote_results ) {
+				$wd = $vote_results->winner_data ? $vote_results->winner_data : array();
+				$fr = $vote_results->final_results ? $vote_results->final_results : array();
+				if ( ! empty( $wd['tie'] ) ) {
+					$vote->_outcome     = 'tied';
+					$vote->_result_text = __( 'Tied', 'wp-voting-plugin' );
+				} elseif ( isset( $fr['passed'] ) ) {
+					$fail_text          = 'consent' === $vote->voting_type ? __( 'Objected', 'wp-voting-plugin' ) : __( 'Did Not Pass', 'wp-voting-plugin' );
+					$vote->_outcome     = $fr['passed'] ? 'passed' : 'failed';
+					$vote->_result_text = $fr['passed'] ? __( 'Passed', 'wp-voting-plugin' ) : $fail_text;
+				} elseif ( ! empty( $wd['winners'] ) ) {
+					$vote->_outcome     = 'winner';
+					$vote->_result_text = implode( ', ', $wd['winners'] );
+				} elseif ( ! empty( $wd['winner'] ) ) {
+					$vote->_outcome     = 'winner';
+					$vote->_result_text = $wd['winner'];
 				}
 			}
 
-			$type_list             = json_decode( $vote->classification, true );
-			$vote->_type_display   = is_array( $type_list ) && ! empty( $type_list ) ? implode( ', ', $type_list ) : '';
+			$type_list           = json_decode( $vote->classification, true );
+			$vote->_type_display = is_array( $type_list ) && ! empty( $type_list ) ? implode( ', ', $type_list ) : '';
 		}
 
 		// Read URL parameters for server-side sort, filter, pagination.
 		// phpcs:disable WordPress.Security.NonceVerification.Recommended
-		$sort_col = isset( $_GET['wpvp_sort'] ) ? sanitize_key( $_GET['wpvp_sort'] ) : $atts['sort_col'];
-		$sort_dir = isset( $_GET['wpvp_dir'] ) ? sanitize_key( $_GET['wpvp_dir'] ) : $atts['sort_dir'];
+		$sort_col = isset( $_GET['wpvp_sort'] ) ? sanitize_key( $_GET['wpvp_sort'] ) : $defaults['sort_col'];
+		$sort_dir = isset( $_GET['wpvp_dir'] ) ? sanitize_key( $_GET['wpvp_dir'] ) : $defaults['sort_dir'];
 		$sort_dir = in_array( $sort_dir, array( 'asc', 'desc' ), true ) ? $sort_dir : 'asc';
 
 		$current_page = isset( $_GET['wpvp_page'] ) ? max( 1, intval( $_GET['wpvp_page'] ) ) : 1;
-		$per_page     = isset( $_GET['wpvp_pp'] ) ? max( 1, intval( $_GET['wpvp_pp'] ) ) : max( 1, intval( $atts['limit'] ) );
+		$per_page     = isset( $_GET['wpvp_pp'] ) ? max( 1, intval( $_GET['wpvp_pp'] ) ) : max( 1, intval( $defaults['limit'] ) );
 
 		$search_query    = isset( $_GET['wpvp_s'] ) ? sanitize_text_field( $_GET['wpvp_s'] ) : '';
 		$filter_proposer = isset( $_GET['wpvp_proposer'] ) ? sanitize_text_field( $_GET['wpvp_proposer'] ) : '';
@@ -306,11 +339,7 @@ class WPVP_Public {
 			'types'        => $type_list_all,
 		);
 
-		$votes = $paged_votes;
-
-		ob_start();
-		include WPVP_PLUGIN_DIR . 'templates/public/vote-list.php';
-		return ob_get_clean();
+		return array( $paged_votes, $pagination );
 	}
 
 	/**
@@ -516,26 +545,24 @@ class WPVP_Public {
 	 * Render a list of votes with available results.
 	 */
 	private function render_results_list(): string {
-		$user_id = get_current_user_id();
-
-		// Fetch completed and closed votes.
-		$args = array(
-			'per_page' => 10000,
-			'page'     => 1,
+		$user_id   = get_current_user_id();
+		$all_votes = WPVP_Database::get_votes(
+			array(
+				'per_page' => 10000,
+				'page'     => 1,
+			)
 		);
 
-		$all_votes = WPVP_Database::get_votes( $args );
-
-		// Filter to votes with results that user can view.
-		$votes_with_results = array();
+		// Completed, closed or withdrawn votes, and open votes with "show results before closing", that the user can view.
+		$candidates = array();
+		$saved_ids  = array();
 		foreach ( $all_votes as $vote ) {
-			// Include completed, closed, withdrawn, or open votes with "show results before closing" enabled.
 			$is_completed_or_closed = in_array( $vote->voting_stage, array( 'completed', 'closed', 'withdrawn' ), true );
 
 			$show_open_results = false;
 			if ( 'open' === $vote->voting_stage ) {
-				$settings = json_decode( $vote->settings, true );
-				$settings = $settings ? $settings : array();
+				$settings          = json_decode( $vote->settings, true );
+				$settings          = $settings ? $settings : array();
 				$show_open_results = ! empty( $settings['show_results_before_closing'] );
 			}
 
@@ -543,31 +570,45 @@ class WPVP_Public {
 				continue;
 			}
 
-			// Check if user can view this vote.
 			if ( ! WPVP_Permissions::can_view_vote( $user_id, $vote ) ) {
 				continue;
 			}
 
-			// Check if results exist (not required for open votes with "show results before closing").
+			$candidates[] = array( $vote, $show_open_results );
 			if ( ! $show_open_results ) {
-				$results = WPVP_Database::get_results( $vote->id );
-				if ( ! $results ) {
-					continue;
-				}
+				$saved_ids[] = (int) $vote->id;
 			}
-
-			// Check if user can view results.
-			if ( ! WPVP_Permissions::can_view_results( $user_id, $vote->id ) ) {
-				continue;
-			}
-
-			$votes_with_results[] = $vote;
 		}
 
-		// Render the list.
+		// Saved results are required, except for open votes with "show results before closing".
+		$outcomes = WPVP_Database::get_result_outcomes( $saved_ids );
+		WPVP_Database::prime_user_votes( $user_id );
+
+		$votes_with_results = array();
+		foreach ( $candidates as $candidate ) {
+			list( $vote, $show_open_results ) = $candidate;
+			if ( ! $show_open_results && ! isset( $outcomes[ (int) $vote->id ] ) ) {
+				continue;
+			}
+			if ( WPVP_Permissions::can_view_results_of( $user_id, $vote ) ) {
+				$votes_with_results[] = $vote;
+			}
+		}
+
+		WPVP_Database::forget_user_votes( $user_id );
+
+		list( $votes, $pagination ) = $this->paginate_votes(
+			$votes_with_results,
+			array(
+				'sort_col' => 'start_date',
+				'sort_dir' => 'asc',
+				'limit'    => 10,
+			),
+			$outcomes
+		);
+		$is_results_context = true;
+
 		ob_start();
-		$votes = $votes_with_results; // Template expects $votes variable.
-		$is_results_context = true; // Flag for template to know this is results list context.
 		include WPVP_PLUGIN_DIR . 'templates/public/vote-list.php';
 		return ob_get_clean();
 	}

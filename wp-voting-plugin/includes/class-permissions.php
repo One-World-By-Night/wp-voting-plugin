@@ -102,7 +102,19 @@ class WPVP_Permissions {
 	}
 
 	/**
-	 * Can the user view results for a specific vote?
+	 * Can the user view results for a specific vote? See can_view_results_of() for the rules.
+	 */
+	public static function can_view_results( int $user_id, int $vote_id ): bool {
+		$vote = WPVP_Database::get_vote( $vote_id );
+		if ( ! $vote ) {
+			return false;
+		}
+
+		return self::can_view_results_of( $user_id, $vote );
+	}
+
+	/**
+	 * Can the user view results for this vote, already loaded?
 	 *
 	 * Logic:
 	 *  - Admins: always yes.
@@ -110,11 +122,8 @@ class WPVP_Permissions {
 	 *  - Open votes with "show results before close": eligible voters, and exec and genre coordinators who can view the vote.
 	 *  - Otherwise: no.
 	 */
-	public static function can_view_results( int $user_id, int $vote_id ): bool {
-		$vote = WPVP_Database::get_vote( $vote_id );
-		if ( ! $vote ) {
-			return false;
-		}
+	public static function can_view_results_of( int $user_id, object $vote ): bool {
+		$vote_id = (int) $vote->id;
 
 		// Admins can always view results.
 		if ( $user_id && user_can( $user_id, 'manage_options' ) ) {

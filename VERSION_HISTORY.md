@@ -1,6 +1,16 @@
 # WP Voting Plugin - Version History
 
-## Version 3.14.8 (Current - November 2026)
+## Version 3.14.9 (Current - November 2026)
+
+**A faster Vote Results list.**
+
+- Fixed: the Vote Results list (the results page with no vote picked) sent every vote with results in one page, and looked up each vote's results, record and ballot count one at a time. It now pages, sorts and filters on the server like the vote list, and makes those lookups once per view.
+- Fixed: a failed vote that isn't a consent item showed "Objected" on vote lists; it shows "Did Not Pass", as the results list always did.
+- Fixed: the vote list logged "Undefined variable $pagination" on every view of the results list.
+
+---
+
+## Version 3.14.8 (November 2026)
 
 **Votes by classification.**
 
