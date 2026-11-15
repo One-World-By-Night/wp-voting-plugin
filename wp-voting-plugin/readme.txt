@@ -72,6 +72,7 @@ A consent agenda proposal passes automatically when the vote closes unless someo
 * Fix: the Vote Results list pages, sorts and filters on the server like the vote list, instead of sending every vote with results in one page
 * Fix: a failed vote that isn't a consent item shows "Did Not Pass" on vote lists, not "Objected"
 * Fix: the vote list no longer logs "Undefined variable $pagination"
+* Fix: on a site without pretty permalinks, the vote list's Filter, search and per-page select stay on the page
 
 = 3.14.8 =
 * Filter All Votes by classification, and list one classification's votes on a page: the [wpvp_votes] shortcode's classification attribute, or Classification on the Vote List widget

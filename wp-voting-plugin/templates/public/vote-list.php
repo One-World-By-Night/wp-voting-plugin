@@ -81,6 +81,17 @@ $pagination  = $server_side ? $pagination : array();
 
 		<?php if ( $server_side ) : ?>
 		<form id="wpvp-filter-form" class="wpvp-vote-list__toolbar" method="get" action="<?php echo esc_url( $base_url ); ?>">
+			<?php
+			// The page's own query arguments (page_id on a site without pretty permalinks), which a GET form drops from its action.
+			parse_str( (string) wp_parse_url( $base_url, PHP_URL_QUERY ), $base_args );
+			foreach ( $base_args as $base_arg => $base_value ) :
+				if ( is_scalar( $base_value ) ) :
+					?>
+					<input type="hidden" name="<?php echo esc_attr( $base_arg ); ?>" value="<?php echo esc_attr( (string) $base_value ); ?>">
+					<?php
+				endif;
+			endforeach;
+			?>
 			<input type="hidden" name="wpvp_sort" value="<?php echo esc_attr( $pagination['sort_col'] ); ?>">
 			<input type="hidden" name="wpvp_dir" value="<?php echo esc_attr( $pagination['sort_dir'] ); ?>">
 
