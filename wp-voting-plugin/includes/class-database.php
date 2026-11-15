@@ -1111,10 +1111,49 @@ class WPVP_Database {
 	}
 
 	/**
+	 * Votes each primed user has a ballot on, as vote_id => true.
+	 *
+	 * @var array<int, array<int, true>>
+	 */
+	private static $voted_by_user = array();
+
+	/**
+	 * Loads every vote the user has a ballot on in one query, so user_has_voted() answers from memory for that user
+	 * until forget_user_votes() is called.
+	 */
+	public static function prime_user_votes( int $user_id ): void {
+		global $wpdb;
+
+		if ( $user_id <= 0 ) {
+			return;
+		}
+
+		$ids = $wpdb->get_col(
+			$wpdb->prepare(
+				'SELECT DISTINCT vote_id FROM ' . self::ballots_table() . ' WHERE user_id = %d',
+				$user_id
+			)
+		);
+
+		self::$voted_by_user[ $user_id ] = array_fill_keys( array_map( 'intval', (array) $ids ), true );
+	}
+
+	/**
+	 * Drops what prime_user_votes() loaded for the user.
+	 */
+	public static function forget_user_votes( int $user_id ): void {
+		unset( self::$voted_by_user[ $user_id ] );
+	}
+
+	/**
 	 * Check whether a user has already voted.
 	 */
 	public static function user_has_voted( int $user_id, int $vote_id ): bool {
 		global $wpdb;
+
+		if ( isset( self::$voted_by_user[ $user_id ] ) ) {
+			return isset( self::$voted_by_user[ $user_id ][ $vote_id ] );
+		}
 
 		$count = $wpdb->get_var(
 			$wpdb->prepare(
@@ -1164,6 +1203,43 @@ class WPVP_Database {
 		}
 
 		return $counts;
+	}
+
+	/**
+	 * Get the outcome columns of several votes' saved results in one query: final_results and winner_data, decoded.
+	 *
+	 * @param int[] $vote_ids Vote IDs.
+	 * @return array<int, object> vote_id => object with final_results and winner_data, for the votes that have results.
+	 */
+	public static function get_result_outcomes( array $vote_ids ): array {
+		global $wpdb;
+
+		$vote_ids = array_values( array_unique( array_filter( array_map( 'intval', $vote_ids ) ) ) );
+		if ( empty( $vote_ids ) ) {
+			return array();
+		}
+
+		$placeholders = implode( ',', array_fill( 0, count( $vote_ids ), '%d' ) );
+		$sql          = $wpdb->prepare(
+			'SELECT vote_id, final_results, winner_data FROM ' . self::results_table() . " WHERE vote_id IN ($placeholders)",
+			$vote_ids
+		);
+
+		$outcomes = array();
+		foreach ( (array) $wpdb->get_results( $sql ) as $row ) { // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+			$vote_id = (int) $row->vote_id;
+			if ( isset( $outcomes[ $vote_id ] ) ) {
+				continue;
+			}
+			foreach ( array( 'final_results', 'winner_data' ) as $field ) {
+				if ( ! empty( $row->$field ) ) {
+					$row->$field = json_decode( $row->$field, true );
+				}
+			}
+			$outcomes[ $vote_id ] = $row;
+		}
+
+		return $outcomes;
 	}
 
 	public static function get_ballots( int $vote_id ): array {
